@@ -1,5 +1,7 @@
 use std::{error::Error, fmt::{Display, Formatter}};
 
+use crate::SqlDialect;
+
 #[allow(dead_code)]
 pub static DEFAULT_ERROR_MSG: &str = "Error occurs when extracting sql parameters.";
 
@@ -26,13 +28,6 @@ impl Error for ExtractSqlError {
     fn cause(&self) -> Option<&dyn Error> {
        None
     }
-}
-
-#[allow(non_camel_case_types)]
-pub enum SqlDialect {
-    postgres,
-    mysql,
-    sqlite,
 }
 
 ///
@@ -141,7 +136,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test() {
+    fn test_extract_sql() {
         let sql = "select * from abc where id=:id and name=:name";
         let rst = extract_params(sql, SqlDialect::postgres);
         assert_eq!(

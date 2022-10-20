@@ -1,3 +1,38 @@
+use std::{error::Error, fmt::{Display, Formatter}};
+
+static DEFAULT_ERROR_MSG: &str = "Error occurs when extracting sql parameters.";
+
+#[derive(Debug, PartialEq)]
+pub struct ExtractSqlError {
+    pub msg: String
+}
+
+impl ExtractSqlError {
+    pub fn new(msg: &str) -> Self {
+        Self {
+            msg: msg.to_owned(),
+        }
+    }
+}
+
+impl Display for ExtractSqlError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.msg)
+    }
+}
+
+impl Error for ExtractSqlError {
+    fn cause(&self) -> Option<&dyn Error> {
+       None
+    }
+}
+
+#[allow(non_camel_case_types)]
+pub enum SqlDialect {
+    postgres,
+    mysql
+}
+
 ///
 /// extract sql and params from raw sql
 /// 
@@ -6,10 +41,10 @@
 /// Basic usage:
 /// 
 /// ```
-/// # use sqlmap::*;
+/// # use dysql::*;
 ///
 /// let sql = "select * from abc where id=:id and name=:name order by id";
-/// let rst = extract_params(sql);
+/// let rst = extract_params(sql, SqlDialect::postgres);
 /// assert_eq!(
 ///     Ok(
 ///         (
@@ -19,8 +54,20 @@
 ///     ),
 ///     rst
 /// );
+/// 
+/// let sql = "select * from abc where id=:id and name=:name order by id";
+/// let rst = extract_params(sql, SqlDialect::mysql);
+/// assert_eq!(
+///     Ok(
+///         (
+///             "select * from abc where id=? and name=? order by id".to_owned(),
+///             vec!["id".to_owned(), "name".to_owned()]
+///         ) 
+///     ),
+///     rst
+/// );
 /// ```
-pub fn extract_params(o_sql: &str) -> Result<(String, Vec<String>), String>{
+pub fn extract_params(o_sql: &str, sql_dial: SqlDialect) -> Result<(String, Vec<String>), ExtractSqlError>{
     // eprintln!("{:#?}", o_sql);
     let mut r_sql = String::new();
     let mut params: Vec<String> = vec![];
@@ -29,25 +76,29 @@ pub fn extract_params(o_sql: &str) -> Result<(String, Vec<String>), String>{
     let mut start: usize = 0;
     let mut cur = start;
     let end = o_sql.len();
+
     while cur < end {
         let (found, current_cursor) = char_index(o_sql, cur, vec![':']);
 
         if found {
             cur = current_cursor;
             count += 1;
-            r_sql.push_str(&format!("{}${}", &o_sql[start..cur], count));
-
+            match sql_dial {
+                SqlDialect::postgres => r_sql.push_str(&format!("{}${}", &o_sql[start..cur], count)),
+                SqlDialect::mysql => r_sql.push_str(&format!("{}?", &o_sql[start..cur])),
+            }
+            
             // skip ":" char
             cur += 1;
             start = cur;
 
             // get named param end index
             if cur == end {
-                return Err("named parameter format error".to_owned())
+                return Err(ExtractSqlError::new(DEFAULT_ERROR_MSG))
             } else {
                 let (found, current_cursor) = char_index(o_sql, cur, vec![' ', '\n', '\t']);
                 if found && current_cursor == cur{
-                    return Err("named parameter format error".to_owned())
+                    return Err(ExtractSqlError::new(DEFAULT_ERROR_MSG))
                 }
 
                 cur = current_cursor;
@@ -90,7 +141,7 @@ mod tests {
     #[test]
     fn test() {
         let sql = "select * from abc where id=:id and name=:name";
-        let rst = extract_params(sql);
+        let rst = extract_params(sql, SqlDialect::postgres);
         assert_eq!(
             Ok(
                 (
@@ -102,16 +153,16 @@ mod tests {
         );
         
         let sql = "select * from abc where id=: id and name=:name order by id";
-        let rst = extract_params(sql);
+        let rst = extract_params(sql, SqlDialect::postgres);
         assert_eq!(
-            Err("named parameter format error".to_owned()),
+            Err(ExtractSqlError::new(DEFAULT_ERROR_MSG)),
             rst
         );
 
         let sql = "select * from abc where id=:id and name=:";
-        let rst = extract_params(sql);
+        let rst = extract_params(sql, SqlDialect::postgres);
         assert_eq!(
-            Err("named parameter format error".to_owned()),
+            Err(ExtractSqlError::new(DEFAULT_ERROR_MSG)),
             rst
         );
     }

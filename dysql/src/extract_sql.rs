@@ -1,5 +1,6 @@
 use std::{error::Error, fmt::{Display, Formatter}};
 
+#[allow(dead_code)]
 pub static DEFAULT_ERROR_MSG: &str = "Error occurs when extracting sql parameters.";
 
 #[derive(Debug, PartialEq)]

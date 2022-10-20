@@ -30,7 +30,8 @@ impl Error for ExtractSqlError {
 #[allow(non_camel_case_types)]
 pub enum SqlDialect {
     postgres,
-    mysql
+    mysql,
+    sqlite,
 }
 
 ///
@@ -85,7 +86,7 @@ pub fn extract_params(o_sql: &str, sql_dial: SqlDialect) -> Result<(String, Vec<
             count += 1;
             match sql_dial {
                 SqlDialect::postgres => r_sql.push_str(&format!("{}${}", &o_sql[start..cur], count)),
-                SqlDialect::mysql => r_sql.push_str(&format!("{}?", &o_sql[start..cur])),
+                _ => r_sql.push_str(&format!("{}?", &o_sql[start..cur])),
             }
             
             // skip ":" char

@@ -15,11 +15,12 @@ fn test_plain_sql() -> Result<(), Box<dyn std::error::Error>> {
 
     let dto = UserDto::new("name1".to_owned(), 12);
     let rst = sql!(|dto| -> postgres {
-        "select * from abc 
-        where id = :id  
+        r#"select * from abc 
+        where id = :id "aa
           and name = :name  
-        order by id"
+        order by id"#
     });
+    
     println!("{:?}", rst);
 
     Ok(())

@@ -6,7 +6,7 @@ use quote::{quote, ToTokens};
 struct SqlClosure {
     dto: syn::Ident,
     dialect: syn::Ident,
-    body: proc_macro2::TokenStream,
+    body: String,
 }
 
 #[proc_macro]
@@ -26,7 +26,7 @@ fn expand(st: &SqlClosure) -> syn::Result<proc_macro2::TokenStream> {
     let dialect = &st.dialect.to_string();
 
     // get sql and params as both string and ident type
-    let (ret_sql, param_strings) = match dysql::extract_params(&body.to_string(), dysql::SqlDialect::from(dialect.to_owned())) {
+    let (ret_sql, param_strings) = match dysql::extract_params(&body, dysql::SqlDialect::from(dialect.to_owned())) {
         Ok(rst) => rst,
         Err(e) => {
             return Err(syn::Error::new(proc_macro2::Span::call_site(), e))
@@ -84,13 +84,10 @@ impl syn::parse::Parse for SqlClosure {
         // parse closure sql body
         let body_buf;
         syn::braced!(body_buf in input);
-        let body: proc_macro2::TokenStream = body_buf.parse()?;
-        let body = body.to_string();
+        let body: syn::LitStr = body_buf.parse()?;
+        let body = body.value();
         let body:Vec<_> = body.split("\n").map(|f| f.trim()).collect();
         let body = body.join(" ");
-        let body = proc_macro2::Literal::string(&body).into_token_stream();
-
-        // eprintln!("{}", body);
 
         Ok(SqlClosure { dto, dialect, body })
     }

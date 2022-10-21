@@ -26,12 +26,11 @@ fn expand(st: &SqlClosure) -> syn::Result<proc_macro2::TokenStream> {
     let dialect = &st.dialect.to_string();
 
     // get raw sql and all params as both string and ident type at compile time!
-    let (_, param_strings) = match dysql::extract_params(&body, dysql::SqlDialect::from(dialect.to_owned())) {
-        Ok(rst) => rst,
-        Err(e) => {
-            return Err(syn::Error::new(proc_macro2::Span::call_site(), e))
-        },
-    };
+    let (tmp_sql, param_strings) = dysql::extract_params(&body, dysql::SqlDialect::from(dialect.to_owned()));
+    if tmp_sql == "".to_owned() {
+        return Err(syn::Error::new(proc_macro2::Span::call_site(), format!("Parse sql error: {} ", body)))
+    }
+    
     let param_idents: Vec<_> = param_strings.iter().map( |p| proc_macro2::Ident::new(p, proc_macro2::Span::call_site()) ).collect();
 
     // gen inner expr token stream
@@ -41,11 +40,11 @@ fn expand(st: &SqlClosure) -> syn::Result<proc_macro2::TokenStream> {
         // let sql_tpl = ramhorns::Template::new(#body)?;
         let sql_tpl = match dysql::get_sql_template(#template_id) {
             Some(tpl) => tpl,
-            None => dysql::put_sql_template(#template_id, #body)?,
+            None => dysql::put_sql_template(#template_id, #body).expect("Unexpected error when put_sql_template"),
         };
 
         let sql_rendered = unsafe{(*sql_tpl).render(&#dto)};
-        let rst = dysql::extract_params(&sql_rendered, dysql::SqlDialect::from(#dialect.to_owned()))?;
+        let rst = dysql::extract_params(&sql_rendered, dysql::SqlDialect::from(#dialect.to_owned()));
         let (sql, param_names) = rst;
         let mut param_values: Vec<&(dyn dysql::ToSql + Sync)> = Vec::new();
     );

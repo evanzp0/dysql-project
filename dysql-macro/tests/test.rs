@@ -3,7 +3,7 @@ use dysql::*;
 pub use ramhorns::Content;
 
 #[test]
-fn test_plain_sql() -> Result<(), Box<dyn std::error::Error>> {
+fn test_plain_sql() {
     #[derive(Content)]
     struct UserDto {
         name: String,
@@ -35,6 +35,4 @@ fn test_plain_sql() -> Result<(), Box<dyn std::error::Error>> {
     let params = format!("{:?}", params);
     let rst1 = format!("{:?}", rst.1);
     assert_eq!(params, rst1);
-
-    Ok(())
 }

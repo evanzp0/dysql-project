@@ -1,4 +1,4 @@
-use crate::{SqlDialect, DySqlResult, DEFAULT_ERROR_MSG, DySqlError};
+use crate::SqlDialect;
 
 ///
 /// extract sql and params from raw sql
@@ -13,28 +13,18 @@ use crate::{SqlDialect, DySqlResult, DEFAULT_ERROR_MSG, DySqlError};
 /// let sql = "select * from abc where id=:id and name=:name order by id";
 /// let rst = extract_params(sql, SqlDialect::postgres);
 /// assert_eq!(
-///     Ok(
-///         (
-///             "select * from abc where id=$1 and name=$2 order by id".to_owned(),
-///             vec!["id".to_owned(), "name".to_owned()]
-///         ) 
-///     ),
+///     ("select * from abc where id=$1 and name=$2 order by id".to_owned(), vec!["id".to_owned(), "name".to_owned()]),
 ///     rst
 /// );
 /// 
 /// let sql = "select * from abc where id=:id and name=:name order by id";
 /// let rst = extract_params(sql, SqlDialect::mysql);
 /// assert_eq!(
-///     Ok(
-///         (
-///             "select * from abc where id=? and name=? order by id".to_owned(),
-///             vec!["id".to_owned(), "name".to_owned()]
-///         ) 
-///     ),
+///     ("select * from abc where id=? and name=? order by id".to_owned(), vec!["id".to_owned(), "name".to_owned()]),
 ///     rst
 /// );
 /// ```
-pub fn extract_params(o_sql: &str, sql_dial: SqlDialect) -> DySqlResult<(String, Vec<String>)>{
+pub fn extract_params(o_sql: &str, sql_dial: SqlDialect) -> (String, Vec<String>) {
     // eprintln!("{:#?}", o_sql);
     let mut r_sql = String::new();
     let mut params: Vec<String> = vec![];
@@ -61,11 +51,11 @@ pub fn extract_params(o_sql: &str, sql_dial: SqlDialect) -> DySqlResult<(String,
 
             // get named param end index
             if cur == end {
-                return Err(Box::new(DySqlError::new(DEFAULT_ERROR_MSG)))
+                return ("".to_string(), vec![])
             } else {
                 let (found, current_cursor) = char_index(o_sql, cur, vec![' ', '\n', '\t', '{']);
                 if found && current_cursor == cur{
-                    return Err(Box::new(DySqlError::new(DEFAULT_ERROR_MSG)))
+                    return ("".to_string(), vec![])
                 }
 
                 cur = current_cursor;
@@ -80,7 +70,7 @@ pub fn extract_params(o_sql: &str, sql_dial: SqlDialect) -> DySqlResult<(String,
         }
     }
 
-    Ok((r_sql, params))
+    (r_sql, params)
 }
 
 ///
@@ -109,24 +99,14 @@ mod tests {
     fn test_extract_sql() {
         let sql = "select * from abc where id=:id and name=:name";
         let rst = extract_params(sql, SqlDialect::postgres);
-        assert_eq!(
-            Ok(
-                (
-                    "select * from abc where id=$1 and name=$2".to_owned(),
-                    vec!["id".to_owned(), "name".to_owned()]
-                ) 
-            ),
-            rst
-        );
+        assert_eq!(("select * from abc where id=$1 and name=$2".to_owned(), vec!["id".to_owned(), "name".to_owned()]), rst);
         
         let sql = "select * from abc where id=: id and name=:name order by id";
         let rst = extract_params(sql, SqlDialect::postgres);
-        let error: DySqlResult<(String, Vec<String>)> = Err(Box::new(DySqlError::new(DEFAULT_ERROR_MSG)));
-        assert_eq!(error,  rst);
+        assert_eq!(((), vec![]),  rst);
 
         let sql = "select * from abc where id=:id and name=:";
         let rst = extract_params(sql, SqlDialect::postgres);
-        let error: DySqlResult<(String, Vec<String>)> = Err(Box::new(DySqlError::new(DEFAULT_ERROR_MSG)));
-        assert_eq!(error,  rst);
+        assert_eq!(((), vec![]),  rst);
     }
 }

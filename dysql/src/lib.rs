@@ -90,9 +90,6 @@ pub fn md5<S:Into<String>>(input: S) -> String {
     md5.result_str()
 }
 
-#[allow(dead_code)]
-pub static DEFAULT_ERROR_MSG: &str = "Error occurs when extracting sql parameters.";
-
 #[derive(Debug, PartialEq)]
 pub struct DySqlError {
     pub msg: String

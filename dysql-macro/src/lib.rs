@@ -25,7 +25,7 @@ fn expand(st: &SqlClosure) -> syn::Result<proc_macro2::TokenStream> {
     let body = &st.body;
     let dialect = &st.dialect.to_string();
 
-    // get sql and params as both string and ident type
+    // get raw sql and all params as both string and ident type at compile time!
     let (ret_sql, param_strings) = match dysql::extract_params(&body, dysql::SqlDialect::from(dialect.to_owned())) {
         Ok(rst) => rst,
         Err(e) => {
@@ -37,7 +37,9 @@ fn expand(st: &SqlClosure) -> syn::Result<proc_macro2::TokenStream> {
     // gen inner expr token stream
     let mut expr = proc_macro2::TokenStream::new();
     let expr_def = quote!(
-        let rst = dysql::extract_params(#body, dysql::SqlDialect::from(#dialect.to_owned()))?;
+        let sql_tpl = ramhorns::Template::new(#body)?;
+        let sql_rendered = sql_tpl.render(&#dto);
+        let rst = dysql::extract_params(&sql_rendered, dysql::SqlDialect::from(#dialect.to_owned()))?;
         let (sql, param_names) = rst;
         let mut param_values: Vec<&(dyn dysql::ToSql + Sync)> = Vec::new();
     );
@@ -61,10 +63,10 @@ fn expand(st: &SqlClosure) -> syn::Result<proc_macro2::TokenStream> {
     let expr_block = proc_macro2::Group::new(proc_macro2::Delimiter::Brace, expr_block);
     expr.extend(expr_block.into_token_stream());
 
-    expr.extend(quote!((#ret_sql, param_values)));
+    expr.extend(quote!((sql, param_values)));
 
     ret.extend(proc_macro2::Group::new(proc_macro2::Delimiter::Brace, expr).into_token_stream());
-    // ret.extend(body.to_token_stream());
+
     Ok(ret)
 }
 

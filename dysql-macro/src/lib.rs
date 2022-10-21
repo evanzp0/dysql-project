@@ -36,6 +36,7 @@ fn expand(st: &SqlClosure) -> syn::Result<proc_macro2::TokenStream> {
     // gen inner expr token stream
     let mut expr = proc_macro2::TokenStream::new();
     let template_id = dysql::md5(body);
+    ramhorns::Template::new(body.clone()).unwrap(); // check the template syntax is ok
     let expr_def = quote!(
         // let sql_tpl = ramhorns::Template::new(#body)?;
         let sql_tpl = match dysql::get_sql_template(#template_id) {

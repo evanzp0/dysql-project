@@ -56,7 +56,7 @@ fn expand(st: &SqlClosure) -> syn::Result<proc_macro2::TokenStream> {
     );
     expr.extend(expr_for);
 
-    let mut expr_block = proc_macro2::TokenStream::new();
+    let mut expr_block_inner = proc_macro2::TokenStream::new();
     let params = param_strings.iter().zip(param_idents);
     for (param_string, ref param_ident) in params {
         let expr_if = quote!(
@@ -64,14 +64,23 @@ fn expand(st: &SqlClosure) -> syn::Result<proc_macro2::TokenStream> {
                 param_values.push(&#dto.#param_ident);
             }
         );
-        expr_block.extend(expr_if);
+        expr_block_inner.extend(expr_if);
     }
-    let expr_block = proc_macro2::Group::new(proc_macro2::Delimiter::Brace, expr_block);
-    expr.extend(expr_block.into_token_stream());
+    let expr_for_block = proc_macro2::Group::new(proc_macro2::Delimiter::Brace, expr_block_inner);
+    expr.extend(expr_for_block.into_token_stream());
 
     expr.extend(quote!((sql, param_values)));
 
     ret.extend(proc_macro2::Group::new(proc_macro2::Delimiter::Brace, expr).into_token_stream());
+
+    // let ret_fn = quote!(
+    //     {
+    //         fn _dysql_tmp_fn() -> DySqlResult<(String, Vec<&(dyn ToSql + Sync)>)> {
+    //             #expr
+    //         }
+    //         _dysql_tmp_fn()
+    //     }
+    // );
 
     Ok(ret)
 }

@@ -47,7 +47,7 @@ fn expand(st: &SqlClosure) -> syn::Result<proc_macro2::TokenStream> {
         let sql_rendered = unsafe{(*sql_tpl).render(&#dto)};
         let rst = dysql::extract_params(&sql_rendered, dysql::SqlDialect::from(#dialect.to_owned()));
         let (sql, param_names) = rst;
-        let mut param_values: Vec<&(dyn dysql::ToSql + Sync)> = Vec::new();
+        let mut param_values: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = Vec::new();
     );
     expr.extend(expr_def);
 
@@ -72,15 +72,6 @@ fn expand(st: &SqlClosure) -> syn::Result<proc_macro2::TokenStream> {
     expr.extend(quote!((sql, param_values)));
 
     ret.extend(proc_macro2::Group::new(proc_macro2::Delimiter::Brace, expr).into_token_stream());
-
-    // let ret_fn = quote!(
-    //     {
-    //         fn _dysql_tmp_fn() -> DySqlResult<(String, Vec<&(dyn ToSql + Sync)>)> {
-    //             #expr
-    //         }
-    //         _dysql_tmp_fn()
-    //     }
-    // );
 
     Ok(ret)
 }

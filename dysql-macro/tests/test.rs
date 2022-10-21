@@ -1,5 +1,4 @@
 use dysql_macro::*;
-use dysql::*;
 pub use ramhorns::Content;
 
 #[test]
@@ -27,7 +26,7 @@ fn test_plain_sql() {
     });
 
     
-    let mut params: Vec<&(dyn ToSql + Sync)> = vec![];
+    let mut params: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = vec![];
     params.push(&dto.id);
     params.push(&dto.name);
     params.push(&dto.age);

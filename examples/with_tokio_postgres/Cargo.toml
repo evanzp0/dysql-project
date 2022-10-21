@@ -1,0 +1,14 @@
+[package]
+name = "with_tokio_postgres"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = { version = "1.0", features = ["full"] }
+deadpool-postgres = "0.10"
+tokio-pg-mapper = "0.2"
+tokio-pg-mapper-derive = "0.2"
+tokio-postgres = { version = "0.7", features = ["with-chrono-0_4"] }
+dysql = {path = "../../dysql"}
+dysql-macro = {path = "../../dysql-macro"}
+ramhorns = "0.14"

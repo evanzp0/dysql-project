@@ -1,9 +1,7 @@
 use std::{fmt::{Display, Formatter}, sync::{Arc, RwLock}, collections::HashMap};
 use std::error::Error;
-mod to_sql;
 mod extract_sql;
 
-pub use to_sql::*;
 pub use extract_sql::*;
 
 use crypto::{md5::Md5, digest::Digest};

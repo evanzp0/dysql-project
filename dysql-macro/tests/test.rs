@@ -1,4 +1,5 @@
 use dysql_macro::*;
+use dysql::*;
 pub use ramhorns::Content;
 
 #[test]
@@ -21,26 +22,19 @@ fn test_plain_sql() -> Result<(), Box<dyn std::error::Error>> {
         r#"select * from abc 
         where id = :id
           and name = :name
-          {{#age}}
-          and age = :age
-          {{/age}}
+          {{#age}}and age = :age{{/age}}
         order by id"#
     });
 
-    println!("{:?}", rst);
-
-    let dto = UserDto::new("name1".to_owned(), 12, Some(13));
-    let rst = sql!(|dto| -> postgres {
-        r#"select * from abc 
-        where id = :id
-          and name = :name
-          {{#age}}
-          and age = :age
-          {{/age}}
-        order by id"#
-    });
-
-    println!("{:?}", rst);
+    
+    let mut params: Vec<&(dyn ToSql + Sync)> = vec![];
+    params.push(&dto.id);
+    params.push(&dto.name);
+    params.push(&dto.age);
+    assert_eq!("select * from abc where id = $1 and name = $2 and age = $3 order by id".to_string(), rst.0);
+    let params = format!("{:?}", params);
+    let rst1 = format!("{:?}", rst.1);
+    assert_eq!(params, rst1);
 
     Ok(())
 }

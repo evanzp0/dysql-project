@@ -96,7 +96,7 @@ impl syn::parse::Parse for SqlClosure {
         let body = body.value();
         let body:Vec<_> = body.split("\n").map(|f| f.trim()).collect();
         let body = body.join(" ");
-
+        // eprintln!("{:#?}", body);
         Ok(SqlClosure { dto, dialect, body })
     }
 }

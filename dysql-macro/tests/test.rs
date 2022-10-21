@@ -29,5 +29,18 @@ fn test_plain_sql() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("{:?}", rst);
 
+    let dto = UserDto::new("name1".to_owned(), 12, Some(13));
+    let rst = sql!(|dto| -> postgres {
+        r#"select * from abc 
+        where id = :id
+          and name = :name
+          {{#age}}
+          and age = :age
+          {{/age}}
+        order by id"#
+    });
+
+    println!("{:?}", rst);
+
     Ok(())
 }

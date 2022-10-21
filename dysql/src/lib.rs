@@ -1,10 +1,56 @@
-use std::fmt::{Display, Formatter};
-
+use std::{fmt::{Display, Formatter}, sync::{Arc, RwLock}, collections::HashMap};
+use std::error::Error;
 mod to_sql;
 mod extract_sql;
 
 pub use to_sql::*;
 pub use extract_sql::*;
+
+use crypto::{md5::Md5, digest::Digest};
+use once_cell::sync::OnceCell;
+use ramhorns::Template;
+
+pub static SQL_TEMPLATE_CACHE: OnceCell<Arc<RwLock<HashMap<String, Template>>>> = OnceCell::new();
+pub type DySqlResult<T> = Result<T, Box<dyn Error>>;
+
+#[allow(dead_code)]
+fn get_sql_template_cache() -> &'static Arc<RwLock<HashMap<String, Template<'static>>>> {
+    let cache = SQL_TEMPLATE_CACHE.get_or_init(|| {
+        Arc::new(RwLock::new(HashMap::new()))
+    });
+
+    cache
+}
+
+pub fn get_sql_template(template_id: &str) -> Option<*const Template<'static>> {
+    let cache = get_sql_template_cache();
+
+    let template_stub = cache.read().unwrap();
+    let template = template_stub.get(template_id);
+
+    if let Some(tmpl) = template {
+        // println!("get template from cache: {}", template_id);
+        return Some(tmpl as *const Template)
+    }
+
+    None
+}
+
+pub fn put_sql_template(template_id: &str, sql: &'static str) -> DySqlResult<*const Template<'static>> {
+    // println!("put template to cache: {}", template_id);
+    let cache = get_sql_template_cache();
+
+    let template = Template::new(sql)?;
+    cache.write().unwrap().insert(template_id.to_string(), template);
+
+    let template = get_sql_template(template_id);
+
+    if let Some(tmpl) = template {
+        return Ok(tmpl as *const Template)
+    }
+
+    Err(Box::new(DySqlError::new(&format!("Template({}) is not find.", template_id))))
+}
 
 #[allow(non_camel_case_types)]
 #[derive(Debug)]
@@ -37,6 +83,41 @@ impl From<String> for SqlDialect {
         }
     }
 }
+
+pub fn md5<S:Into<String>>(input: S) -> String {
+    let mut md5 = Md5::new();
+    md5.input_str(&input.into());
+    md5.result_str()
+}
+
+#[allow(dead_code)]
+pub static DEFAULT_ERROR_MSG: &str = "Error occurs when extracting sql parameters.";
+
+#[derive(Debug, PartialEq)]
+pub struct DySqlError {
+    pub msg: String
+}
+
+impl DySqlError {
+    pub fn new(msg: &str) -> Self {
+        Self {
+            msg: msg.to_owned(),
+        }
+    }
+}
+
+impl Display for DySqlError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.msg)
+    }
+}
+
+impl Error for DySqlError {
+    fn cause(&self) -> Option<&dyn Error> {
+       None
+    }
+}
+
 
 #[cfg(test)]
 mod tests {

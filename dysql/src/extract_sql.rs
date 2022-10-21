@@ -103,10 +103,10 @@ mod tests {
         
         let sql = "select * from abc where id=: id and name=:name order by id";
         let rst = extract_params(sql, SqlDialect::postgres);
-        assert_eq!(((), vec![]),  rst);
+        assert_eq!(("".to_owned(), vec![]),  rst);
 
         let sql = "select * from abc where id=:id and name=:";
         let rst = extract_params(sql, SqlDialect::postgres);
-        assert_eq!(((), vec![]),  rst);
+        assert_eq!(("".to_owned(), vec![]),  rst);
     }
 }

@@ -2,7 +2,6 @@
 
 **Dysql** is a rust crate that adds the ability of dynamic sql to **tokio-postgres** through proc macro. it uses [**Ramhorns**](https://github.com/maciejhirsz/ramhorns) the high performance template engine implementation of [**Mustache**](https://mustache.github.io/) 
 
-Dysql suport **postgres**，**mysql**，**sqlite**，sql dialect.
 
 ### Cargo.toml:
 ```toml
@@ -35,22 +34,13 @@ async fn main() -> Result<(), Error> {
 
     // use postgres sql dialect 
     let dto = UserDto::new(Some("zhanglan".to_owned()), None, None);
-    let (sql, params) = sql!(|dto| { // default sql dialect is "postgres"
+    let (sql, params) = sql!(|dto| {
         r#"SELECT * FROM test_user 
         WHERE 1 = 1
           {{#name}}AND name = :name{{/name}}
           {{#age}}AND age > :age{{/age}}
         ORDER BY id"#
     });
-
-    //// use mysql sql dialect 
-    // let (sql, params) = sql!(|dto| -> mysql { // use "mysql" as sql dialect
-    //     r#"SELECT * FROM test_user 
-    //     WHERE 1 = 1
-    //       {{#name}}AND name = :name{{/name}}
-    //       {{#age}}AND age > :age{{/age}}
-    //     ORDER BY id"#
-    // });
 
     let rows = client.query(&sql, &params).await?;
     rows.iter().for_each(|row| {
@@ -81,5 +71,4 @@ impl UserDto {
 
 ### License
 
-Dysql is free software, and is released under the terms of the GNU General Public
-License version 3. See [LICENSE](LICENSE).
+Dysql is free software, and is released under the terms of the Apache License version 2. See [LICENSE](LICENSE).

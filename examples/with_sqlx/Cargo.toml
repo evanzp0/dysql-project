@@ -1,0 +1,12 @@
+[package]
+name = "with_sqlx"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+sqlx = { version = "0.6", features = [ "runtime-tokio-native-tls" , "postgres" ] }
+tokio = { version = "1.0", features = ["full"] }
+ramhorns = "0.14"
+tokio-postgres = { version = "0.7", features = ["with-chrono-0_4"] }
+dysql = {path = "../../dysql"}
+dysql-macro = {path = "../../dysql-macro"}

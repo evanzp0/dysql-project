@@ -6,7 +6,7 @@ pub use extract_sql::*;
 
 use crypto::{md5::Md5, digest::Digest};
 use once_cell::sync::OnceCell;
-use ramhorns::Template;
+use ramhorns::{Template, Content};
 
 pub static SQL_TEMPLATE_CACHE: OnceCell<Arc<RwLock<HashMap<String, Template>>>> = OnceCell::new();
 pub type DySqlResult<T> = Result<T, Box<dyn Error>>;
@@ -113,6 +113,18 @@ impl Error for DySqlError {
     }
 }
 
+#[derive(Debug)]
+pub enum QueryType {
+    FetchAll,
+    FetchOne,
+    FetchScalar,
+    Execute,
+}
+
+#[derive(Content)]
+pub struct EmptyDto {
+    pub _empty: u8
+}
 
 #[cfg(test)]
 mod tests {

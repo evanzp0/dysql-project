@@ -1,4 +1,4 @@
-# About dysql
+# About Dysql
 
 **Dysql** is a rust crate that adds the ability of dynamic sql to **tokio-postgres** through proc macro. it uses [**Ramhorns**](https://github.com/maciejhirsz/ramhorns) the high performance template engine implementation of [**Mustache**](https://mustache.github.io/) 
 

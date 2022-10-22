@@ -81,5 +81,4 @@ impl UserDto {
 
 ### License
 
-Dysql is free software, and is released under the terms of the GNU General Public
-License version 3. See [LICENSE](LICENSE).
+Dysql is free software, and is released under the terms of the Apache License version 2. See [LICENSE](LICENSE).

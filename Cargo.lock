@@ -209,6 +209,17 @@ dependencies = [
 [[package]]
 name = "dysql"
 version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dac4ea347cb00877b24fb22ca889c341460a867cd0b2db5cd8ca2f5e701f28b7"
+dependencies = [
+ "once_cell",
+ "ramhorns",
+ "rust-crypto",
+]
+
+[[package]]
+name = "dysql"
+version = "0.1.2"
 dependencies = [
  "once_cell",
  "ramhorns",
@@ -217,9 +228,9 @@ dependencies = [
 
 [[package]]
 name = "dysql-macro"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
- "dysql",
+ "dysql 0.1.1",
  "proc-macro2",
  "quote",
  "ramhorns",
@@ -231,7 +242,7 @@ dependencies = [
 name = "dysql-project"
 version = "0.1.1"
 dependencies = [
- "dysql",
+ "dysql 0.1.2",
  "dysql-macro",
 ]
 

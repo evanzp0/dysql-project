@@ -9,8 +9,8 @@ Dysql suport **postgres**，**mysql**，**sqlite**，sql dialect.
 [dependencies]
 tokio = { version = "1.0", features = ["full"] }
 tokio-postgres = { version = "0.7", features = ["with-chrono-0_4"] }
-dysql = {path = "../../dysql"}
-dysql-macro = {path = "../../dysql-macro"}
+dysql = "0.1.2"
+dysql-macro = "0.1.2"
 ramhorns = "0.14"
 ```
 

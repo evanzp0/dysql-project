@@ -1,5 +1,5 @@
 use proc_macro::TokenStream;
-use quote::{quote, ToTokens};
+use quote::quote;
 
 #[allow(dead_code)]
 #[derive(Debug)]
@@ -20,58 +20,45 @@ pub fn sql(input: TokenStream) -> TokenStream {
 }
 
 fn expand(st: &SqlClosure) -> syn::Result<proc_macro2::TokenStream> {
-    let mut ret = proc_macro2::TokenStream::new();
     let dto = &st.dto;
     let body = &st.body;
     let dialect = &st.dialect.to_string();
+    let template_id = dysql::md5(body);
+    
+    // check the template syntax is ok
+    ramhorns::Template::new(body.clone()).unwrap(); 
 
     // get raw sql and all params as both string and ident type at compile time!
     let (tmp_sql, param_strings) = dysql::extract_params(&body, dysql::SqlDialect::from(dialect.to_owned()));
     if tmp_sql == "".to_owned() {
         return Err(syn::Error::new(proc_macro2::Span::call_site(), format!("Parse sql error: {} ", body)))
     }
-    
     let param_idents: Vec<_> = param_strings.iter().map( |p| proc_macro2::Ident::new(p, proc_macro2::Span::call_site()) ).collect();
+    
+    let ret = quote!(
+        {
+            let mut param_values: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = Vec::new();
+            let sql_tpl = ramhorns::Template::new(#body).unwrap();
+            let sql_tpl = match dysql::get_sql_template(#template_id) {
+                Some(tpl) => tpl,
+                None => dysql::put_sql_template(#template_id, #body).expect("Unexpected error when put_sql_template"),
+            };
+    
+            let sql_rendered = unsafe{(*sql_tpl).render(&#dto)};
+            let rst = dysql::extract_params(&sql_rendered, dysql::SqlDialect::from(#dialect.to_owned()));
+            let (sql, param_names) = rst;
 
-    // gen inner expr token stream
-    let mut expr = proc_macro2::TokenStream::new();
-    let template_id = dysql::md5(body);
-    ramhorns::Template::new(body.clone()).unwrap(); // check the template syntax is ok
-    let expr_def = quote!(
-        // let sql_tpl = ramhorns::Template::new(#body)?;
-        let sql_tpl = match dysql::get_sql_template(#template_id) {
-            Some(tpl) => tpl,
-            None => dysql::put_sql_template(#template_id, #body).expect("Unexpected error when put_sql_template"),
-        };
-
-        let sql_rendered = unsafe{(*sql_tpl).render(&#dto)};
-        let rst = dysql::extract_params(&sql_rendered, dysql::SqlDialect::from(#dialect.to_owned()));
-        let (sql, param_names) = rst;
-        let mut param_values: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = Vec::new();
-    );
-    expr.extend(expr_def);
-
-    let expr_for = quote!(
-        for i in 0..param_names.len() 
-    );
-    expr.extend(expr_for);
-
-    let mut expr_block_inner = proc_macro2::TokenStream::new();
-    let params = param_strings.iter().zip(param_idents);
-    for (param_string, ref param_ident) in params {
-        let expr_if = quote!(
-            if param_names[i] == #param_string {
-                param_values.push(&#dto.#param_ident);
+            for i in 0..param_names.len() {
+                #(
+                    if param_names[i] == #param_strings {
+                        param_values.push(&#dto.#param_idents);
+                    }
+                )*
             }
-        );
-        expr_block_inner.extend(expr_if);
-    }
-    let expr_for_block = proc_macro2::Group::new(proc_macro2::Delimiter::Brace, expr_block_inner);
-    expr.extend(expr_for_block.into_token_stream());
 
-    expr.extend(quote!((sql, param_values)));
-
-    ret.extend(proc_macro2::Group::new(proc_macro2::Delimiter::Brace, expr).into_token_stream());
+            (sql, param_values)
+        }
+    );
 
     Ok(ret)
 }

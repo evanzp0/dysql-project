@@ -2,7 +2,7 @@ use dysql_macro::*;
 pub use ramhorns::Content;
 
 #[test]
-fn test_plain_sql() {
+fn test_plain_sql() -> dysql::DySqlResult<()>{
     #[derive(Content)]
     struct UserDto {
         name: String,
@@ -34,4 +34,6 @@ fn test_plain_sql() {
     let params = format!("{:?}", params);
     let rst1 = format!("{:?}", rst.1);
     assert_eq!(params, rst1);
+
+    Ok(())
 }

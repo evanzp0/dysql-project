@@ -209,6 +209,8 @@ dependencies = [
 [[package]]
 name = "dysql"
 version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f7f4b980797fef0f7875cfcad58c33190baa03bf61b260d2eba57efb1f67e97c"
 dependencies = [
  "once_cell",
  "ramhorns",

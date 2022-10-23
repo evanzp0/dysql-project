@@ -1,8 +1,15 @@
+#[cfg(feature = "sqlx")]
+mod sqlx;
+#[cfg(feature = "sqlx")]
+use sqlx::expand;
+
+#[cfg(not(feature = "sqlx"))]
 mod tokie_postgres;
+#[cfg(not(feature = "sqlx"))]
+use tokie_postgres::expand;
+
 use dysql::QueryType;
 use proc_macro::TokenStream;
-
-use tokie_postgres::*;
 
 #[allow(dead_code)]
 #[derive(Debug)]

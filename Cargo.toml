@@ -1,6 +1,6 @@
 [package]
 name = "dysql-project"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 description = "Dysql adds the ability of dynamic sql query to tokio-postgres through proc macro. it uses Ramhorns the high performance template engine implementation of Mustache"
 license = "Apache-2.0"

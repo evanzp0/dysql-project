@@ -6,6 +6,7 @@ use crate::SqlClosure;
 pub (crate) fn expand(st: &SqlClosure, query_type: QueryType) -> syn::Result<proc_macro2::TokenStream> {
     let dto = &st.dto;
     let body = &st.body;
+    let cot = &st.cot;
     let dialect = &st.dialect.to_string();
     let template_id = dysql::md5(body);
     
@@ -20,10 +21,11 @@ pub (crate) fn expand(st: &SqlClosure, query_type: QueryType) -> syn::Result<pro
     let param_idents: Vec<_> = param_strings.iter().map( |p| proc_macro2::Ident::new(p, proc_macro2::Span::call_site()) ).collect();
     
     let expend_inner = match query_type {
-        QueryType::FetchAll => expand_fetch_all(st, &param_strings, &param_idents),
+        QueryType::FetchAll => expand_fetch_all(st),
         QueryType::FetchOne => expand_fetch_one(st),
         QueryType::FetchScalar => expand_fetch_scalar(st),
         QueryType::Execute => expand_execute(st),
+        QueryType::Insert => return Err(syn::Error::new(proc_macro2::Span::call_site(), "Error: the feature of tokio-postgres not support insert!(...) macro")),
     };
 
     let ret = quote!(
@@ -40,16 +42,17 @@ pub (crate) fn expand(st: &SqlClosure, query_type: QueryType) -> syn::Result<pro
             let rst = dysql::extract_params(&sql_rendered, dysql::SqlDialect::from(#dialect.to_owned()));
             let (sql, param_names) = rst;
 
-            // for i in 0..param_names.len() {
-            //     #(
-            //         if param_names[i] == #param_strings {
-            //             param_values.push(&#dto.#param_idents);
-            //         }
-            //     )*
-            // }
+            for i in 0..param_names.len() {
+                #(
+                    if param_names[i] == #param_strings {
+                        param_values.push(&#dto.#param_idents);
+                    }
+                )*
+            }
 
-            // let params = param_values.into_iter();
-            // let params = params.as_slice();
+            let stmt = #cot.prepare(&sql).await?;
+            let params = param_values.into_iter();
+            let params = params.as_slice();
             
             #expend_inner
         }
@@ -58,22 +61,17 @@ pub (crate) fn expand(st: &SqlClosure, query_type: QueryType) -> syn::Result<pro
     Ok(ret)
 }
 
-pub (crate) fn expand_fetch_all(st: &SqlClosure, param_strings: &Vec<String>, param_idents: &Vec<proc_macro2::Ident>) -> proc_macro2::TokenStream {
+fn expand_fetch_all(st: &SqlClosure) -> proc_macro2::TokenStream {
     let cot = &st.cot;
     let ret_type = &st.ret_type;
-    let dto = &st.dto;
 
     let ret = quote!(
-        let mut query = sqlx::query_as::<_, #ret_type>(&sql);
-        for i in 0..param_names.len() {
-            #(
-                if param_names[i] == #param_strings {
-                    query = query.bind(&#dto.#param_idents);
-                }
-            )*
-        }
+        let rows = #cot.query(&stmt, params).await?;
+        let rst = rows
+            .iter()
+            .map(|row| #ret_type::from_row_ref(row).expect("query unexpected error"))
+            .collect::<Vec<#ret_type>>();
 
-        let rst = query.fetch_all(&#cot).await?;
         rst
     );
 

@@ -9,9 +9,16 @@ use dysql_macro::*;
 async fn main() -> dysql::DySqlResult<()> {
     let mut conn = connect_db().await;
 
+    let rows = conn.query("select * from test_user", &[]).await?;
+    rows.iter().for_each(|row| {
+        let id: i32 = row.get(0);
+        let name: String = row.get(1);
+        let age: i32 = row.get(2);
+        println!("id: {}, name: {}, age: {}", id, name, age);
+    });
 
     // fetch all
-    let dto = UserDto::new(None, None,Some(13));
+    let dto = UserDto{ id: None, name: None, age: Some(15) };
     let rst: Vec<User> = fetch_all!(|dto, conn, User| {
         r#"select * from test_user 
         where 1 = 1
@@ -28,7 +35,7 @@ async fn main() -> dysql::DySqlResult<()> {
     );
 
     // fetch one
-    let dto = UserDto::new(Some(2), None, None);
+    let dto = UserDto{ id: Some(2), name: None, age: None };
     let rst = fetch_one!(|dto, conn, User| {
         r#"select * from test_user 
         where 1 = 1
@@ -45,13 +52,25 @@ async fn main() -> dysql::DySqlResult<()> {
 
     // execute with transaction
     let tran = conn.transaction().await?;
-    let dto = UserDto::new(Some(2), None, None);
-    let rst = execute!(|dto, tran| {
+
+    let dto = UserDto{ id: Some(3), name: None, age: None };
+    let affected_rows_num = execute!(|dto, tran| {
         r#"delete from test_user where id = :id"#
     });
-    assert_eq!(1, rst);
+    assert_eq!(1, affected_rows_num);
+
     tran.rollback().await?;
 
+    // insert with transaction and get id back
+    let tran = conn.transaction().await?;
+
+    let dto = UserDto{ id: Some(4), name: Some("lisi".to_owned()), age: Some(50) };
+    let insert_id = fetch_scalar!(|dto, &mut tran, i32| {
+        r#"insert into test_user (id, name, age) values (:id, :name, :age) returning id"#
+    });
+    assert_eq!(4, insert_id);
+    
+    tran.rollback().await?;
 
     Ok(())
 }
@@ -62,12 +81,6 @@ struct UserDto {
     id: Option<i32>,
     name: Option<String>,
     age: Option<i32>
-}
-
-impl UserDto {
-    fn new(id: Option<i32>, name: Option<String>, age: Option<i32>) -> Self {
-        Self { id, name, age }
-    }
 }
 
 #[allow(dead_code)]

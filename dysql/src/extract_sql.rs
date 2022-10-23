@@ -53,7 +53,7 @@ pub fn extract_params(o_sql: &str, sql_dial: SqlDialect) -> (String, Vec<String>
             if cur == end {
                 return ("".to_string(), vec![])
             } else {
-                let (found, current_cursor) = char_index(o_sql, cur, vec![' ', '\n', '\t', '{']);
+                let (found, current_cursor) = char_index(o_sql, cur, vec![' ', '\n', '\t', ',', ';', '{', ')']);
                 if found && current_cursor == cur{
                     return ("".to_string(), vec![])
                 }

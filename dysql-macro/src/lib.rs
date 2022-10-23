@@ -1,12 +1,12 @@
 #[cfg(feature = "sqlx")]
-mod sqlx;
+mod dy_sqlx;
 #[cfg(feature = "sqlx")]
-use sqlx::expand;
+use dy_sqlx::expand;
 
 #[cfg(not(feature = "sqlx"))]
-mod tokie_postgres;
+mod dy_tokie_postgres;
 #[cfg(not(feature = "sqlx"))]
-use tokie_postgres::expand;
+use dy_tokie_postgres::expand;
 
 use dysql::QueryType;
 use proc_macro::TokenStream;
@@ -16,6 +16,8 @@ use proc_macro::TokenStream;
 struct SqlClosure {
     dto: syn::Ident,
     cot: syn::Ident, // database connection or transaction
+    is_cot_ref: bool,
+    is_cot_ref_mut: bool,
     ret_type: Option<syn::Path>, // return type
     dialect: syn::Ident,
     body: String,
@@ -24,6 +26,8 @@ struct SqlClosure {
 impl syn::parse::Parse for SqlClosure {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
         // parse closure parameters
+
+        //// parse dto
         input.parse::<syn::Token!(|)>()?;
         let dto = match input.parse::<syn::Ident>() {
             Ok(i) => i,
@@ -32,10 +36,30 @@ impl syn::parse::Parse for SqlClosure {
                 Err(e) => return Err(e),
             },
         };
-        
-        input.parse::<syn::Token!(,)>()?;
-        let cot: syn::Ident = input.parse()?;
 
+        //// parse cot
+        let mut is_cot_ref = false;
+        let mut is_cot_ref_mut = false;
+        input.parse::<syn::Token!(,)>()?;
+        //////parse ref mut
+        let cot: syn::Ident = match input.parse::<syn::Token!(&)>() {
+            Ok(_) => {
+                is_cot_ref = true;
+                match input.parse::<syn::Token!(mut)>() {
+                    Ok(_) => {
+                        is_cot_ref = false;
+                        is_cot_ref_mut = true;
+                        input.parse()?
+                    },
+                    Err(_) => input.parse()?,
+                }
+            },
+            Err(_) => {
+                input.parse()?
+            },
+        };
+
+        //// parse return type
         let mut ret_type = None;
         match input.parse::<syn::Token!(|)>() {
             Ok(_) => (),
@@ -62,8 +86,10 @@ impl syn::parse::Parse for SqlClosure {
         let body = body.value();
         let body:Vec<_> = body.split("\n").map(|f| f.trim()).collect();
         let body = body.join(" ");
-        // eprintln!("{:#?}", body);
-        Ok(SqlClosure { dto, cot, ret_type, dialect, body })
+        let sc = SqlClosure { dto, cot, is_cot_ref, is_cot_ref_mut, ret_type, dialect, body };
+        // eprintln!("{:#?}", sc);
+
+        Ok(sc)
     }
 }
 
@@ -169,8 +195,7 @@ pub fn fetch_scalar(input: TokenStream) -> TokenStream {
 /// Basic usage:
 /// 
 /// ```ignore
-/// let mut conn = connect_db().await;
-/// let tran = conn.transaction().await?;
+/// let mut tran = get_transaction().await?;
 /// 
 /// let dto = UserDto::new(Some(2), None, None);
 /// let rst = execute!(|dto, tran| {
@@ -185,6 +210,36 @@ pub fn execute(input: TokenStream) -> TokenStream {
     let st = syn::parse_macro_input!(input as SqlClosure);
 
     match expand(&st, QueryType::Execute) {
+        Ok(ret) => ret.into(),
+        Err(e) => e.into_compile_error().into(),
+    }
+}
+
+///
+/// insert data
+/// **Note:** This macro only works under **sqlx** features and **postgres database not supports it**.
+/// 
+/// # Examples
+///
+/// Basic usage:
+/// 
+/// ```ignore
+/// let mut tran = get_transaction().await?;
+/// 
+/// let dto = UserDto{ id: Some(4), name: Some("lisi".to_owned()), age: Some(50) };
+/// let last_insert_id = insert!(|dto, tran| -> mysql {
+///     r#"insert into test_user (id, name, age) values (4, 'aa', 1)"#
+/// });
+/// assert_eq!(4, last_insert_id);
+/// 
+/// tran.rollback().await?;
+/// ```
+#[cfg(feature = "sqlx")]
+#[proc_macro]
+pub fn insert(input: TokenStream) -> TokenStream {
+    let st = syn::parse_macro_input!(input as SqlClosure);
+
+    match expand(&st, QueryType::Insert) {
         Ok(ret) => ret.into(),
         Err(e) => e.into_compile_error().into(),
     }

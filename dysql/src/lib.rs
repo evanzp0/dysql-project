@@ -119,6 +119,7 @@ pub enum QueryType {
     FetchOne,
     FetchScalar,
     Execute,
+    Insert,
 }
 
 #[derive(Content)]

@@ -1,42 +1,54 @@
 # About Dysql
 
-**Dysql** is a rust crate that adds the ability of dynamic sql query to **tokio-postgres** through proc macro. 
+**Dysql** is a rust crate that do dynamic-sql query through proc-macro, it bases on [**tokio-postgres**](https://github.com/sfackler/rust-postgres) (default feature) and [**sqlx**](https://github.com/launchbadge/sqlx) crate, you can switch them by setting the features. 
 It uses [**Ramhorns**](https://github.com/maciejhirsz/ramhorns) the high performance template engine implementation of [**Mustache**](https://mustache.github.io/) 
+
+It invokes like blow:
+```
+<dysql_macro>!(| <dto>, <conn_or_tran> [, return_type] | [-> dialect] { ...sql string... });
+```
+> Note: **Dialect can be blank**, and the default value is **postgres**, and dialect also supports  **mysql**, **sqlite**.
+
+## Example (Sqlx)
 
 ### Cargo.toml:
 ```toml
 [dependencies]
+dysql = "0.3"
+dysql-macro = {version = "0.3", features = ["sqlx"]}
+sqlx = { version = "0.6", features = [ "runtime-tokio-native-tls" , "postgres" ] }
 tokio = { version = "1.0", features = ["full"] }
-tokio-postgres = { version = "0.7", features = ["with-chrono-0_4"] }
-dysql = "0.2"
-dysql-macro = "0.2"
 ramhorns = "0.14"
-tokio-pg-mapper = "0.2"
-tokio-pg-mapper-derive = "0.2"
+tokio-postgres = { version = "0.7", features = ["with-chrono-0_4"] }
 ```
 
-### Example
+### main.rs
 ```rust
-use tokio_pg_mapper::FromTokioPostgresRow;
-use tokio_pg_mapper_derive::PostgresMapper;
-use tokio_postgres::{NoTls, connect};
+use dysql_macro::{fetch_all, fetch_one, fetch_scalar, execute};
 use ramhorns::Content;
-
-use dysql_macro::*;
+use sqlx::{postgres::PgPoolOptions, FromRow};
 
 #[tokio::main]
 async fn main() -> dysql::DySqlResult<()> {
-    let mut conn = connect_db().await;
+    let conn = PgPoolOptions::new()
+        .max_connections(5)
+        .connect("postgres://root:111111@127.0.0.1/my_database").await?;
 
+    let rows = sqlx::query_as::<_, (i32, String, i32)>("SELECT id, name, age FROM test_user")
+        .fetch_all(&conn).await?;
 
+    rows.iter().for_each(|row| {
+        println!("id: {}, name: {}, age: {}", row.0, row.1, row.2);
+    });
+    
     // fetch all
-    let dto = UserDto::new(None, None,Some(13));
-    let rst: Vec<User> = fetch_all!(|dto, conn, User| {
-        r#"select * from test_user 
-        where 1 = 1
-            {{#name}}and name = :name{{/name}}
-            {{#age}}and age > :age{{/age}}
-        order by id"#
+    let dto = UserDto{ id: None, name: None, age: Some(15) };
+    let rst = fetch_all!(|dto, conn, User| {
+        r#"SELECT * FROM test_user 
+        WHERE 1 = 1
+          {{#name}}AND name = :name{{/name}}
+          {{#age}}AND age > :age{{/age}}
+        ORDER BY id"#
     });
     assert_eq!(
         vec![
@@ -47,7 +59,7 @@ async fn main() -> dysql::DySqlResult<()> {
     );
 
     // fetch one
-    let dto = UserDto::new(Some(2), None, None);
+    let dto = UserDto{ id: Some(2), name: None, age: None };
     let rst = fetch_one!(|dto, conn, User| {
         r#"select * from test_user 
         where 1 = 1
@@ -63,18 +75,35 @@ async fn main() -> dysql::DySqlResult<()> {
     assert_eq!(3, rst);
 
     // execute with transaction
-    let tran = conn.transaction().await?;
-    let dto = UserDto::new(Some(2), None, None);
-    let rst = execute!(|dto, tran| {
+    let mut tran = conn.begin().await?;
+    let dto = UserDto{ id: Some(3), name: None, age: None };
+    let affected_rows_num = execute!(|dto, &mut tran| {
         r#"delete from test_user where id = :id"#
     });
-    assert_eq!(1, rst);
+
+    assert_eq!(1, affected_rows_num);
     tran.rollback().await?;
 
+    // insert with transaction and get id back (postgres only)
+    let mut tran = conn.begin().await?;
+    let dto = UserDto{ id: Some(4), name: Some("lisi".to_owned()), age: Some(50) };
+    let insert_id = fetch_scalar!(|dto, &mut tran, i32| {
+        r#"insert into test_user (id, name, age) values (:id, :name, :age) returning id"#
+    });
+    assert_eq!(4, insert_id);
+    tran.rollback().await?;
+
+    //// insert with transaction and get id back (except postgres)
+    // let mut tran = conn.begin().await?;
+    // let dto = UserDto{ id: Some(4), name: Some("lisi".to_owned()), age: Some(50) };
+    // let last_insert_id = insert!(|dto, tran| -> mysql {
+    //     r#"insert into test_user (id, name, age) values (4, 'aa', 1)"#
+    // });
+    // assert_eq!(4, last_insert_id);
+    // tran.rollback().await?;
 
     Ok(())
 }
-
 
 #[derive(Content)]
 struct UserDto {
@@ -83,32 +112,19 @@ struct UserDto {
     age: Option<i32>
 }
 
-impl UserDto {
-    fn new(id: Option<i32>, name: Option<String>, age: Option<i32>) -> Self {
-        Self { id, name, age }
-    }
-}
-
 #[allow(dead_code)]
-#[derive(PostgresMapper, Debug, PartialEq)]
-#[pg_mapper(table="test_user")]
+#[derive(Debug, PartialEq)]
+#[derive(FromRow)]
 struct User {
     id: i32,
     name: Option<String>,
     age: Option<i32>
 }
 
-async fn connect_db() -> tokio_postgres::Client {
-    let (client, connection) = connect("host=127.0.0.1 user=root password=111111 dbname=my_database", NoTls).await.unwrap();
-    tokio::spawn(async move {
-        if let Err(e) = connection.await {
-            eprintln!("connection error: {}", e);
-        }
-    });
-
-    client
-}
 ```
+
+## Example (tokio-postgres)
+please see: [Dysql tokio-postgres example](https://github.com/evanzp0/dysql-project/tree/main/examples/with_tokio_postgres)
 
 ### License
 

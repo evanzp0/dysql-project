@@ -1,3 +1,5 @@
+#![cfg(not(feature = "sqlx"))]
+
 use tokio_pg_mapper::FromTokioPostgresRow;
 use tokio_pg_mapper_derive::PostgresMapper;
 use tokio_postgres::{NoTls, connect};
@@ -108,3 +110,4 @@ async fn test_execute() -> dysql::DySqlResult<()>{
 
     Ok(())
 }
+

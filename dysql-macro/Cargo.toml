@@ -2,7 +2,7 @@
 name = "dysql-macro"
 version = "0.3.0"
 edition = "2021"
-description = "Dysql adds the ability of dynamic sql query to tokio-postgres through proc macro. it uses Ramhorns the high performance template engine implementation of Mustache"
+description = "Dysql is a rust crate that do dynamic-sql query through proc-macro, it bases on tokio-postgres (default feature) and sqlx crate"
 license = "Apache-2.0"
 
 [features]

@@ -1,20 +1,21 @@
-#[cfg(feature = "sqlx")]
+#[cfg(not(feature = "tokio-postgres"))]
 mod dy_sqlx;
-#[cfg(feature = "sqlx")]
+#[cfg(not(feature = "tokio-postgres"))]
 use dy_sqlx::expand;
 
-#[cfg(not(feature = "sqlx"))]
+#[cfg(feature = "tokio-postgres")]
 mod dy_tokie_postgres;
-#[cfg(not(feature = "sqlx"))]
+#[cfg(feature = "tokio-postgres")]
 use dy_tokie_postgres::expand;
 
 use dysql::{QueryType, get_dysql_config};
 use proc_macro::TokenStream;
+use syn::punctuated::Punctuated;
 
 #[allow(dead_code)]
 #[derive(Debug)]
 struct SqlClosure {
-    dto: syn::Ident,
+    dto: Option<syn::Ident>,
     cot: syn::Ident, // database connection or transaction
     is_cot_ref: bool,
     is_cot_ref_mut: bool,
@@ -30,10 +31,10 @@ impl syn::parse::Parse for SqlClosure {
         //// parse dto
         input.parse::<syn::Token!(|)>()?;
         let dto = match input.parse::<syn::Ident>() {
-            Ok(i) => i,
-            Err(_) => match input.parse::<syn::Token!(_)>() {
-                Ok(t) => syn::Ident::new( "_empty_dto", t.span),
-                Err(e) => return Err(e),
+            Ok(i) => Some(i),
+            Err(e) => match input.parse::<syn::Token!(_)>() {
+                Ok(_) => None,
+                Err(_) => return Err(e),
             },
         };
 
@@ -249,4 +250,16 @@ pub fn insert(input: TokenStream) -> TokenStream {
         Ok(ret) => ret.into(),
         Err(e) => e.into_compile_error().into(),
     }
+}
+
+pub(crate) fn gen_path(s: &str) -> syn::Path {
+    let seg = syn::PathSegment {
+        ident: syn::Ident::new(s, proc_macro2::Span::call_site()),
+        arguments: syn::PathArguments::None,
+    };
+    let mut punct: Punctuated<syn::PathSegment, syn::Token![::]> = Punctuated::new();
+    punct.push_value(seg);
+    let path = syn::Path{ leading_colon: None, segments: punct };
+
+    path
 }

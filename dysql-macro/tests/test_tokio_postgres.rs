@@ -9,13 +9,13 @@ use dysql_macro::*;
 
 #[derive(Content)]
 struct UserDto {
-    id: Option<i32>,
+    id: Option<i64>,
     name: Option<String>,
     age: Option<i32>,
 }
 
 impl UserDto {
-    fn new(id: Option<i32>, name: Option<String>, age: Option<i32>) -> Self {
+    fn new(id: Option<i64>, name: Option<String>, age: Option<i32>) -> Self {
         Self { id, name,  age }
     }
 }
@@ -24,7 +24,7 @@ impl UserDto {
 #[derive(PostgresMapper, Debug, PartialEq)]
 #[pg_mapper(table="test_user")]
 struct User {
-    id: i32,
+    id: i64,
     name: Option<String>,
     age: Option<i32>
 }
@@ -116,11 +116,11 @@ async fn test_insert() -> dysql::DySqlResult<()>{
     let tran = conn.transaction().await?;
 
     let dto = UserDto{ id: Some(4), name: Some("lisi".to_owned()), age: Some(50) };
-    let insert_id = fetch_scalar!(|dto, &mut tran, i32| {
+    let insert_id = insert!(|dto, &mut tran| {
         r#"insert into test_user (id, name, age) values (:id, :name, :age) returning id"#
     });
     
-    assert_eq!(4, insert_id);
+    assert!(insert_id > 3);
 
     tran.rollback().await?;
 

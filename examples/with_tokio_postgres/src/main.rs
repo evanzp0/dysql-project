@@ -9,14 +9,6 @@ use dysql_macro::*;
 async fn main() -> dysql::DySqlResult<()> {
     let mut conn = connect_db().await;
 
-    let rows = conn.query("select * from test_user", &[]).await?;
-    rows.iter().for_each(|row| {
-        let id: i32 = row.get(0);
-        let name: String = row.get(1);
-        let age: i32 = row.get(2);
-        println!("id: {}, name: {}, age: {}", id, name, age);
-    });
-
     // fetch all
     let dto = UserDto{ id: None, name: None, age: Some(15) };
     let rst: Vec<User> = fetch_all!(|dto, conn, User| {
@@ -65,10 +57,12 @@ async fn main() -> dysql::DySqlResult<()> {
     let tran = conn.transaction().await?;
 
     let dto = UserDto{ id: Some(4), name: Some("lisi".to_owned()), age: Some(50) };
-    let insert_id = fetch_scalar!(|dto, &mut tran, i32| {
+    //// Here return type is omitted because default return type of insert_id is i64. 
+    //// if the return type is others, you should give a specific type.
+    let insert_id = insert!(|dto, &mut tran| { 
         r#"insert into test_user (id, name, age) values (:id, :name, :age) returning id"#
     });
-    assert_eq!(4, insert_id);
+    assert!(insert_id > 3);
     
     tran.rollback().await?;
 
@@ -78,7 +72,7 @@ async fn main() -> dysql::DySqlResult<()> {
 
 #[derive(Content)]
 struct UserDto {
-    id: Option<i32>,
+    id: Option<i64>,
     name: Option<String>,
     age: Option<i32>
 }
@@ -87,7 +81,7 @@ struct UserDto {
 #[derive(PostgresMapper, Debug, PartialEq)]
 #[pg_mapper(table="test_user")]
 struct User {
-    id: i32,
+    id: i64,
     name: Option<String>,
     age: Option<i32>
 }

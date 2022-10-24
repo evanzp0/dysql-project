@@ -5,10 +5,9 @@ edition = "2021"
 
 [dependencies]
 dysql = {path = "../../dysql"}
-dysql-macro = { path = "../../dysql-macro", features = ["postgres"]}
+dysql-macro = { path = "../../dysql-macro", features = ["tokio-postgres"]}
 tokio = { version = "1.0", features = ["full"] }
 tokio-postgres = { version = "0.7", features = ["with-chrono-0_4"] }
-ramhorns = "0.14"
 tokio-pg-mapper = "0.2"
 tokio-pg-mapper-derive = "0.2"
-# deadpool-postgres = "0.10"
+ramhorns = "0.14"

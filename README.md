@@ -1,6 +1,6 @@
 # About Dysql
 
-**Dysql** is a rust crate that do dynamic-sql query through proc-macro, it bases on [**tokio-postgres**](https://github.com/sfackler/rust-postgres) (default feature) and [**sqlx**](https://github.com/launchbadge/sqlx) crate, you can switch them by setting the features. 
+**Dysql** is a rust crate that do dynamic-sql query through proc-macro, it bases on [**tokio-postgres**](https://github.com/sfackler/rust-postgres) and [**sqlx**](https://github.com/launchbadge/sqlx) crate (default feature), you can switch them by setting the features. 
 It uses [**Ramhorns**](https://github.com/maciejhirsz/ramhorns) the high performance template engine implementation of [**Mustache**](https://mustache.github.io/) 
 
 It invokes like blow:

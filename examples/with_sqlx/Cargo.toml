@@ -5,8 +5,8 @@ edition = "2021"
 
 [dependencies]
 dysql = {path = "../../dysql"}
-dysql-macro = {path = "../../dysql-macro", features = ["sqlx"]}
-sqlx = { version = "0.6", features = [ "runtime-tokio-native-tls" , "postgres" ] }
+dysql-macro = {path = "../../dysql-macro"}
+sqlx = { version = "0.6", features = [ "runtime-tokio-native-tls" , "postgres", "mysql", "sqlite"] }
 tokio = { version = "1.0", features = ["full"] }
 ramhorns = "0.14"
 tokio-postgres = { version = "0.7", features = ["with-chrono-0_4"] }

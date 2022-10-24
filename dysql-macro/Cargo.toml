@@ -6,8 +6,8 @@ description = "Dysql is a rust crate that do dynamic-sql query through proc-macr
 license = "Apache-2.0"
 
 [features]
-default = ["postgres"]
-postgres = []
+default = ["sqlx"]
+tokio-postgres = []
 sqlx = []
 
 [lib]

@@ -1,19 +1,16 @@
-use dysql_macro::{fetch_all, fetch_one, fetch_scalar, execute};
+use dysql_macro::{fetch_all, fetch_one, fetch_scalar, execute, insert};
 use ramhorns::Content;
-use sqlx::{postgres::PgPoolOptions, FromRow};
+use sqlx::{
+    postgres::PgPoolOptions, FromRow, Pool, Postgres, mysql::MySqlPoolOptions, MySql, 
+    sqlite::{SqliteConnectOptions, SqliteJournalMode}, 
+    ConnectOptions, SqliteConnection, Acquire
+};
+
+use std::str::FromStr;
 
 #[tokio::main]
 async fn main() -> dysql::DySqlResult<()> {
-    let conn = PgPoolOptions::new()
-        .max_connections(5)
-        .connect("postgres://root:111111@127.0.0.1/my_database").await?;
-
-    let rows = sqlx::query_as::<_, (i32, String, i32)>("SELECT id, name, age FROM test_user")
-        .fetch_all(&conn).await?;
-
-    rows.iter().for_each(|row| {
-        println!("id: {}, name: {}, age: {}", row.0, row.1, row.2);
-    });
+    let conn = connect_postgres_db().await;
     
     // fetch all
     let dto = UserDto{ id: None, name: None, age: Some(15) };
@@ -58,30 +55,44 @@ async fn main() -> dysql::DySqlResult<()> {
     assert_eq!(1, affected_rows_num);
     tran.rollback().await?;
 
-    // insert with transaction and get id back (postgres only)
+    // insert with transaction and get id back (postgres)
     let mut tran = conn.begin().await?;
     let dto = UserDto{ id: Some(4), name: Some("lisi".to_owned()), age: Some(50) };
-    let insert_id = fetch_scalar!(|dto, &mut tran, i32| {
+
+    let insert_id = fetch_scalar!(|dto, &mut tran, i64| {
         r#"insert into test_user (id, name, age) values (:id, :name, :age) returning id"#
     });
     assert_eq!(4, insert_id);
     tran.rollback().await?;
 
-    //// insert with transaction and get id back (except postgres)
-    // let mut tran = conn.begin().await?;
-    // let dto = UserDto{ id: Some(4), name: Some("lisi".to_owned()), age: Some(50) };
-    // let last_insert_id = insert!(|dto, tran, i64| -> mysql {
-    //     r#"insert into test_user (id, name, age) values (4, 'aa', 1)"#
-    // });
-    // assert_eq!(4, last_insert_id);
-    // tran.rollback().await?;
+    
+    // insert with transaction and get id back (mysql)
+    let conn = connect_mysql_db().await;
+    let mut tran = conn.begin().await?;
+
+    let dto = UserDto{ id: Some(4), name: Some("lisi".to_owned()), age: Some(50) };
+    let insert_id = insert!(|dto, &mut tran| -> mysql {
+        r#"insert into test_user (name, age) values ('aa', 1)"#
+    });
+    assert!(insert_id > 3);
+    tran.rollback().await?;
+
+    // insert with transaction and get id back (sqlite)
+    let mut conn = connect_sqlite_db().await;
+    let mut tran = conn.begin().await?;
+
+    let dto = UserDto{ id: Some(4), name: Some("lisi".to_owned()), age: Some(50) };
+    let insert_id = insert!(|dto, &mut tran| -> sqlite {
+        r#"insert into test_user (name, age) values ('aa', 1)"#
+    });
+    assert!(insert_id > 3);
 
     Ok(())
 }
 
 #[derive(Content)]
 struct UserDto {
-    id: Option<i32>,
+    id: Option<i64>,
     name: Option<String>,
     age: Option<i32>
 }
@@ -90,7 +101,47 @@ struct UserDto {
 #[derive(Debug, PartialEq)]
 #[derive(FromRow)]
 struct User {
-    id: i32,
+    id: i64,
     name: Option<String>,
     age: Option<i32>
+}
+
+async fn connect_postgres_db() -> Pool<Postgres> {
+    let conn = PgPoolOptions::new()
+        .max_connections(5)
+        .connect("postgres://root:111111@127.0.0.1/my_database").await.unwrap();
+
+    conn
+}
+
+async fn connect_mysql_db() -> Pool<MySql> {
+    let conn = MySqlPoolOptions::new()
+        .max_connections(5)
+        .connect("mysql://root:111111@127.0.0.1/my_database").await.unwrap();
+
+    conn
+}
+
+async fn connect_sqlite_db() -> SqliteConnection {
+    let mut conn = SqliteConnectOptions::from_str("sqlite::memory:")
+        .unwrap()
+        .journal_mode(SqliteJournalMode::Wal)
+        .read_only(false)
+        .connect()
+        .await.unwrap();
+
+    // prepare test data
+    sqlx::query("DROP TABLE IF EXISTS test_user").execute(&mut conn).await.unwrap();
+    sqlx::query(r#"
+        CREATE TABLE test_user (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name VARCHAR(255) NULL,
+            age INT NULL
+        )"#
+    ).execute(&mut conn).await.unwrap();
+    sqlx::query("INSERT INTO test_user (name, age) VALUES ('huanglan', 10)").execute(&mut conn).await.unwrap();
+    sqlx::query("INSERT INTO test_user (name, age) VALUES ('zhanglan', 21)").execute(&mut conn).await.unwrap();
+    sqlx::query("INSERT INTO test_user (name, age) VALUES ('zhangsan', 35)").execute(&mut conn).await.unwrap();
+
+    conn
 }

@@ -12,7 +12,7 @@ use sqlx::{
 
 #[derive(Content)]
 struct UserDto {
-    id: Option<i32>,
+    id: Option<i64>,
     name: Option<String>,
     age: Option<i32>
 }
@@ -66,7 +66,6 @@ async fn connect_sqlite_db() -> SqliteConnection {
     conn
 }
 
-
 #[tokio::test]
 async fn test_fetch_all() -> dysql::DySqlResult<()>{
     let conn = connect_postgres_db().await;
@@ -113,6 +112,7 @@ async fn test_fetch_scalar() -> dysql::DySqlResult<()>{
     let rst = fetch_scalar!(|_, conn, i64| {
         r#"select count (*) from test_user"#
     });
+
     assert_eq!(3, rst);
 
     Ok(())

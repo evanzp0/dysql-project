@@ -1,3 +1,4 @@
+//! tokio-postegres feature implement
 use dysql::QueryType;
 use quote::quote;
 

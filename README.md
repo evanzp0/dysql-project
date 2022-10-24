@@ -1,6 +1,6 @@
 # About Dysql
 
-**Dysql** is a rust crate that do dynamic-sql query through proc-macro, it bases on [**tokio-postgres**](https://github.com/sfackler/rust-postgres) and [**sqlx**](https://github.com/launchbadge/sqlx) crate (default feature), you can switch them by setting the features. 
+**Dysql** is a rust crate that do dynamic-sql query through proc-macro, it bases on [**tokio-postgres**] and [**sqlx**](https://github.com/launchbadge/sqlx) crate (default feature), you can switch them by setting the features. 
 It uses [**Ramhorns**](https://github.com/maciejhirsz/ramhorns) the high performance template engine implementation of [**Mustache**](https://mustache.github.io/) 
 
 It invokes like blow:
@@ -10,6 +10,8 @@ It invokes like blow:
 > Note: **Dialect can be blank**, and the default value is **postgres**, and dialect also supports  **mysql**, **sqlite**.
 
 ## Example (Sqlx)
+
+Full example please see: [Dysql sqlx example](https://github.com/evanzp0/dysql-project/tree/main/examples/with_sqlx)
 
 ### Cargo.toml:
 ```toml
@@ -24,22 +26,11 @@ tokio-postgres = { version = "0.7", features = ["with-chrono-0_4"] }
 
 ### main.rs
 ```rust
-use dysql_macro::{fetch_all, fetch_one, fetch_scalar, execute};
-use ramhorns::Content;
-use sqlx::{postgres::PgPoolOptions, FromRow};
+...
 
 #[tokio::main]
 async fn main() -> dysql::DySqlResult<()> {
-    let conn = PgPoolOptions::new()
-        .max_connections(5)
-        .connect("postgres://root:111111@127.0.0.1/my_database").await?;
-
-    let rows = sqlx::query_as::<_, (i32, String, i32)>("SELECT id, name, age FROM test_user")
-        .fetch_all(&conn).await?;
-
-    rows.iter().for_each(|row| {
-        println!("id: {}, name: {}, age: {}", row.0, row.1, row.2);
-    });
+    let conn = connect_postgres_db().await;
     
     // fetch all
     let dto = UserDto{ id: None, name: None, age: Some(15) };
@@ -75,56 +66,36 @@ async fn main() -> dysql::DySqlResult<()> {
     assert_eq!(3, rst);
 
     // execute with transaction
-    let mut tran = conn.begin().await?;
-    let dto = UserDto{ id: Some(3), name: None, age: None };
     let affected_rows_num = execute!(|dto, &mut tran| {
         r#"delete from test_user where id = :id"#
     });
+    ...
 
-    assert_eq!(1, affected_rows_num);
-    tran.rollback().await?;
-
-    // insert with transaction and get id back (postgres only)
-    let mut tran = conn.begin().await?;
-    let dto = UserDto{ id: Some(4), name: Some("lisi".to_owned()), age: Some(50) };
-    let insert_id = fetch_scalar!(|dto, &mut tran, i32| {
+    // insert with transaction and get id back (postgres)
+    let insert_id = fetch_scalar!(|dto, &mut tran, i64| {
         r#"insert into test_user (id, name, age) values (:id, :name, :age) returning id"#
     });
-    assert_eq!(4, insert_id);
-    tran.rollback().await?;
+    ...
 
-    //// insert with transaction and get id back (except postgres)
-    // let mut tran = conn.begin().await?;
-    // let dto = UserDto{ id: Some(4), name: Some("lisi".to_owned()), age: Some(50) };
-    // let last_insert_id = insert!(|dto, tran| -> mysql {
-    //     r#"insert into test_user (id, name, age) values (4, 'aa', 1)"#
-    // });
-    // assert_eq!(4, last_insert_id);
-    // tran.rollback().await?;
+    // insert with transaction and get id back (mysql)
+    let dto = UserDto{ id: Some(4), name: Some("lisi".to_owned()), age: Some(50) };
+    let insert_id = insert!(|dto, &mut tran| -> mysql {
+        r#"insert into test_user (name, age) values ('aa', 1)"#
+    });
+    ...
 
-    Ok(())
+    // insert with transaction and get id back (sqlite)
+    let dto = UserDto{ id: Some(4), name: Some("lisi".to_owned()), age: Some(50) };
+    let insert_id = insert!(|dto, &mut tran| -> sqlite {
+        r#"insert into test_user (name, age) values ('aa', 1)"#
+    });
+    ...
+
 }
-
-#[derive(Content)]
-struct UserDto {
-    id: Option<i32>,
-    name: Option<String>,
-    age: Option<i32>
-}
-
-#[allow(dead_code)]
-#[derive(Debug, PartialEq)]
-#[derive(FromRow)]
-struct User {
-    id: i32,
-    name: Option<String>,
-    age: Option<i32>
-}
-
 ```
 
 ## Example (tokio-postgres)
-please see: [Dysql tokio-postgres example](https://github.com/evanzp0/dysql-project/tree/main/examples/with_tokio_postgres)
+Full example please see: [Dysql tokio-postgres example](https://github.com/evanzp0/dysql-project/tree/main/examples/with_tokio_postgres)
 
 ### License
 

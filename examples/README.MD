@@ -4,12 +4,12 @@
 ```
 $docker-compose up -d
 ```
-## 2. Prepare test data
+## 2. Prepare test data (Goto the "with_tokio_postgres" or "with_sqlx" folder first)
 ```
 $sqlx database create
 $sqlx mig run
 ```
-### 3. Goto the "with_tokio_postgres" folder, and run it
+### 3. Goto the "with_tokio_postgres" or "with_sqlx" folder, and run it
 ```
 $cargo run
 ```

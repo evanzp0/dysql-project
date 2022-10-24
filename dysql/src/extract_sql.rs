@@ -1,3 +1,4 @@
+//! Extract name paramters and sql statement from the named sql template.
 use crate::{SqlDialect, DySqlResult, DySqlError, DEFAULT_ERROR_MSG};
 
 ///
@@ -100,8 +101,6 @@ mod tests {
         let sql = "select * from abc where id=:id and name=:name";
         let rst = extract_params(sql, SqlDialect::postgres);
         assert_eq!(("select * from abc where id=$1 and name=$2".to_owned(), vec!["id".to_owned(), "name".to_owned()]), rst.unwrap());
-        
-
     }
 
     #[test]

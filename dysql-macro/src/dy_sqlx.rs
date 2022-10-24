@@ -1,3 +1,4 @@
+//! sqlx feature implement
 use dysql::{QueryType, SqlDialect};
 use quote::quote;
 

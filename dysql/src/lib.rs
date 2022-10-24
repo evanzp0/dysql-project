@@ -1,4 +1,4 @@
-use std::{fmt::{Display, Formatter}, sync::{Arc, RwLock}, collections::HashMap};
+use std::{fmt::{Display, Formatter}, sync::RwLock, collections::HashMap};
 use std::error::Error;
 mod extract_sql;
 
@@ -8,13 +8,34 @@ use crypto::{md5::Md5, digest::Digest};
 use once_cell::sync::OnceCell;
 use ramhorns::{Template, Content};
 
-pub static SQL_TEMPLATE_CACHE: OnceCell<Arc<RwLock<HashMap<String, Template>>>> = OnceCell::new();
+pub static SQL_TEMPLATE_CACHE: OnceCell<RwLock<HashMap<String, Template>>> = OnceCell::new();
+pub static DYSQL_CONFIG: OnceCell<DySqlConfig> = OnceCell::new();
+
 pub type DySqlResult<T> = Result<T, Box<dyn Error>>;
+pub struct DySqlConfig {
+    pub  dialect: SqlDialect
+}
+
+impl DySqlConfig {
+    pub fn new() -> Self {
+        Self {
+            dialect: SqlDialect::postgres
+        }
+    }
+}
+
+pub fn get_dysql_config() -> &'static DySqlConfig {
+    let cfg = DYSQL_CONFIG.get_or_init(|| {
+        DySqlConfig::new()
+    });
+
+    cfg
+}
 
 #[allow(dead_code)]
-fn get_sql_template_cache() -> &'static Arc<RwLock<HashMap<String, Template<'static>>>> {
+fn get_sql_template_cache() -> &'static RwLock<HashMap<String, Template<'static>>> {
     let cache = SQL_TEMPLATE_CACHE.get_or_init(|| {
-        Arc::new(RwLock::new(HashMap::new()))
+        RwLock::new(HashMap::new())
     });
 
     cache
@@ -56,8 +77,6 @@ pub enum SqlDialect {
     postgres,
     mysql,
     sqlite,
-    oracle,
-    other,
 }
 
 impl Display for SqlDialect {
@@ -72,13 +91,17 @@ impl From<String> for SqlDialect {
             SqlDialect::postgres
         } else if source == SqlDialect::mysql.to_string() {
             SqlDialect::mysql
-        } else if source == SqlDialect::oracle.to_string() {
-            SqlDialect::oracle
         } else if source == SqlDialect::sqlite.to_string() {
             SqlDialect::sqlite
         } else {
-            SqlDialect::other
+            panic!("{} dialect is not support", source);
         }
+    }
+}
+
+impl PartialEq<String> for SqlDialect {
+    fn eq(&self, other: &String) -> bool {
+        *other == self.to_string()
     }
 }
 

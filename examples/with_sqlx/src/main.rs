@@ -70,7 +70,7 @@ async fn main() -> dysql::DySqlResult<()> {
     //// insert with transaction and get id back (except postgres)
     // let mut tran = conn.begin().await?;
     // let dto = UserDto{ id: Some(4), name: Some("lisi".to_owned()), age: Some(50) };
-    // let last_insert_id = insert!(|dto, tran| -> mysql {
+    // let last_insert_id = insert!(|dto, tran, i64| -> mysql {
     //     r#"insert into test_user (id, name, age) values (4, 'aa', 1)"#
     // });
     // assert_eq!(4, last_insert_id);

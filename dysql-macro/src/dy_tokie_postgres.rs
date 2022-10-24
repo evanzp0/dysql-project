@@ -25,7 +25,7 @@ pub (crate) fn expand(st: &SqlClosure, query_type: QueryType) -> syn::Result<pro
         QueryType::FetchOne => expand_fetch_one(st),
         QueryType::FetchScalar => expand_fetch_scalar(st),
         QueryType::Execute => expand_execute(st),
-        QueryType::Insert => return Err(syn::Error::new(proc_macro2::Span::call_site(), "Error: the feature of tokio-postgres not support insert!(...) macro")),
+        QueryType::Insert => expand_fetch_scalar(st),
     };
 
     let ret = quote!(

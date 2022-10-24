@@ -1,8 +1,14 @@
 #![cfg(feature = "sqlx")]
 
-use dysql_macro::{fetch_all, fetch_one, fetch_scalar, execute};
+use std::str::FromStr;
+
+use dysql_macro::{fetch_all, fetch_one, fetch_scalar, execute, insert};
 use ramhorns::Content;
-use sqlx::{postgres::PgPoolOptions, FromRow, Pool, Postgres};
+use sqlx::{
+    postgres::PgPoolOptions, FromRow, Pool, Postgres, mysql::MySqlPoolOptions, MySql, 
+    sqlite::{SqliteConnectOptions, SqliteJournalMode}, 
+    ConnectOptions, SqliteConnection, Acquire
+};
 
 #[derive(Content)]
 struct UserDto {
@@ -15,12 +21,12 @@ struct UserDto {
 #[derive(Debug, PartialEq)]
 #[derive(FromRow)]
 struct User {
-    id: i32,
+    id: i64,
     name: Option<String>,
     age: Option<i32>
 }
 
-async fn connect_db() -> Pool<Postgres> {
+async fn connect_postgres_db() -> Pool<Postgres> {
     let conn = PgPoolOptions::new()
         .max_connections(5)
         .connect("postgres://root:111111@127.0.0.1/my_database").await.unwrap();
@@ -28,9 +34,42 @@ async fn connect_db() -> Pool<Postgres> {
     conn
 }
 
+async fn connect_mysql_db() -> Pool<MySql> {
+    let conn = MySqlPoolOptions::new()
+        .max_connections(5)
+        .connect("mysql://root:111111@127.0.0.1/my_database").await.unwrap();
+
+    conn
+}
+
+async fn connect_sqlite_db() -> SqliteConnection {
+    let mut conn = SqliteConnectOptions::from_str("sqlite::memory:")
+        .unwrap()
+        .journal_mode(SqliteJournalMode::Wal)
+        .read_only(false)
+        .connect()
+        .await.unwrap();
+
+    // prepare test data
+    sqlx::query("DROP TABLE IF EXISTS test_user").execute(&mut conn).await.unwrap();
+    sqlx::query(r#"
+        CREATE TABLE test_user (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name VARCHAR(255) NULL,
+            age INT NULL
+        )"#
+    ).execute(&mut conn).await.unwrap();
+    sqlx::query("INSERT INTO test_user (name, age) VALUES ('huanglan', 10)").execute(&mut conn).await.unwrap();
+    sqlx::query("INSERT INTO test_user (name, age) VALUES ('zhanglan', 21)").execute(&mut conn).await.unwrap();
+    sqlx::query("INSERT INTO test_user (name, age) VALUES ('zhangsan', 35)").execute(&mut conn).await.unwrap();
+
+    conn
+}
+
+
 #[tokio::test]
 async fn test_fetch_all() -> dysql::DySqlResult<()>{
-    let conn = connect_db().await;
+    let conn = connect_postgres_db().await;
 
     let dto = UserDto{ id: None, name: None, age: Some(15) };
     let rst = fetch_all!(|dto, conn, User| {
@@ -53,7 +92,7 @@ async fn test_fetch_all() -> dysql::DySqlResult<()>{
 
 #[tokio::test]
 async fn test_fetch_one() -> dysql::DySqlResult<()>{
-    let conn = connect_db().await;
+    let conn = connect_postgres_db().await;
 
     let dto = UserDto{ id: Some(2), name: None, age: None };
     let rst = fetch_one!(|dto, conn, User| {
@@ -64,13 +103,12 @@ async fn test_fetch_one() -> dysql::DySqlResult<()>{
     });
     assert_eq!(User { id: 2, name: Some("zhanglan".to_owned()), age: Some(21) }, rst);
 
-
     Ok(())
 }
 
 #[tokio::test]
 async fn test_fetch_scalar() -> dysql::DySqlResult<()>{
-    let conn = connect_db().await;
+    let conn = connect_postgres_db().await;
 
     let rst = fetch_scalar!(|_, conn, i64| {
         r#"select count (*) from test_user"#
@@ -83,7 +121,7 @@ async fn test_fetch_scalar() -> dysql::DySqlResult<()>{
 
 #[tokio::test]
 async fn test_execute() -> dysql::DySqlResult<()>{
-    let conn = connect_db().await;
+    let conn = connect_postgres_db().await;
     let mut tran = conn.begin().await?;
 
     let dto = UserDto{ id: Some(3), name: None, age: None };
@@ -100,31 +138,47 @@ async fn test_execute() -> dysql::DySqlResult<()>{
 
 #[tokio::test]
 async fn test_insert() -> dysql::DySqlResult<()>{
-    let conn = connect_db().await;
+    let conn = connect_postgres_db().await;
     let mut tran = conn.begin().await?;
 
-    let dto = UserDto{ id: Some(4), name: Some("lisi".to_owned()), age: Some(50) };
-    let insert_id = fetch_scalar!(|dto, &mut tran, i32| {
-        r#"insert into test_user (id, name, age) values (:id, :name, :age) returning id"#
+    let dto = UserDto{ id: None, name: Some("lisi".to_owned()), age: Some(50) };
+    let insert_id = insert!(|dto, &mut tran| {
+        r#"insert into test_user (name, age) values (:name, :age) returning id"#
     });
-    assert_eq!(4, insert_id);
+    assert!(insert_id > 3);
     tran.rollback().await?;
 
     Ok(())
 }
 
-// #[tokio::test]
-// async fn test_insert_mysql() -> dysql::DySqlResult<()>{
-//     let conn = connect_db().await;
-//     let mut tran = conn.begin().await?;
+#[tokio::test]
+async fn test_insert_mysql() -> dysql::DySqlResult<()>{
+    let conn = connect_mysql_db().await;
+    let mut tran = conn.begin().await?;
 
-//     let dto = UserDto{ id: Some(4), name: Some("lisi".to_owned()), age: Some(50) };
-//     let last_insert_id = insert!(|dto, tran| -> mysql {
-//         r#"insert into test_user (id, name, age) values (4, 'aa', 1)"#
-//     });
-//     assert_eq!(4, last_insert_id);
-//     tran.rollback().await?;
+    let dto = UserDto{ id: Some(4), name: Some("lisi".to_owned()), age: Some(50) };
+    let insert_id = insert!(|dto, &mut tran| -> mysql {
+        r#"insert into test_user (name, age) values ('aa', 1)"#
+    });
+    assert!(insert_id > 3);
+    tran.rollback().await?;
 
-//     Ok(())
-// }
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_insert_sqlite() -> dysql::DySqlResult<()>{
+    let mut conn = connect_sqlite_db().await;
+    let mut tran = conn.begin().await?;
+
+    let dto = UserDto{ id: Some(4), name: Some("lisi".to_owned()), age: Some(50) };
+
+    let insert_id = insert!(|dto, &mut tran| -> sqlite {
+        r#"insert into test_user (name, age) values ('aa', 1)"#
+    });
+    assert!(insert_id > 3);
+    tran.rollback().await?;
+
+    Ok(())
+}
 

@@ -1,5 +1,6 @@
-use dysql::QueryType;
+use dysql::{QueryType, SqlDialect};
 use quote::quote;
+use syn::punctuated::Punctuated;
 
 use crate::SqlClosure;
 
@@ -24,7 +25,7 @@ pub (crate) fn expand(st: &SqlClosure, query_type: QueryType) -> syn::Result<pro
         QueryType::FetchOne => expand_fetch_one(st, &param_strings, &param_idents),
         QueryType::FetchScalar => expand_fetch_scalar(st, &param_strings, &param_idents),
         QueryType::Execute => expand_execute(st, &param_strings, &param_idents),
-        QueryType::Insert => expand_insert(st, &param_strings, &param_idents),
+        QueryType::Insert => expand_insert(st, &param_strings, &param_idents)?,
     };
 
     let ret = quote!(
@@ -160,34 +161,81 @@ fn expand_execute(st: &SqlClosure, param_strings: &Vec<String>, param_idents: &V
     ret
 }
 
-fn expand_insert(st: &SqlClosure, param_strings: &Vec<String>, param_idents: &Vec<proc_macro2::Ident>) -> proc_macro2::TokenStream {
+fn expand_insert(st: &SqlClosure, param_strings: &Vec<String>, param_idents: &Vec<proc_macro2::Ident>) -> syn::Result<proc_macro2::TokenStream> {
     let cot = &st.cot;
     let dto = &st.dto;
-
+    let dialect: SqlDialect = st.dialect.to_string().into();
+    
     let cot_ref = if st.is_cot_ref_mut {
         quote!(&mut )
     } else {
         quote!(&)
     };
 
-    let ret = quote!(
-        let mut query = sqlx::query(&sql);
-        for i in 0..param_names.len() {
-            #(
-                if param_names[i] == #param_strings {
-                    query = query.bind(&#dto.#param_idents);
-                }
-            )*
-        }
+    // gen return type fro postgres
+    let ret_type_seg = syn::PathSegment {
+        ident: syn::Ident::new("i64", proc_macro2::Span::call_site()),
+        arguments: syn::PathArguments::None,
+    };
+    let mut ret_type_punct: Punctuated<syn::PathSegment, syn::Token![::]> = Punctuated::new();
+    ret_type_punct.push_value(ret_type_seg);
+    let ret_type_path = Some(syn::Path{ leading_colon: None, segments: ret_type_punct });
+    let ret_type = match &st.ret_type {
+        Some(_) => &st.ret_type,
+        None => &ret_type_path,
+    };
 
-        let _rst = query.execute(&mut #cot).await?;
-        let last_insert_id = sqlx::query_as::<_, (i64,)>("SELECT LAST_INSERT_ID();")
-            .fetch_one(#cot_ref #cot)
-            .await?
-            .0;
-        last_insert_id
-    );
+    // build return token stream
+    let ret = match dialect {
+        SqlDialect::postgres => quote!(
+            let mut query = sqlx::query_scalar::<_, #ret_type>(&sql);
+            for i in 0..param_names.len() {
+                #(
+                    if param_names[i] == #param_strings {
+                        query = query.bind(&#dto.#param_idents);
+                    }
+                )*
+            }
+    
+            let insert_id = query.fetch_one(#cot_ref #cot).await?;
+            insert_id
+        ),
+        SqlDialect::mysql => quote!(
+            let mut query = sqlx::query(&sql);
+            for i in 0..param_names.len() {
+                #(
+                    if param_names[i] == #param_strings {
+                        query = query.bind(&#dto.#param_idents);
+                    }
+                )*
+            }
 
-    ret
+            let _rst = query.execute(&mut #cot).await?;
+            let insert_id = sqlx::query_as::<_, (u64,)>("SELECT LAST_INSERT_ID();")
+                .fetch_one(#cot_ref #cot)
+                .await?
+                .0;
+            insert_id
+        ),
+        SqlDialect::sqlite => quote!(
+            let mut query = sqlx::query(&sql);
+            for i in 0..param_names.len() {
+                #(
+                    if param_names[i] == #param_strings {
+                        query = query.bind(&#dto.#param_idents);
+                    }
+                )*
+            }
+
+            let _rst = query.execute(&mut #cot).await?;
+            let insert_id = sqlx::query_as::<_, (i32,)>("SELECT last_insert_rowid();")
+                .fetch_one(#cot_ref #cot)
+                .await?
+                .0;
+            insert_id
+        ),
+    };
+
+    Ok(ret)
 }
 

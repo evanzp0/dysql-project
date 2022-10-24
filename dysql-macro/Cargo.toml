@@ -14,8 +14,8 @@ sqlx = []
 proc-macro = true
 
 [dependencies]
-dysql= "0.3.0"
-# dysql = { path = "../dysql" }
+# dysql= "0.3.0"
+dysql = { path = "../dysql" }
 syn = {version="1.0", features=["extra-traits", "visit-mut"]}
 proc-macro2 = {version="1.0", features = ["span-locations"]}
 quote = {version="1.0"}
@@ -26,4 +26,4 @@ tokio-postgres = { version = "0.7", features = ["with-chrono-0_4"] }
 tokio = { version = "1.0", features = ["full"] }
 tokio-pg-mapper = "0.2"
 tokio-pg-mapper-derive = "0.2"
-sqlx = { version = "0.6", features = [ "runtime-tokio-native-tls" , "postgres", "chrono", "uuid" ] }
+sqlx = { version = "0.6", features = [ "runtime-tokio-native-tls" , "postgres",  "mysql", "sqlite", "chrono", "uuid" ] }

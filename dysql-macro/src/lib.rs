@@ -8,7 +8,7 @@ mod dy_tokie_postgres;
 #[cfg(not(feature = "sqlx"))]
 use dy_tokie_postgres::expand;
 
-use dysql::QueryType;
+use dysql::{QueryType, get_dysql_config};
 use proc_macro::TokenStream;
 
 #[allow(dead_code)]
@@ -76,7 +76,13 @@ impl syn::parse::Parse for SqlClosure {
         // parse closure returning sql dialect
         let dialect: syn::Ident = match input.parse::<syn::Token!(->)>() {
             Ok(_) => input.parse()?,
-            Err(_) => syn::Ident::new(&dysql::SqlDialect::postgres.to_string(), input.span()),
+            Err(_) => {
+                match get_dysql_config().dialect {
+                    dysql::SqlDialect::postgres => syn::Ident::new(&dysql::SqlDialect::postgres.to_string(), input.span()),
+                    dysql::SqlDialect::mysql => syn::Ident::new(&dysql::SqlDialect::mysql.to_string(), input.span()),
+                    dysql::SqlDialect::sqlite => syn::Ident::new(&dysql::SqlDialect::sqlite.to_string(), input.span()),
+                }
+            },
         };
 
         // parse closure sql body
@@ -162,7 +168,7 @@ pub fn fetch_one(input: TokenStream) -> TokenStream {
 }
 
 ///
-/// fetch a scalar value from query
+/// Fetch a scalar value from query
 /// 
 /// # Examples
 ///
@@ -188,7 +194,7 @@ pub fn fetch_scalar(input: TokenStream) -> TokenStream {
 }
 
 ///
-/// execute query
+/// Execute query
 /// 
 /// # Examples
 ///
@@ -216,8 +222,8 @@ pub fn execute(input: TokenStream) -> TokenStream {
 }
 
 ///
-/// insert data
-/// **Note:** This macro only works under **sqlx** features and **postgres database not supports it**.
+/// Insert data
+/// **Note:** if you use this macro under **postgres** database, you should add "returning id" at the end of sql statement by yourself.
 /// 
 /// # Examples
 ///
@@ -228,13 +234,13 @@ pub fn execute(input: TokenStream) -> TokenStream {
 /// 
 /// let dto = UserDto{ id: Some(4), name: Some("lisi".to_owned()), age: Some(50) };
 /// let last_insert_id = insert!(|dto, tran| -> mysql {
-///     r#"insert into test_user (id, name, age) values (4, 'aa', 1)"#
+///     r#"insert into test_user (id, name, age) values (4, 'aa', 1)"#  // works for mysql and sqlite
+///     // r#"insert into test_user (id, name, age) values (4, 'aa', 1) returning id"#  // works for postgres
 /// });
 /// assert_eq!(4, last_insert_id);
 /// 
 /// tran.rollback().await?;
 /// ```
-#[cfg(feature = "sqlx")]
 #[proc_macro]
 pub fn insert(input: TokenStream) -> TokenStream {
     let st = syn::parse_macro_input!(input as SqlClosure);

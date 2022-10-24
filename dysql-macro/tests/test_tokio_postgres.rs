@@ -94,7 +94,6 @@ async fn test_fetch_scalar() -> dysql::DySqlResult<()>{
     Ok(())
 }
 
-
 #[tokio::test]
 async fn test_execute() -> dysql::DySqlResult<()>{
     let mut conn = connect_db().await;
@@ -111,3 +110,19 @@ async fn test_execute() -> dysql::DySqlResult<()>{
     Ok(())
 }
 
+#[tokio::test]
+async fn test_insert() -> dysql::DySqlResult<()>{
+    let mut conn = connect_db().await;
+    let tran = conn.transaction().await?;
+
+    let dto = UserDto{ id: Some(4), name: Some("lisi".to_owned()), age: Some(50) };
+    let insert_id = fetch_scalar!(|dto, &mut tran, i32| {
+        r#"insert into test_user (id, name, age) values (:id, :name, :age) returning id"#
+    });
+    
+    assert_eq!(4, insert_id);
+
+    tran.rollback().await?;
+
+    Ok(())
+}

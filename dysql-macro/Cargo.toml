@@ -6,7 +6,7 @@ description = "Dysql is a rust crate that do dynamic-sql query through proc-macr
 license = "Apache-2.0"
 
 [features]
-default = ["sqlx"]
+default = ["tokio-postgres"]
 tokio-postgres = []
 sqlx = []
 
@@ -16,10 +16,13 @@ proc-macro = true
 [dependencies]
 # dysql= "0.3.0"
 dysql = { path = "../dysql" }
-syn = { version="1.0", features=["extra-traits", "visit-mut"] }
-proc-macro2 = { version="1.0", features = ["span-locations"] }
-quote = { version="1.0" }
+syn = {version="1.0", features=["extra-traits", "visit-mut"]}
+proc-macro2 = {version="1.0", features = ["span-locations"]}
+quote = {version="1.0"}
 ramhorns = "0.14"
+
+[build]
+rustflags = ["--cfg", "tokio_unstable"]
 
 [dev-dependencies]
 tokio-postgres = { version = "0.7", features = ["with-chrono-0_4"] }

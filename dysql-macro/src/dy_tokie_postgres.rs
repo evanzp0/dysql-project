@@ -14,16 +14,14 @@ pub (crate) fn expand(st: &SqlClosure, query_type: QueryType) -> syn::Result<pro
     ramhorns::Template::new(body.clone()).unwrap(); 
 
     // get raw sql and all params as both string and ident type at compile time!
-    let (tmp_sql, param_strings) = match dto {
-        Some(_) => dysql::extract_params(&body, dysql::SqlDialect::from(dialect.to_owned())),
-        None => (body.to_string(), vec![]),
+    let param_strings = match dto {
+        Some(_) => dysql::extract_params(&body, dysql::SqlDialect::from(dialect.to_owned()))
+            .map_err(|_| syn::Error::new(proc_macro2::Span::call_site(), format!("Parse sql error: {} ", body)))?
+            .1,
+        None => vec![],
     };
-
-    if tmp_sql == "".to_owned() {
-        return Err(syn::Error::new(proc_macro2::Span::call_site(), format!("Parse sql error: {} ", body)))
-    }
     let param_idents: Vec<_> = param_strings.iter().map( |p| proc_macro2::Ident::new(p, proc_macro2::Span::call_site()) ).collect();
-    
+
     // gen sql render and bind params statement
     let expend_sql_bind_params_inner = match dto {
         Some(dto) => quote!(
@@ -34,7 +32,7 @@ pub (crate) fn expand(st: &SqlClosure, query_type: QueryType) -> syn::Result<pro
             };
     
             let sql_rendered = unsafe{(*sql_tpl).render(&#dto)};
-            let extract_rst = dysql::extract_params(&sql_rendered, dysql::SqlDialect::from(#dialect.to_owned()));
+            let extract_rst = dysql::extract_params(&sql_rendered, dysql::SqlDialect::from(#dialect.to_owned()))?;
             let (sql, param_names) = extract_rst;
 
             for i in 0..param_names.len() {

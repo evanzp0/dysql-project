@@ -6,8 +6,9 @@ pub use extract_sql::*;
 
 use crypto::{md5::Md5, digest::Digest};
 use once_cell::sync::OnceCell;
-use ramhorns::{Template, Content};
+use ramhorns::Template;
 
+pub static DEFAULT_ERROR_MSG: &str = "Error occurs when extracting sql parameters.";
 pub static SQL_TEMPLATE_CACHE: OnceCell<RwLock<HashMap<String, Template>>> = OnceCell::new();
 pub static DYSQL_CONFIG: OnceCell<DySqlConfig> = OnceCell::new();
 
@@ -111,6 +112,15 @@ pub fn md5<S:Into<String>>(input: S) -> String {
     md5.result_str()
 }
 
+#[derive(Debug)]
+pub enum QueryType {
+    FetchAll,
+    FetchOne,
+    FetchScalar,
+    Execute,
+    Insert,
+}
+
 #[derive(Debug, PartialEq)]
 pub struct DySqlError {
     pub msg: String
@@ -134,20 +144,6 @@ impl Error for DySqlError {
     fn cause(&self) -> Option<&dyn Error> {
        None
     }
-}
-
-#[derive(Debug)]
-pub enum QueryType {
-    FetchAll,
-    FetchOne,
-    FetchScalar,
-    Execute,
-    Insert,
-}
-
-#[derive(Content)]
-pub struct EmptyDto {
-    pub _empty: u8
 }
 
 #[cfg(test)]

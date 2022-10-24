@@ -1,4 +1,4 @@
-use crate::SqlDialect;
+use crate::{SqlDialect, DySqlResult, DySqlError, DEFAULT_ERROR_MSG};
 
 ///
 /// extract sql and params from raw sql
@@ -14,17 +14,17 @@ use crate::SqlDialect;
 /// let rst = extract_params(sql, SqlDialect::postgres);
 /// assert_eq!(
 ///     ("select * from abc where id=$1 and name=$2 order by id".to_owned(), vec!["id".to_owned(), "name".to_owned()]),
-///     rst
+///     rst.unwrap()
 /// );
 /// 
 /// let sql = "select * from abc where id=:id and name=:name order by id";
 /// let rst = extract_params(sql, SqlDialect::mysql);
 /// assert_eq!(
 ///     ("select * from abc where id=? and name=? order by id".to_owned(), vec!["id".to_owned(), "name".to_owned()]),
-///     rst
+///     rst.unwrap()
 /// );
 /// ```
-pub fn extract_params(o_sql: &str, sql_dial: SqlDialect) -> (String, Vec<String>) {
+pub fn extract_params(o_sql: &str, sql_dial: SqlDialect) -> DySqlResult<(String, Vec<String>)> {
     // eprintln!("{:#?}", o_sql);
     let mut r_sql = String::new();
     let mut params: Vec<String> = vec![];
@@ -51,11 +51,11 @@ pub fn extract_params(o_sql: &str, sql_dial: SqlDialect) -> (String, Vec<String>
 
             // get named param end index
             if cur == end {
-                return ("".to_string(), vec![])
+                return Err(Box::new(DySqlError::new(DEFAULT_ERROR_MSG)))
             } else {
                 let (found, current_cursor) = char_index(o_sql, cur, vec![' ', '\n', '\t', ',', ';', '{', ')']);
                 if found && current_cursor == cur{
-                    return ("".to_string(), vec![])
+                    return Err(Box::new(DySqlError::new(DEFAULT_ERROR_MSG)))
                 }
 
                 cur = current_cursor;
@@ -70,7 +70,7 @@ pub fn extract_params(o_sql: &str, sql_dial: SqlDialect) -> (String, Vec<String>
         }
     }
 
-    (r_sql, params)
+    Ok((r_sql, params))
 }
 
 ///
@@ -99,14 +99,25 @@ mod tests {
     fn test_extract_sql() {
         let sql = "select * from abc where id=:id and name=:name";
         let rst = extract_params(sql, SqlDialect::postgres);
-        assert_eq!(("select * from abc where id=$1 and name=$2".to_owned(), vec!["id".to_owned(), "name".to_owned()]), rst);
+        assert_eq!(("select * from abc where id=$1 and name=$2".to_owned(), vec!["id".to_owned(), "name".to_owned()]), rst.unwrap());
         
+
+    }
+
+    #[test]
+    fn test_extract_wrong_parameter() {
         let sql = "select * from abc where id=: id and name=:name order by id";
         let rst = extract_params(sql, SqlDialect::postgres);
-        assert_eq!(("".to_owned(), vec![]),  rst);
+        match rst {
+            Ok(_) => panic!("Unexpected error"),
+            Err(e) => assert_eq!(e.to_string(), DEFAULT_ERROR_MSG),
+        };
 
         let sql = "select * from abc where id=:id and name=:";
         let rst = extract_params(sql, SqlDialect::postgres);
-        assert_eq!(("".to_owned(), vec![]),  rst);
+        match rst {
+            Ok(_) => panic!("Unexpected error"),
+            Err(e) => assert_eq!(e.to_string(), DEFAULT_ERROR_MSG),
+        };
     }
 }

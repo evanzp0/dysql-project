@@ -16,9 +16,9 @@ proc-macro = true
 [dependencies]
 # dysql= "0.3.0"
 dysql = { path = "../dysql" }
-syn = {version="1.0", features=["extra-traits", "visit-mut"]}
-proc-macro2 = {version="1.0", features = ["span-locations"]}
-quote = {version="1.0"}
+syn = { version="1.0", features=["extra-traits", "visit-mut"] }
+proc-macro2 = { version="1.0", features = ["span-locations"] }
+quote = { version="1.0" }
 ramhorns = "0.14"
 
 [dev-dependencies]

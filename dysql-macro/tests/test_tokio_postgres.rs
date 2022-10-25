@@ -45,7 +45,7 @@ async fn test_fetch_all() -> dysql::DySqlResult<()>{
     let conn = connect_db().await;
     let dto = UserDto::new(None, None,Some(13));
 
-    let rst: Vec<User> = fetch_all!(|dto, conn, User| {
+    let rst: Vec<User> = fetch_all!(|dto, conn| -> User {
         r#"select * from test_user 
         where 1 = 1
             {{#name}}and name = :name{{/name}}
@@ -69,7 +69,7 @@ async fn test_fetch_one() -> dysql::DySqlResult<()>{
     let conn = connect_db().await;
     let dto = UserDto::new(Some(2), None, None);
 
-    let rst = fetch_one!(|dto, conn, User| {
+    let rst = fetch_one!(|dto, conn, "get_user_by_id"| -> User {
         r#"select * from test_user 
         where 1 = 1
             and id = :id
@@ -86,7 +86,7 @@ async fn test_fetch_one() -> dysql::DySqlResult<()>{
 async fn test_fetch_scalar() -> dysql::DySqlResult<()>{
     let conn = connect_db().await;
 
-    let rst = fetch_scalar!(|_, conn, i64| {
+    let rst = fetch_scalar!(|_, conn| -> (i64, postgres) {
         r#"select count (*) from test_user"#
     });
     assert_eq!(3, rst);
@@ -116,7 +116,7 @@ async fn test_insert() -> dysql::DySqlResult<()>{
     let tran = conn.transaction().await?;
 
     let dto = UserDto{ id: Some(4), name: Some("lisi".to_owned()), age: Some(50) };
-    let insert_id = insert!(|dto, &mut tran| {
+    let insert_id = insert!(|dto, &mut tran| -> (_, _) {
         r#"insert into test_user (id, name, age) values (:id, :name, :age) returning id"#
     });
     

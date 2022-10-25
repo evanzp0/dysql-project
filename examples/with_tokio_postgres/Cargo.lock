@@ -208,7 +208,7 @@ dependencies = [
 
 [[package]]
 name = "dysql"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "once_cell",
  "ramhorns",
@@ -217,7 +217,7 @@ dependencies = [
 
 [[package]]
 name = "dysql-macro"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "dysql",
  "proc-macro2",
@@ -1277,7 +1277,7 @@ checksum = "f40009d85759725a34da6d89a94e63d7bdc50a862acf0dbc7c8e488f1edcb6f5"
 
 [[package]]
 name = "with_tokio_postgres"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "dysql",
  "dysql-macro",

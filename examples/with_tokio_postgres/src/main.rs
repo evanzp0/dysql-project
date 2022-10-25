@@ -11,7 +11,7 @@ async fn main() -> dysql::DySqlResult<()> {
 
     // fetch all
     let dto = UserDto{ id: None, name: None, age: Some(15) };
-    let rst: Vec<User> = fetch_all!(|dto, conn, User| {
+    let rst: Vec<User> = fetch_all!(|dto, conn| -> User {
         r#"select * from test_user 
         where 1 = 1
             {{#name}}and name = :name{{/name}}
@@ -28,7 +28,7 @@ async fn main() -> dysql::DySqlResult<()> {
 
     // fetch one
     let dto = UserDto{ id: Some(2), name: None, age: None };
-    let rst = fetch_one!(|dto, conn, User| {
+    let rst = fetch_one!(|dto, conn| -> User {
         r#"select * from test_user 
         where 1 = 1
             and id = :id
@@ -37,7 +37,7 @@ async fn main() -> dysql::DySqlResult<()> {
     assert_eq!(User { id: 2, name: Some("zhanglan".to_owned()), age: Some(21) }, rst);
 
     // fetch scalar value
-    let rst = fetch_scalar!(|_, conn, i64| {
+    let rst = fetch_scalar!(|_, conn| -> i64 {
         r#"select count (*) from test_user"#
     });
     assert_eq!(3, rst);

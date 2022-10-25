@@ -21,7 +21,7 @@
 //!     
 //!     // fetch all
 //!     let dto = UserDto{ id: None, name: None, age: Some(15) };
-//!     let rst = fetch_all!(|dto, conn, User| {
+//!     let rst = fetch_all!(|dto, conn| -> User {
 //!         r#"SELECT * FROM test_user 
 //!         WHERE 1 = 1
 //!           {{#name}}AND name = :name{{/name}}
@@ -36,50 +36,21 @@
 //!         rst
 //!     );
 //! 
-//!     // fetch one
-//!     let dto = UserDto{ id: Some(2), name: None, age: None };
-//!     let rst = fetch_one!(|dto, conn, User| {
-//!         r#"select * from test_user 
-//!         where 1 = 1
-//!             and id = :id
-//!         order by id"#
-//!     });
-//!     assert_eq!(User { id: 2, name: Some("zhanglan".to_owned()), age: Some(21) }, rst);
+//!     let rst = fetch_one!(...);
 //! 
-//!     // fetch scalar value
-//!     let rst = fetch_scalar!(|_, conn, i64| {
-//!         r#"select count (*) from test_user"#
-//!     });
-//!     assert_eq!(3, rst);
-//! 
-//!     // execute with transaction
-//!     let affected_rows_num = execute!(|dto, &mut tran| {
-//!         r#"delete from test_user where id = :id"#
-//!     });
-//!     //...
-//! 
-//!     // insert with transaction and get id back (postgres)
-//!     let insert_id = fetch_scalar!(|dto, &mut tran, i64| {
-//!         r#"insert into test_user (id, name, age) values (:id, :name, :age) returning id"#
-//!     });
-//!     //...
-//! 
-//!     // insert with transaction and get id back (mysql)
-//!     let dto = UserDto{ id: Some(4), name: Some("lisi".to_owned()), age: Some(50) };
-//!     let insert_id = insert!(|dto, &mut tran| -> mysql {
-//!         r#"insert into test_user (name, age) values ('aa', 1)"#
-//!     });
-//!     //...
-//! 
-//!     // insert with transaction and get id back (sqlite)
-//!     let dto = UserDto{ id: Some(4), name: Some("lisi".to_owned()), age: Some(50) };
-//!     let insert_id = insert!(|dto, &mut tran| -> sqlite {
-//!         r#"insert into test_user (name, age) values ('aa', 1)"#
-//!     });
-//!     //...
-//! 
+//!     let rst = fetch_scalar!(...);
+//!     
+//!     let affected_rows_num = execute!(...);
+//!     
+//!     let insert_id = insert!(...);
 //! }
 //! ```
+//! 
+//! ## Example (tokio-postgres)
+//! Full example please see: [Dysql tokio-postgres example](https://github.com/evanzp0/dysql-project/tree/main/examples/with_tokio_postgres)
+//! 
+//! ## Example (sqlx)
+//! Full example please see: [Dysql sqlx example](https://github.com/evanzp0/dysql-project/tree/main/examples/with_sqlx)
 use std::{fmt::{Display, Formatter}, sync::RwLock, collections::HashMap};
 use std::error::Error;
 mod extract_sql;

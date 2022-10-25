@@ -21,7 +21,7 @@
 //!     
 //!     // fetch all
 //!     let dto = UserDto{ id: None, name: None, age: Some(15) };
-//!     let rst = fetch_all!(|dto, conn, User| {
+//!     let rst = fetch_all!(|dto, conn| -> User {
 //!         r#"SELECT * FROM test_user 
 //!         WHERE 1 = 1
 //!           {{#name}}AND name = :name{{/name}}
@@ -36,50 +36,21 @@
 //!         rst
 //!     );
 //! 
-//!     // fetch one
-//!     let dto = UserDto{ id: Some(2), name: None, age: None };
-//!     let rst = fetch_one!(|dto, conn, User| {
-//!         r#"select * from test_user 
-//!         where 1 = 1
-//!             and id = :id
-//!         order by id"#
-//!     });
-//!     assert_eq!(User { id: 2, name: Some("zhanglan".to_owned()), age: Some(21) }, rst);
+//!     let rst = fetch_one!(...);
 //! 
-//!     // fetch scalar value
-//!     let rst = fetch_scalar!(|_, conn, i64| {
-//!         r#"select count (*) from test_user"#
-//!     });
-//!     assert_eq!(3, rst);
-//! 
-//!     // execute with transaction
-//!     let affected_rows_num = execute!(|dto, &mut tran| {
-//!         r#"delete from test_user where id = :id"#
-//!     });
-//!     //...
-//! 
-//!     // insert with transaction and get id back (postgres)
-//!     let insert_id = fetch_scalar!(|dto, &mut tran, i64| {
-//!         r#"insert into test_user (id, name, age) values (:id, :name, :age) returning id"#
-//!     });
-//!     //...
-//! 
-//!     // insert with transaction and get id back (mysql)
-//!     let dto = UserDto{ id: Some(4), name: Some("lisi".to_owned()), age: Some(50) };
-//!     let insert_id = insert!(|dto, &mut tran| -> mysql {
-//!         r#"insert into test_user (name, age) values ('aa', 1)"#
-//!     });
-//!     //...
-//! 
-//!     // insert with transaction and get id back (sqlite)
-//!     let dto = UserDto{ id: Some(4), name: Some("lisi".to_owned()), age: Some(50) };
-//!     let insert_id = insert!(|dto, &mut tran| -> sqlite {
-//!         r#"insert into test_user (name, age) values ('aa', 1)"#
-//!     });
-//!     //...
-//! 
+//!     let rst = fetch_scalar!(...);
+//!     
+//!     let affected_rows_num = execute!(...);
+//!     
+//!     let insert_id = insert!(...);
 //! }
 //! ```
+//! 
+//! ## Example (tokio-postgres)
+//! Full example please see: [Dysql tokio-postgres example](https://github.com/evanzp0/dysql-project/tree/main/examples/with_tokio_postgres)
+//! 
+//! ## Example (sqlx)
+//! Full example please see: [Dysql sqlx example](https://github.com/evanzp0/dysql-project/tree/main/examples/with_sqlx)
 #[cfg(not(feature = "tokio-postgres"))]
 mod dy_sqlx;
 #[cfg(not(feature = "tokio-postgres"))]
@@ -101,6 +72,7 @@ struct SqlClosure {
     cot: syn::Ident, // database connection or transaction
     is_cot_ref: bool,
     is_cot_ref_mut: bool,
+    sql_name: Option<String>,
     ret_type: Option<syn::Path>, // return type
     dialect: syn::Ident,
     body: String,
@@ -142,29 +114,72 @@ impl syn::parse::Parse for SqlClosure {
             },
         };
 
-        //// parse return type
-        let mut ret_type = None;
+        // parse sql_name
+        let mut sql_name = None;
         match input.parse::<syn::Token!(|)>() {
             Ok(_) => (),
             Err(_) => {
                 input.parse::<syn::Token!(,)>()?;
-                ret_type = match input.parse::<syn::Path>() {
-                    Ok(p) => Some(p),
+                sql_name = match input.parse::<syn::LitStr>() {
+                    Ok(s) => Some(s.value()),
                     Err(_) => None,
                 };
                 input.parse::<syn::Token!(|)>()?;
             },
         }
 
-        // parse closure returning sql dialect
-        let dialect: syn::Ident = match input.parse::<syn::Token!(->)>() {
-            Ok(_) => input.parse()?,
-            Err(_) => {
-                match get_dysql_config().dialect {
-                    dysql::SqlDialect::postgres => syn::Ident::new(&dysql::SqlDialect::postgres.to_string(), input.span()),
-                    dysql::SqlDialect::mysql => syn::Ident::new(&dysql::SqlDialect::mysql.to_string(), input.span()),
-                    dysql::SqlDialect::sqlite => syn::Ident::new(&dysql::SqlDialect::sqlite.to_string(), input.span()),
+        // parses token(->) first ,and then parses the tuple of return type and dialect
+        let dialect: syn::Ident;
+        let ret_type:Option<syn::Path>;
+        match input.parse::<syn::Token!(->)>() {
+            Ok(_) => {
+                // try to parse return type path: ret_type, or ( ... )
+                match input.parse::<syn::Path>() {
+                    Ok(p) => {
+                        ret_type = Some(p);
+                        dialect = get_default_dialect(&input.span());
+                    },
+                    Err(_) => match parse_return_tuple(input) {
+                        // try to parse return tuple : ( ret_type, dialect ) or ( ret_type, _ )
+                        Ok(tp) => {
+                            match tp.parse::<syn::Path>() {
+                                Ok(p) => {
+                                    ret_type = Some(p);
+                                    tp.parse::<syn::Token!(,)>()?;
+                                    if let Err(_) = tp.parse::<syn::Token!(_)>() {
+                                        match tp.parse::<syn::Ident>() {
+                                            Ok(i) => dialect = i,
+                                            Err(_) => return Err(syn::Error::new(proc_macro2::Span::call_site(), "Need specify the dialect")),
+                                        }
+                                    } else {
+                                        dialect = get_default_dialect(&input.span());
+                                    }
+                                },
+                                // try to parse ( _, dialect )
+                                Err(_) => match tp.parse::<syn::Token!(_)>() {
+                                    Ok(_) => {
+                                        ret_type = None;
+                                        tp.parse::<syn::Token!(,)>()?;
+                                        if let Err(_) = tp.parse::<syn::Token!(_)>() {
+                                            match tp.parse::<syn::Ident>() {
+                                                Ok(i) => dialect = i,
+                                                Err(_) => return Err(syn::Error::new(proc_macro2::Span::call_site(), "Need specify the dialect")),
+                                            }
+                                        } else {
+                                            dialect = get_default_dialect(&input.span());
+                                        }
+                                    },
+                                    Err(_) => return Err(syn::Error::new(proc_macro2::Span::call_site(), "Need specify the return type")),
+                                },
+                            }
+                        },
+                        Err(_) => return Err(syn::Error::new(proc_macro2::Span::call_site(), "Need specify the return type and dialect")),
+                    },
                 }
+            },
+            Err(_) => {
+                ret_type = None;
+                dialect = get_default_dialect(&input.span());
             },
         };
 
@@ -175,10 +190,25 @@ impl syn::parse::Parse for SqlClosure {
         let body = body.value();
         let body:Vec<_> = body.split("\n").map(|f| f.trim()).collect();
         let body = body.join(" ");
-        let sc = SqlClosure { dto, cot, is_cot_ref, is_cot_ref_mut, ret_type, dialect, body };
+        let sc = SqlClosure { dto, cot, is_cot_ref, is_cot_ref_mut, sql_name, ret_type, dialect, body };
         // eprintln!("{:#?}", sc);
 
         Ok(sc)
+    }
+}
+
+fn parse_return_tuple(input: syn::parse::ParseStream) -> syn::Result<syn::parse::ParseBuffer> {
+    let tuple_buf;
+    syn::parenthesized!(tuple_buf in input);
+
+    Ok(tuple_buf)
+}
+
+fn get_default_dialect(span: &proc_macro2::Span) -> syn::Ident {
+    match get_dysql_config().dialect {
+        dysql::SqlDialect::postgres => syn::Ident::new(&dysql::SqlDialect::postgres.to_string(), span.clone()),
+        dysql::SqlDialect::mysql => syn::Ident::new(&dysql::SqlDialect::mysql.to_string(), span.clone()),
+        dysql::SqlDialect::sqlite => syn::Ident::new(&dysql::SqlDialect::sqlite.to_string(), span.clone()),
     }
 }
 
@@ -212,7 +242,7 @@ impl syn::parse::Parse for SqlClosure {
 #[proc_macro]
 pub fn fetch_all(input: TokenStream) -> TokenStream {
     let st = syn::parse_macro_input!(input as SqlClosure);
-    if st.ret_type.is_none() { panic!("Call macro fetch_all!(|..., ..., return_type|) error, return_type can't be null.") }
+    if st.ret_type.is_none() { panic!("ret_type can't be null.") }
 
     match expand(&st, QueryType::FetchAll) {
         Ok(ret) => ret.into(),
@@ -242,7 +272,7 @@ pub fn fetch_all(input: TokenStream) -> TokenStream {
 #[proc_macro]
 pub fn fetch_one(input: TokenStream) -> TokenStream {
     let st = syn::parse_macro_input!(input as SqlClosure);
-    if st.ret_type.is_none() { panic!("Call macro fetch_all!(|..., ..., return_type|) error, return_type can't be null.") }
+    if st.ret_type.is_none() { panic!("ret_type can't be null.") }
 
     match expand(&st, QueryType::FetchOne) {
         Ok(ret) => ret.into(),
@@ -268,7 +298,7 @@ pub fn fetch_one(input: TokenStream) -> TokenStream {
 #[proc_macro]
 pub fn fetch_scalar(input: TokenStream) -> TokenStream {
     let st = syn::parse_macro_input!(input as SqlClosure);
-    if st.ret_type.is_none() { panic!("Call macro fetch_all!(|..., ..., return_type|) error, return_type can't be null.") }
+    if st.ret_type.is_none() { panic!("ret_type can't be null.") }
 
     match expand(&st, QueryType::FetchScalar) {
         Ok(ret) => ret.into(),

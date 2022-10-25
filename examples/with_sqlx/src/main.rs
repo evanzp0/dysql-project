@@ -14,7 +14,7 @@ async fn main() -> dysql::DySqlResult<()> {
     
     // fetch all
     let dto = UserDto{ id: None, name: None, age: Some(15) };
-    let rst = fetch_all!(|dto, conn, User| {
+    let rst = fetch_all!(|dto, conn| -> User {
         r#"SELECT * FROM test_user 
         WHERE 1 = 1
           {{#name}}AND name = :name{{/name}}
@@ -31,7 +31,7 @@ async fn main() -> dysql::DySqlResult<()> {
 
     // fetch one
     let dto = UserDto{ id: Some(2), name: None, age: None };
-    let rst = fetch_one!(|dto, conn, User| {
+    let rst = fetch_one!(|dto, conn| -> User {
         r#"select * from test_user 
         where 1 = 1
             and id = :id
@@ -40,7 +40,7 @@ async fn main() -> dysql::DySqlResult<()> {
     assert_eq!(User { id: 2, name: Some("zhanglan".to_owned()), age: Some(21) }, rst);
 
     // fetch scalar value
-    let rst = fetch_scalar!(|_, conn, i64| {
+    let rst = fetch_scalar!(|_, conn| -> i64 {
         r#"select count (*) from test_user"#
     });
     assert_eq!(3, rst);
@@ -59,7 +59,7 @@ async fn main() -> dysql::DySqlResult<()> {
     let mut tran = conn.begin().await?;
     let dto = UserDto{ id: Some(4), name: Some("lisi".to_owned()), age: Some(50) };
 
-    let insert_id = fetch_scalar!(|dto, &mut tran, i64| {
+    let insert_id = insert!(|dto, &mut tran| {
         r#"insert into test_user (id, name, age) values (:id, :name, :age) returning id"#
     });
     assert_eq!(4, insert_id);
@@ -71,7 +71,7 @@ async fn main() -> dysql::DySqlResult<()> {
     let mut tran = conn.begin().await?;
 
     let dto = UserDto{ id: Some(4), name: Some("lisi".to_owned()), age: Some(50) };
-    let insert_id = insert!(|dto, &mut tran| -> mysql {
+    let insert_id = insert!(|dto, &mut tran| -> (_, mysql) {
         r#"insert into test_user (name, age) values ('aa', 1)"#
     });
     assert!(insert_id > 3);
@@ -82,7 +82,7 @@ async fn main() -> dysql::DySqlResult<()> {
     let mut tran = conn.begin().await?;
 
     let dto = UserDto{ id: Some(4), name: Some("lisi".to_owned()), age: Some(50) };
-    let insert_id = insert!(|dto, &mut tran| -> sqlite {
+    let insert_id = insert!(|dto, &mut tran| -> (_, sqlite) {
         r#"insert into test_user (name, age) values ('aa', 1)"#
     });
     assert!(insert_id > 3);

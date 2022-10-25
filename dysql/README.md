@@ -1,16 +1,15 @@
 # About Dysql
 
-**Dysql** is a rust crate that do dynamic-sql query through proc-macro, it bases on [**tokio-postgres**](https://github.com/sfackler/rust-postgres) and [**sqlx**](https://github.com/launchbadge/sqlx) crate (default feature), you can switch them by setting the features. 
+**Dysql** is a rust crate that do dynamic-sql query through proc-macro, it bases on [**tokio-postgres**] and [**sqlx**](https://github.com/launchbadge/sqlx) crate (default feature), you can switch them by setting the features. 
 It uses [**Ramhorns**](https://github.com/maciejhirsz/ramhorns) the high performance template engine implementation of [**Mustache**](https://mustache.github.io/) 
 
 It invokes like blow:
 ```
-<dysql_macro>!(| <dto>, <conn_or_tran> [, return_type] | [-> dialect] { ...sql string... });
+dysql_macro!(| dto, conn_or_tran | [-> return_type | -> (return_type ,dialect)] { ...sql string... });
 ```
 > Note: **Dialect can be blank**, and the default value is **postgres**, and dialect also supports  **mysql**, **sqlite**.
 
-## Example (Sqlx)
-
+## Example (sqlx)
 Full example please see: [Dysql sqlx example](https://github.com/evanzp0/dysql-project/tree/main/examples/with_sqlx)
 
 ### Cargo.toml:
@@ -34,7 +33,7 @@ async fn main() -> dysql::DySqlResult<()> {
     
     // fetch all
     let dto = UserDto{ id: None, name: None, age: Some(15) };
-    let rst = fetch_all!(|dto, conn, User| {
+    let rst = fetch_all!(|dto, conn| -> User {
         r#"SELECT * FROM test_user 
         WHERE 1 = 1
           {{#name}}AND name = :name{{/name}}
@@ -51,7 +50,7 @@ async fn main() -> dysql::DySqlResult<()> {
 
     // fetch one
     let dto = UserDto{ id: Some(2), name: None, age: None };
-    let rst = fetch_one!(|dto, conn, User| {
+    let rst = fetch_one!(|dto, conn| -> User {
         r#"select * from test_user 
         where 1 = 1
             and id = :id
@@ -60,7 +59,7 @@ async fn main() -> dysql::DySqlResult<()> {
     assert_eq!(User { id: 2, name: Some("zhanglan".to_owned()), age: Some(21) }, rst);
 
     // fetch scalar value
-    let rst = fetch_scalar!(|_, conn, i64| {
+    let rst = fetch_scalar!(|_, conn| -> i64 {
         r#"select count (*) from test_user"#
     });
     assert_eq!(3, rst);
@@ -72,25 +71,17 @@ async fn main() -> dysql::DySqlResult<()> {
     ...
 
     // insert with transaction and get id back (postgres)
-    let insert_id = fetch_scalar!(|dto, &mut tran, i64| {
+    let insert_id = insert!(|dto, &mut tran| {
         r#"insert into test_user (id, name, age) values (:id, :name, :age) returning id"#
     });
     ...
 
-    // insert with transaction and get id back (mysql)
+    // insert with transaction and get id back (mysql / sqlite)
     let dto = UserDto{ id: Some(4), name: Some("lisi".to_owned()), age: Some(50) };
     let insert_id = insert!(|dto, &mut tran| -> mysql {
         r#"insert into test_user (name, age) values ('aa', 1)"#
     });
     ...
-
-    // insert with transaction and get id back (sqlite)
-    let dto = UserDto{ id: Some(4), name: Some("lisi".to_owned()), age: Some(50) };
-    let insert_id = insert!(|dto, &mut tran| -> sqlite {
-        r#"insert into test_user (name, age) values ('aa', 1)"#
-    });
-    ...
-
 }
 ```
 

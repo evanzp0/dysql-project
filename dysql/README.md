@@ -1,7 +1,9 @@
 # About Dysql
 
-**Dysql** is a rust crate that do dynamic-sql query through proc-macro, it bases on [**tokio-postgres**] and [**sqlx**](https://github.com/launchbadge/sqlx) crate (default feature), you can switch them by setting the features. 
-It uses [**Ramhorns**](https://github.com/maciejhirsz/ramhorns) the high performance template engine implementation of [**Mustache**](https://mustache.github.io/) 
+**Dysql** is a highly Performant Rust SQL Toolkit and ORM Library. An async, pure Rust SQL crate featuring compile-time Dynamic SQL.
+
+It bases on [**tokio-postgres**] and [**sqlx**](https://github.com/launchbadge/sqlx) crate (default feature), you can switch them by setting the features. 
+It uses [**Ramhorns**](https://github.com/maciejhirsz/ramhorns) the high performance template engine implementation of [**Mustache**](https://mustache.github.io/) template language (a very very very simply template language) :-).
 
 It invokes like blow:
 ```
@@ -15,8 +17,8 @@ Full example please see: [Dysql sqlx example](https://github.com/evanzp0/dysql-p
 ### Cargo.toml:
 ```toml
 [dependencies]
-dysql = "0.3"
-dysql-macro = {version = "0.3", features = ["sqlx"]}
+dysql = "0.4"
+dysql-macro = {version = "0.4", features = ["sqlx"]}
 sqlx = { version = "0.6", features = [ "runtime-tokio-native-tls" , "postgres" ] }
 tokio = { version = "1.0", features = ["full"] }
 ramhorns = "0.14"

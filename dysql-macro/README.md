@@ -1,11 +1,13 @@
 # About Dysql
 
-**Dysql** is a rust crate that do dynamic-sql query through proc-macro, it bases on [**tokio-postgres**] and [**sqlx**](https://github.com/launchbadge/sqlx) crate (default feature), you can switch them by setting the features. 
-It uses [**Ramhorns**](https://github.com/maciejhirsz/ramhorns) the high performance template engine implementation of [**Mustache**](https://mustache.github.io/) 
+**Dysql** is a highly Performant Rust SQL Toolkit and ORM Library. An async, pure Rust SQL crate featuring compile-time Dynamic SQL.
+
+It bases on [**tokio-postgres**](https://github.com/sfackler/rust-postgres) and [**sqlx**](https://github.com/launchbadge/sqlx) crate (default feature), you can switch them by setting the features. 
+It uses [**Ramhorns**](https://github.com/maciejhirsz/ramhorns) the high performance template engine implementation of [**Mustache**](https://mustache.github.io/) template language (a very very very simply template language) :-).
 
 It invokes like blow:
-```
-dysql_macro!(| dto, conn_or_tran | [-> return_type | -> (return_type ,dialect)] { ...sql string... });
+```(
+dysql_macro!(| dto, conn_or_tran | [-> return_ty)pe | -> (return_type ,dialect)] { ...sql string... });
 ```
 > Note: **Dialect can be blank**, and the default value is **postgres**, and dialect also supports  **mysql**, **sqlite**.
 

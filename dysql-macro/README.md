@@ -7,7 +7,7 @@ It uses [**Ramhorns**](https://github.com/maciejhirsz/ramhorns) the high perform
 
 It invokes like blow:
 ```(
-dysql_macro!(| dto, conn_or_tran | [-> return_ty)pe | -> (return_type ,dialect)] { ...sql string... });
+dysql_macro!(| dto, conn_or_tran | [-> return_type | -> (return_type ,dialect)] { ...sql string... });
 ```
 > Note: **Dialect can be blank**, and the default value is **postgres**, and dialect also supports  **mysql**, **sqlite**.
 
@@ -80,7 +80,7 @@ async fn main() -> dysql::DySqlResult<()> {
 
     // insert with transaction and get id back (mysql / sqlite)
     let dto = UserDto{ id: Some(4), name: Some("lisi".to_owned()), age: Some(50) };
-    let insert_id = insert!(|dto, &mut tran| -> mysql {
+    let insert_id = insert!(|dto, &mut tran| -> (_, mysql) { // you can use 'sqlite' replace the 'mysql' dialect
         r#"insert into test_user (name, age) values ('aa', 1)"#
     });
     ...

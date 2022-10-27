@@ -59,7 +59,7 @@ pub use extract_sql::*;
 
 use crypto::{md5::Md5, digest::Digest};
 use once_cell::sync::OnceCell;
-use ramhorns::Template;
+use ramhorns::{Template, Content};
 
 pub static DEFAULT_ERROR_MSG: &str = "Error occurs when extracting sql parameters.";
 pub static SQL_TEMPLATE_CACHE: OnceCell<RwLock<HashMap<String, Template>>> = OnceCell::new();
@@ -196,6 +196,20 @@ impl Display for DySqlError {
 impl Error for DySqlError {
     fn cause(&self) -> Option<&dyn Error> {
        None
+    }
+}
+
+#[allow(unused)]
+#[derive(Content)]
+pub struct Value<T> {
+    pub value: T
+}
+
+impl<T> Value<T> {
+    pub fn new(value: T) -> Self {
+        Self {
+            value
+        }
     }
 }
 

@@ -66,8 +66,10 @@ pub (crate) fn expand_fetch_all(st: &SqlClosure, param_strings: &Vec<String>, pa
 
     let cot_ref = if st.is_cot_ref_mut {
         quote!(&mut )
-    } else {
+    } else if st.is_cot_ref {
         quote!(&)
+    } else {
+        quote!()
     };
 
     let ret = match dto {
@@ -101,8 +103,10 @@ fn expand_fetch_one(st: &SqlClosure, param_strings: &Vec<String>, param_idents: 
 
     let cot_ref = if st.is_cot_ref_mut {
         quote!(&mut )
-    } else {
+    } else if st.is_cot_ref {
         quote!(&)
+    } else {
+        quote!()
     };
 
     let ret = match dto {
@@ -136,8 +140,10 @@ fn expand_fetch_scalar(st: &SqlClosure, param_strings: &Vec<String>, param_ident
 
     let cot_ref = if st.is_cot_ref_mut {
         quote!(&mut )
-    } else {
+    } else if st.is_cot_ref {
         quote!(&)
+    } else {
+        quote!()
     };
 
     let ret = match dto {
@@ -170,8 +176,10 @@ fn expand_execute(st: &SqlClosure, param_strings: &Vec<String>, param_idents: &V
 
     let cot_ref = if st.is_cot_ref_mut {
         quote!(&mut )
-    } else {
+    } else if st.is_cot_ref {
         quote!(&)
+    } else {
+        quote!()
     };
 
     let ret = match dto {
@@ -207,8 +215,10 @@ fn expand_insert(st: &SqlClosure, param_strings: &Vec<String>, param_idents: &Ve
     
     let cot_ref = if st.is_cot_ref_mut {
         quote!(&mut )
-    } else {
+    } else if st.is_cot_ref {
         quote!(&)
+    } else {
+        quote!()
     };
 
     // gen return type fro postgres

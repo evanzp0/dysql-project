@@ -42,7 +42,12 @@ pub fn extract_params(o_sql: &str, sql_dial: SqlDialect) -> DySqlResult<(String,
             cur = current_cursor;
             count += 1;
             match sql_dial {
-                SqlDialect::postgres => r_sql.push_str(&format!("{}${}", &o_sql[start..cur], count)),
+                // SqlDialect::postgres => r_sql.push_str(&format!("{}${}", &o_sql[start..cur], count)),
+                SqlDialect::postgres => {
+                    r_sql.push_str(&o_sql[start..cur]);
+                    r_sql.push('$');
+                    r_sql.push_str(&count.to_string());
+                },
                 _ => r_sql.push_str(&format!("{}?", &o_sql[start..cur])),
             }
             

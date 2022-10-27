@@ -1,5 +1,6 @@
 #![cfg(not(feature = "sqlx"))]
 
+use dysql::Value;
 use tokio_pg_mapper::FromTokioPostgresRow;
 use tokio_pg_mapper_derive::PostgresMapper;
 use tokio_postgres::{NoTls, connect};
@@ -45,7 +46,7 @@ async fn test_fetch_all() -> dysql::DySqlResult<()>{
     let conn = connect_db().await;
     let dto = UserDto::new(None, None,Some(13));
 
-    let rst: Vec<User> = fetch_all!(|dto, conn| -> User {
+    let rst: Vec<User> = fetch_all!(|dto, &conn| -> User {
         r#"select * from test_user 
         where 1 = 1
             {{#name}}and name = :name{{/name}}
@@ -67,12 +68,13 @@ async fn test_fetch_all() -> dysql::DySqlResult<()>{
 #[tokio::test]
 async fn test_fetch_one() -> dysql::DySqlResult<()>{
     let conn = connect_db().await;
-    let dto = UserDto::new(Some(2), None, None);
+    // let dto = UserDto::new(Some(2), None, None);
+    let dto = Value::new(2_i64);
 
-    let rst = fetch_one!(|dto, conn, "get_user_by_id"| -> User {
+    let rst = fetch_one!(|dto, &conn, "get_user_by_id"| -> User {
         r#"select * from test_user 
         where 1 = 1
-            and id = :id
+            and id = :value
         order by id"#
     });
 
@@ -86,7 +88,7 @@ async fn test_fetch_one() -> dysql::DySqlResult<()>{
 async fn test_fetch_scalar() -> dysql::DySqlResult<()>{
     let conn = connect_db().await;
 
-    let rst = fetch_scalar!(|_, conn| -> (i64, postgres) {
+    let rst = fetch_scalar!(|_, &conn| -> (i64, postgres) {
         r#"select count (*) from test_user"#
     });
     assert_eq!(3, rst);
@@ -100,7 +102,7 @@ async fn test_execute() -> dysql::DySqlResult<()>{
     let tran = conn.transaction().await?;
 
     let dto = UserDto::new(Some(2), None, None);
-    let rst = execute!(|dto, tran| {
+    let rst = execute!(|dto, &tran| {
         r#"delete from test_user where id = :id"#
     });
     assert_eq!(1, rst);

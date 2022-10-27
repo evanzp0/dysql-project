@@ -71,7 +71,7 @@ async fn test_fetch_all() -> dysql::DySqlResult<()>{
     let conn = connect_postgres_db().await;
 
     let dto = UserDto{ id: None, name: None, age: Some(15) };
-    let rst = fetch_all!(|dto, conn| -> User {
+    let rst = fetch_all!(|dto, &conn| -> User {
         r#"SELECT * FROM test_user 
         WHERE 1 = 1
           {{#name}}AND name = :name{{/name}}
@@ -94,7 +94,7 @@ async fn test_fetch_one() -> dysql::DySqlResult<()>{
     let conn = connect_postgres_db().await;
 
     let dto = UserDto{ id: Some(2), name: None, age: None };
-    let rst = fetch_one!(|dto, conn| -> User {
+    let rst = fetch_one!(|dto, &conn| -> User {
         r#"select * from test_user 
         where 1 = 1
             and id = :id
@@ -109,7 +109,7 @@ async fn test_fetch_one() -> dysql::DySqlResult<()>{
 async fn test_fetch_scalar() -> dysql::DySqlResult<()>{
     let conn = connect_postgres_db().await;
 
-    let rst = fetch_scalar!(|_, conn| -> i64 {
+    let rst = fetch_scalar!(|_, &conn| -> i64 {
         r#"select count (*) from test_user"#
     });
 

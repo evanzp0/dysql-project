@@ -3,12 +3,6 @@
 //! It bases on [**tokio-postgres**] and [**sqlx**] crate (default feature), you can switch them by setting the features. 
 //! It uses [**Ramhorns**] the high performance template engine implementation of [**Mustache**]
 //! 
-//! It invokes like blow:
-//! ```ignore
-//!   dysql_macro!(| dto, conn_or_tran [, return_type] | [-> dialect] { ...sql string... });
-//! ```
-//! > Note: **Dialect can be blank**, and the default value is **postgres**, and dialect also supports  **mysql**, **sqlite**.
-//! 
 //! ## Example (Sqlx)
 //! 
 //! ### main.rs
@@ -21,7 +15,7 @@
 //!     
 //!     // fetch all
 //!     let dto = UserDto{ id: None, name: None, age: Some(15) };
-//!     let rst = fetch_all!(|dto, conn| -> User {
+//!     let rst = fetch_all!(|dto, &conn| -> User {
 //!         r#"SELECT * FROM test_user 
 //!         WHERE 1 = 1
 //!           {{#name}}AND name = :name{{/name}}

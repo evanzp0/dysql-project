@@ -35,7 +35,7 @@ async fn main() -> dysql::DySqlResult<()> {
     
     // fetch all
     let dto = UserDto{ id: None, name: None, age: Some(15) };
-    let rst = fetch_all!(|dto, &conn| -> User {
+    let rst = fetch_all!(|&dto, &conn| -> User {
         r#"SELECT * FROM test_user 
         WHERE 1 = 1
           {{#name}}AND name = :name{{/name}}
@@ -53,7 +53,7 @@ async fn main() -> dysql::DySqlResult<()> {
     // fetch one
     // let dto = UserDto{ id: Some(2), name: None, age: None };
     let dto = dysql::Value::new(2_i64); // use value wrapper object
-    let rst = fetch_one!(|dto, &conn| -> User {
+    let rst = fetch_one!(|&dto, &conn| -> User {
         r#"select * from test_user 
         where 1 = 1
             and id = :value
@@ -68,13 +68,13 @@ async fn main() -> dysql::DySqlResult<()> {
     assert_eq!(3, rst);
 
     // execute with transaction
-    let affected_rows_num = execute!(|dto, &mut tran| {
+    let affected_rows_num = execute!(|&dto, &mut tran| {
         r#"delete from test_user where id = :id"#
     });
     ...
 
     // insert with transaction and get id back (postgres)
-    let insert_id = insert!(|dto, &mut tran| {
+    let insert_id = insert!(|&dto, &mut tran| {
         r#"insert into test_user (id, name, age) values (:id, :name, :age) returning id"#
     });
     ...

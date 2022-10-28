@@ -46,7 +46,7 @@ async fn test_fetch_all() -> dysql::DySqlResult<()>{
     let conn = connect_db().await;
     let dto = UserDto::new(None, None,Some(13));
 
-    let rst: Vec<User> = fetch_all!(|dto, &conn| -> User {
+    let rst: Vec<User> = fetch_all!(|&dto, &conn| -> User {
         r#"select * from test_user 
         where 1 = 1
             {{#name}}and name = :name{{/name}}
@@ -70,8 +70,9 @@ async fn test_fetch_one() -> dysql::DySqlResult<()>{
     let conn = connect_db().await;
     // let dto = UserDto::new(Some(2), None, None);
     let dto = Value::new(2_i64);
+    // let a = &dto;
 
-    let rst = fetch_one!(|dto, &conn, "get_user_by_id"| -> User {
+    let rst = fetch_one!(|&dto, &conn, "get_user_by_id"| -> User {
         r#"select * from test_user 
         where 1 = 1
             and id = :value
@@ -102,7 +103,7 @@ async fn test_execute() -> dysql::DySqlResult<()>{
     let tran = conn.transaction().await?;
 
     let dto = UserDto::new(Some(2), None, None);
-    let rst = execute!(|dto, &tran| {
+    let rst = execute!(|&dto, &tran| {
         r#"delete from test_user where id = :id"#
     });
     assert_eq!(1, rst);
@@ -118,7 +119,7 @@ async fn test_insert() -> dysql::DySqlResult<()>{
     let tran = conn.transaction().await?;
 
     let dto = UserDto{ id: Some(4), name: Some("lisi".to_owned()), age: Some(50) };
-    let insert_id = insert!(|dto, &mut tran| -> (_, _) {
+    let insert_id = insert!(|&dto, &mut tran| -> (_, _) {
         r#"insert into test_user (id, name, age) values (:id, :name, :age) returning id"#
     });
     

@@ -15,7 +15,7 @@
 //!     
 //!     // fetch all
 //!     let dto = UserDto{ id: None, name: None, age: Some(15) };
-//!     let rst = fetch_all!(|dto, &conn| -> User {
+//!     let rst = fetch_all!(|&dto, &conn| -> User {
 //!         r#"SELECT * FROM test_user 
 //!         WHERE 1 = 1
 //!           {{#name}}AND name = :name{{/name}}

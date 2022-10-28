@@ -6,11 +6,14 @@ use crate::{SqlClosure, gen_path};
 
 pub (crate) fn expand(st: &SqlClosure, query_type: QueryType) -> syn::Result<proc_macro2::TokenStream> {
     let dto = &st.dto;
+    let is_dto_ref = &st.is_dto_ref;
     let body = &st.body;
     let cot = &st.cot;
     let dialect = &st.dialect.to_string();
     let template_id = dysql::md5(body);
     
+    let dto_ref = if *is_dto_ref { quote!(&) }  else { quote!() }; 
+
     // check the template syntax is ok
     ramhorns::Template::new(body.clone()).unwrap(); 
 
@@ -32,7 +35,7 @@ pub (crate) fn expand(st: &SqlClosure, query_type: QueryType) -> syn::Result<pro
                 None => dysql::put_sql_template(#template_id, #body).expect("Unexpected error when put_sql_template"),
             };
     
-            let sql_rendered = unsafe{(*sql_tpl).render(&#dto)};
+            let sql_rendered = unsafe{(*sql_tpl).render(#dto_ref #dto)};
             let extract_rst = dysql::extract_params(&sql_rendered, dysql::SqlDialect::from(#dialect.to_owned()))?;
             let (sql, param_names) = extract_rst;
 

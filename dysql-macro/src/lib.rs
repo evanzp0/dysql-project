@@ -15,7 +15,7 @@
 //!     
 //!     // fetch all
 //!     let dto = UserDto{ id: None, name: None, age: Some(15) };
-//!     let rst = fetch_all!(|dto, &conn| -> User {
+//!     let rst = fetch_all!(|&dto, &conn| -> User {
 //!         r#"SELECT * FROM test_user 
 //!         WHERE 1 = 1
 //!           {{#name}}AND name = :name{{/name}}
@@ -63,6 +63,7 @@ use syn::punctuated::Punctuated;
 #[derive(Debug)]
 struct SqlClosure {
     dto: Option<syn::Ident>,
+    is_dto_ref: bool,
     cot: syn::Ident, // database connection or transaction
     is_cot_ref: bool,
     is_cot_ref_mut: bool,
@@ -76,8 +77,13 @@ impl syn::parse::Parse for SqlClosure {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
         // parse closure parameters
 
+        let mut is_dto_ref = false;
         //// parse dto
         input.parse::<syn::Token!(|)>()?;
+        if let Ok(_) = input.parse::<syn::Token!(&)>() {
+            is_dto_ref = true;
+            input.parse::<syn::Token!(mut)>().ok();
+        };
         let dto = match input.parse::<syn::Ident>() {
             Ok(i) => Some(i),
             Err(e) => match input.parse::<syn::Token!(_)>() {
@@ -184,7 +190,7 @@ impl syn::parse::Parse for SqlClosure {
         let body = body.value();
         let body:Vec<_> = body.split("\n").map(|f| f.trim()).collect();
         let body = body.join(" ");
-        let sc = SqlClosure { dto, cot, is_cot_ref, is_cot_ref_mut, sql_name, ret_type, dialect, body };
+        let sc = SqlClosure { dto, is_dto_ref, cot, is_cot_ref, is_cot_ref_mut, sql_name, ret_type, dialect, body };
         // eprintln!("{:#?}", sc);
 
         Ok(sc)

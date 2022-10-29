@@ -42,17 +42,17 @@ async fn connect_db() -> tokio_postgres::Client {
 }
 
 #[tokio::test]
-async fn test_fetch_all() -> dysql::DySqlResult<()>{
+async fn test_fetch_all() {
     let conn = connect_db().await;
     let dto = UserDto::new(None, None,Some(13));
 
-    let rst: Vec<User> = fetch_all!(|&dto, &conn| -> User {
+    let rst = fetch_all!(|&dto, &conn| -> User {
         r#"select * from test_user 
         where 1 = 1
             {{#name}}and name = :name{{/name}}
             {{#age}}and age > :age{{/age}}
         order by id"#
-    });
+    }).unwrap();
 
     assert_eq!(
         vec![
@@ -61,12 +61,10 @@ async fn test_fetch_all() -> dysql::DySqlResult<()>{
         ], 
         rst
     );
-
-    Ok(())
 }
 
 #[tokio::test]
-async fn test_fetch_one() -> dysql::DySqlResult<()>{
+async fn test_fetch_one() {
     let conn = connect_db().await;
     // let dto = UserDto::new(Some(2), None, None);
     let dto = Value::new(2_i64);
@@ -77,11 +75,9 @@ async fn test_fetch_one() -> dysql::DySqlResult<()>{
         where 1 = 1
             and id = :value
         order by id"#
-    });
+    }).unwrap();
 
     assert_eq!(User { id: 2, name: Some("zhanglan".to_owned()), age: Some(21) }, rst);
-
-    Ok(())
 }
 
 
@@ -91,41 +87,37 @@ async fn test_fetch_scalar() -> dysql::DySqlResult<()>{
 
     let rst = fetch_scalar!(|_, &conn| -> (i64, postgres) {
         r#"select count (*) from test_user"#
-    });
+    }).unwrap();
     assert_eq!(3, rst);
 
     Ok(())
 }
 
 #[tokio::test]
-async fn test_execute() -> dysql::DySqlResult<()>{
+async fn test_execute() {
     let mut conn = connect_db().await;
-    let tran = conn.transaction().await?;
+    let tran = conn.transaction().await.unwrap();
 
     let dto = UserDto::new(Some(2), None, None);
     let rst = execute!(|&dto, &tran| {
         r#"delete from test_user where id = :id"#
-    });
+    }).unwrap();
     assert_eq!(1, rst);
 
-    tran.rollback().await?;
-
-    Ok(())
+    tran.rollback().await.unwrap();
 }
 
 #[tokio::test]
-async fn test_insert() -> dysql::DySqlResult<()>{
+async fn test_insert() {
     let mut conn = connect_db().await;
-    let tran = conn.transaction().await?;
+    let tran = conn.transaction().await.unwrap();
 
     let dto = UserDto{ id: Some(4), name: Some("lisi".to_owned()), age: Some(50) };
     let insert_id = insert!(|&dto, &mut tran| -> (_, _) {
         r#"insert into test_user (id, name, age) values (:id, :name, :age) returning id"#
-    });
+    }).unwrap();
     
     assert!(insert_id > 3);
 
-    tran.rollback().await?;
-
-    Ok(())
+    tran.rollback().await.unwrap();
 }

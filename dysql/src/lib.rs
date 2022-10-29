@@ -116,7 +116,7 @@ pub fn put_sql_template(template_id: &str, sql: &'static str) -> DySqlResult<*co
         return Ok(tmpl as *const Template)
     }
 
-    Err(Box::new(DySqlError::new(&format!("Template({}) is not find.", template_id))))
+    Err(Box::new(DySqlError::new(&format!("Template({}) is not find.", template_id), None)))
 }
 
 #[allow(non_camel_case_types)]
@@ -168,15 +168,17 @@ pub enum QueryType {
     Insert,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug)]
 pub struct DySqlError {
-    pub msg: String
+    pub msg: String,
+    pub child_err: Option<Box<dyn Error>>,
 }
 
 impl DySqlError {
-    pub fn new(msg: &str) -> Self {
+    pub fn new(msg: &str, child_err: Option<Box<dyn Error>>) -> Self {
         Self {
             msg: msg.to_owned(),
+            child_err
         }
     }
 }
@@ -189,7 +191,10 @@ impl Display for DySqlError {
 
 impl Error for DySqlError {
     fn cause(&self) -> Option<&dyn Error> {
-       None
+        match &self.child_err {
+            None => None,
+            Some(err) => Some(&**err),
+        }
     }
 }
 

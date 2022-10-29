@@ -8,7 +8,6 @@ pub (crate) fn expand(st: &SqlClosure, query_type: QueryType) -> syn::Result<pro
     let dto = &st.dto;
     let is_dto_ref = &st.is_dto_ref;
     let body = &st.body;
-    let cot = &st.cot;
     let dialect = &st.dialect.to_string();
     let template_id = dysql::md5(body);
     
@@ -27,7 +26,7 @@ pub (crate) fn expand(st: &SqlClosure, query_type: QueryType) -> syn::Result<pro
     let param_idents: Vec<_> = param_strings.iter().map( |p| proc_macro2::Ident::new(p, proc_macro2::Span::call_site()) ).collect();
 
     // gen sql render and bind params statement
-    let expend_sql_bind_params_inner = match dto {
+    let sql_bind_params_ts = match dto {
         Some(dto) => quote!(
             let sql_tpl = ramhorns::Template::new(#body).unwrap();
             let sql_tpl = match dysql::get_sql_template(#template_id) {
@@ -36,8 +35,12 @@ pub (crate) fn expand(st: &SqlClosure, query_type: QueryType) -> syn::Result<pro
             };
     
             let sql_rendered = unsafe{(*sql_tpl).render(#dto_ref #dto)};
-            let extract_rst = dysql::extract_params(&sql_rendered, dysql::SqlDialect::from(#dialect.to_owned()))?;
-            let (sql, param_names) = extract_rst;
+            let extract_rst = dysql::extract_params(&sql_rendered, dysql::SqlDialect::from(#dialect.to_owned()));
+            if let Err(e) = extract_rst {
+                break 'rst_block Err(Box::new(dysql::DySqlError::new(&e.to_string(), Some(e))));
+            }
+
+            let (sql, param_names) = extract_rst.unwrap();
 
             for i in 0..param_names.len() {
                 #(
@@ -51,87 +54,170 @@ pub (crate) fn expand(st: &SqlClosure, query_type: QueryType) -> syn::Result<pro
     };
 
     // gen query statement
-    let expend_query_inner = match query_type {
-        QueryType::FetchAll => expand_fetch_all(st),
-        QueryType::FetchOne => expand_fetch_one(st),
-        QueryType::FetchScalar => expand_fetch_scalar(st),
-        QueryType::Execute => expand_execute(st),
-        QueryType::Insert => expand_fetch_insert(st),
+    let rst = match query_type {
+        QueryType::FetchAll => expand_fetch_all(st, sql_bind_params_ts),
+        QueryType::FetchOne => expand_fetch_one(st, sql_bind_params_ts),
+        QueryType::FetchScalar => expand_fetch_scalar(st, sql_bind_params_ts),
+        QueryType::Execute => expand_execute(st, sql_bind_params_ts),
+        QueryType::Insert => expand_fetch_insert(st, sql_bind_params_ts),
     };
 
-    let ret = quote!(
-        {
-            let mut param_values: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = Vec::new();
+    // let ret = quote!(
+    //     'block {
+    //         let mut param_values: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = Vec::new();
 
-            #expend_sql_bind_params_inner
+    //         #expend_sql_bind_params_inner
 
-            let stmt = #cot.prepare(&sql).await?;
-            let params = param_values.into_iter();
-            let params = params.as_slice();
+    //         let stmt = #cot.prepare(&sql).await?;
+    //         let params = param_values.into_iter();
+    //         let params = params.as_slice();
             
-            #expend_query_inner
-        }
-    );
+    //         #expend_query_inner
+    //     }
+    // );
+
+    let ret = quote!({
+        #rst
+    });
 
     Ok(ret)
 }
 
-fn expand_fetch_all(st: &SqlClosure) -> proc_macro2::TokenStream {
+fn expand_fetch_all(st: &SqlClosure, sql_bind_params_ts: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
     let cot = &st.cot;
     let ret_type = &st.ret_type;
 
-    let ret = quote!(
-        let rows = #cot.query(&stmt, &params).await?;
+    let ret = quote!('rst_block: {
+        let mut param_values: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = Vec::new();
+
+        #sql_bind_params_ts
+
+        let stmt = #cot.prepare(&sql).await;
+        if let Err(e) = stmt {
+            break 'rst_block Err(Box::new(dysql::DySqlError::new(&e.to_string(), Some(Box::new(e)))));
+        }
+        let stmt = stmt.expect("Unexpected error");
+
+        let params = param_values.into_iter();
+        let params = params.as_slice();
+
+        let rows = #cot.query(&stmt, &params).await;
+        if let Err(e) = rows {
+            break 'rst_block Err(Box::new(dysql::DySqlError::new(&e.to_string(), Some(Box::new(e)))));
+        }
+        let rows = rows.expect("Unexpected error");
+
         let rst = rows
             .iter()
             .map(|row| #ret_type::from_row_ref(row).expect("query unexpected error"))
             .collect::<Vec<#ret_type>>();
 
-        rst
-    );
+        Ok(rst)
+    });
 
     ret
 }
 
-fn expand_fetch_one(st: &SqlClosure) -> proc_macro2::TokenStream {
+fn expand_fetch_one(st: &SqlClosure, sql_bind_params_ts: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
     let cot = &st.cot;
     let ret_type = &st.ret_type;
 
-    let ret = quote!(
-        let row = #cot.query_one(&stmt, &params).await?;
-        let rst = #ret_type::from_row(row)?;
-        rst
-    );
+    let ret = quote!('rst_block: {
+        let mut param_values: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = Vec::new();
+
+        #sql_bind_params_ts
+
+        let stmt = #cot.prepare(&sql).await;
+        if let Err(e) = stmt {
+            break 'rst_block Err(Box::new(dysql::DySqlError::new(&e.to_string(), Some(Box::new(e)))));
+        }
+        let stmt = stmt.expect("Unexpected error");
+
+        let params = param_values.into_iter();
+        let params = params.as_slice();
+
+        let row = #cot.query_one(&stmt, &params).await;
+        if let Err(e) = row {
+            break 'rst_block Err(Box::new(dysql::DySqlError::new(&e.to_string(), Some(Box::new(e)))));
+        }
+        let row = row.expect("Unexpected error");
+
+        let rst = #ret_type::from_row(row);
+        if let Err(e) = rst {
+            break 'rst_block Err(Box::new(dysql::DySqlError::new(&e.to_string(), Some(Box::new(e)))));
+        }
+        let rst = rst.expect("Unexpected error");
+
+        Ok(rst)
+    });
 
     ret
 }
 
-fn expand_fetch_scalar(st: &SqlClosure) -> proc_macro2::TokenStream {
+fn expand_fetch_scalar(st: &SqlClosure, sql_bind_params_ts: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
     let cot = &st.cot;
     let ret_type = &st.ret_type;
 
-    let ret = quote!(
-        let row = #cot.query_one(&stmt, &params).await?;
+    let ret = quote!('rst_block: {
+        let mut param_values: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = Vec::new();
+
+        #sql_bind_params_ts
+
+        let stmt = #cot.prepare(&sql).await;
+        if let Err(e) = stmt {
+            break 'rst_block Err(Box::new(dysql::DySqlError::new(&e.to_string(), Some(Box::new(e)))));
+        }
+        let stmt = stmt.expect("Unexpected error");
+
+        let params = param_values.into_iter();
+        let params = params.as_slice();
+
+        let row = #cot.query_one(&stmt, &params).await;
+        if let Err(e) = row {
+            break 'rst_block Err(Box::new(dysql::DySqlError::new(&e.to_string(), Some(Box::new(e)))));
+        }
+        let row = row.expect("Unexpected error");
+
         let rst: #ret_type = row.get(0);
 
-        rst
-    );
+        Ok(rst)
+    });
 
     ret
 }
 
-fn expand_execute(st: &SqlClosure) -> proc_macro2::TokenStream {
+fn expand_execute(st: &SqlClosure, sql_bind_params_ts: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
     let cot = &st.cot;
 
-    let ret = quote!(
-        let affect_count = #cot.execute(&stmt, &params).await?;
-        affect_count
-    );
+    let ret = quote!('rst_block: {
+        let mut param_values: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = Vec::new();
+
+        #sql_bind_params_ts
+
+        let stmt = #cot.prepare(&sql).await;
+        if let Err(e) = stmt {
+            break 'rst_block Err(Box::new(dysql::DySqlError::new(&e.to_string(), Some(Box::new(e)))));
+        }
+        let stmt = stmt.expect("Unexpected error");
+
+        let params = param_values.into_iter();
+        let params = params.as_slice();
+
+        let affect_count = #cot.execute(&stmt, &params).await;
+        if let Err(e) = affect_count {
+            break 'rst_block Err(Box::new(dysql::DySqlError::new(&e.to_string(), Some(Box::new(e)))));
+        }
+        let affectrst_count = affect_count.expect("Unexpected error");
+
+        let rst = affectrst_count;
+
+        Ok(rst)
+    });
 
     ret
 }
 
-fn expand_fetch_insert(st: &SqlClosure) -> proc_macro2::TokenStream {
+fn expand_fetch_insert(st: &SqlClosure, sql_bind_params_ts: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
     let cot = &st.cot;
     let i64_path = Some(gen_path("i64"));
     let ret_type = match &st.ret_type {
@@ -139,12 +225,29 @@ fn expand_fetch_insert(st: &SqlClosure) -> proc_macro2::TokenStream {
         None => &i64_path,
     };
 
-    let ret = quote!(
-        let row = #cot.query_one(&stmt, &params).await?;
+    let ret = quote!('rst_block: {
+        let mut param_values: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = Vec::new();
+
+        #sql_bind_params_ts
+
+        let stmt = #cot.prepare(&sql).await;
+        if let Err(e) = stmt {
+            break 'rst_block Err(Box::new(dysql::DySqlError::new(&e.to_string(), Some(Box::new(e)))));
+        }
+        let stmt = stmt.expect("Unexpected error");
+
+        let params = param_values.into_iter();
+        let params = params.as_slice();
+
+        let row = #cot.query_one(&stmt, &params).await;
+        if let Err(e) = row {
+            break 'rst_block Err(Box::new(dysql::DySqlError::new(&e.to_string(), Some(Box::new(e)))));
+        }
+        let row = row.expect("Unexpected error");
         let rst: #ret_type = row.get(0);
 
-        rst
-    );
+        Ok(rst)
+    });
 
     ret
 }

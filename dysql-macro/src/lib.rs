@@ -197,6 +197,19 @@ impl syn::parse::Parse for SqlClosure {
     }
 }
 
+pub(crate) fn gen_path(s: &str) -> syn::Path {
+    let seg = syn::PathSegment {
+        ident: syn::Ident::new(s, proc_macro2::Span::call_site()),
+        arguments: syn::PathArguments::None,
+    };
+    let mut punct: Punctuated<syn::PathSegment, syn::Token![::]> = Punctuated::new();
+    punct.push_value(seg);
+    let path = syn::Path{ leading_colon: None, segments: punct };
+
+    path
+}
+
+
 fn parse_return_tuple(input: syn::parse::ParseStream) -> syn::Result<syn::parse::ParseBuffer> {
     let tuple_buf;
     syn::parenthesized!(tuple_buf in input);
@@ -223,13 +236,13 @@ fn get_default_dialect(span: &proc_macro2::Span) -> syn::Ident {
 /// let mut conn = connect_db().await;
 /// 
 /// let dto = UserDto {id: None, name: None, age: 13};
-/// let rst = fetch_all!(|dto, conn, User| {
+/// let rst = fetch_all!(|&dto, &conn| -> User {
 ///     r#"select * from test_user 
 ///     where 1 = 1
 ///         {{#name}}and name = :name{{/name}}
 ///         {{#age}}and age > :age{{/age}}
 ///     order by id"#
-/// });
+/// }).unwrap();
 /// 
 /// assert_eq!(
 ///     vec![
@@ -261,11 +274,11 @@ pub fn fetch_all(input: TokenStream) -> TokenStream {
 /// let mut conn = connect_db().await;
 /// 
 /// let dto = UserDto {id: 2, name: None, age: None};
-/// let rst = fetch_one!(|dto, conn, User| {
+/// let rst = fetch_one!(|&dto, &conn| -> User {
 ///     r#"select * from test_user 
 ///     where id = :id
 ///     order by id"#
-/// });
+/// }).unwrap();
 /// 
 /// assert_eq!(User { id: 2, name: Some("zhanglan".to_owned()), age: Some(21) }, rst);
 /// ```
@@ -290,9 +303,9 @@ pub fn fetch_one(input: TokenStream) -> TokenStream {
 /// ```ignore
 /// let mut conn = connect_db().await;
 /// 
-/// let rst = fetch_scalar!(|_, conn, i64| {
+/// let rst = fetch_scalar!(|_, &conn| -> i64 {
 ///     r#"select count (*) from test_user"#
-/// });
+/// }).unwrap();
 /// assert_eq!(3, rst);
 /// ```
 #[proc_macro]
@@ -314,12 +327,12 @@ pub fn fetch_scalar(input: TokenStream) -> TokenStream {
 /// Basic usage:
 /// 
 /// ```ignore
-/// let mut tran = get_transaction().await?;
+/// let mut tran = get_transaction().await.unwrap();
 /// 
 /// let dto = UserDto::new(Some(2), None, None);
-/// let rst = execute!(|dto, tran| {
+/// let rst = execute!(|&dto, &mut tran| {
 ///     r#"delete from test_user where id = :id"#
-/// });
+/// }).unwrap();
 /// assert_eq!(1, rst);
 /// 
 /// tran.rollback().await?;
@@ -343,13 +356,13 @@ pub fn execute(input: TokenStream) -> TokenStream {
 /// Basic usage:
 /// 
 /// ```ignore
-/// let mut tran = get_transaction().await?;
-/// 
+/// let mut tran = get_transaction().await.unwrap();
+
 /// let dto = UserDto{ id: Some(4), name: Some("lisi".to_owned()), age: Some(50) };
-/// let last_insert_id = insert!(|dto, tran| -> mysql {
+/// let last_insert_id = insert!(|&dto, &mut tran| -> (_, mysql) {
 ///     r#"insert into test_user (id, name, age) values (4, 'aa', 1)"#  // works for mysql and sqlite
 ///     // r#"insert into test_user (id, name, age) values (4, 'aa', 1) returning id"#  // works for postgres
-/// });
+/// }).unwrap();
 /// assert_eq!(4, last_insert_id);
 /// 
 /// tran.rollback().await?;
@@ -362,16 +375,4 @@ pub fn insert(input: TokenStream) -> TokenStream {
         Ok(ret) => ret.into(),
         Err(e) => e.into_compile_error().into(),
     }
-}
-
-pub(crate) fn gen_path(s: &str) -> syn::Path {
-    let seg = syn::PathSegment {
-        ident: syn::Ident::new(s, proc_macro2::Span::call_site()),
-        arguments: syn::PathArguments::None,
-    };
-    let mut punct: Punctuated<syn::PathSegment, syn::Token![::]> = Punctuated::new();
-    punct.push_value(seg);
-    let path = syn::Path{ leading_colon: None, segments: punct };
-
-    path
 }

@@ -208,18 +208,7 @@ dependencies = [
 
 [[package]]
 name = "dysql"
-version = "0.4.3"
-dependencies = [
- "once_cell",
- "ramhorns",
- "rust-crypto",
-]
-
-[[package]]
-name = "dysql"
-version = "0.4.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "81601a5cc08c8c26aea7997c089fc04c88b1c5c93ad2de7de6c375e4fd45215f"
+version = "0.5.0"
 dependencies = [
  "once_cell",
  "ramhorns",
@@ -228,9 +217,9 @@ dependencies = [
 
 [[package]]
 name = "dysql-macro"
-version = "0.4.3"
+version = "0.5.0"
 dependencies = [
- "dysql 0.4.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "dysql",
  "proc-macro2",
  "quote",
  "ramhorns",
@@ -1288,9 +1277,9 @@ checksum = "f40009d85759725a34da6d89a94e63d7bdc50a862acf0dbc7c8e488f1edcb6f5"
 
 [[package]]
 name = "with_tokio_postgres"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
- "dysql 0.4.3",
+ "dysql",
  "dysql-macro",
  "ramhorns",
  "tokio",

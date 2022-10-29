@@ -67,7 +67,7 @@ async fn connect_sqlite_db() -> SqliteConnection {
 }
 
 #[tokio::test]
-async fn test_fetch_all() -> dysql::DySqlResult<()>{
+async fn test_fetch_all() {
     let conn = connect_postgres_db().await;
 
     let dto = UserDto{ id: None, name: None, age: Some(15) };
@@ -77,7 +77,7 @@ async fn test_fetch_all() -> dysql::DySqlResult<()>{
           {{#name}}AND name = :name{{/name}}
           {{#age}}AND age > :age{{/age}}
         ORDER BY id"#
-    });
+    }).unwrap();
     assert_eq!(
         vec![
             User { id: 2, name: Some("zhanglan".to_owned()), age: Some(21) }, 
@@ -85,12 +85,10 @@ async fn test_fetch_all() -> dysql::DySqlResult<()>{
         ], 
         rst
     );
-
-    Ok(())
 }
 
 #[tokio::test]
-async fn test_fetch_one() -> dysql::DySqlResult<()>{
+async fn test_fetch_one() {
     let conn = connect_postgres_db().await;
 
     let dto = UserDto{ id: Some(2), name: None, age: None };
@@ -99,10 +97,8 @@ async fn test_fetch_one() -> dysql::DySqlResult<()>{
         where 1 = 1
             and id = :id
         order by id"#
-    });
+    }).unwrap();
     assert_eq!(User { id: 2, name: Some("zhanglan".to_owned()), age: Some(21) }, rst);
-
-    Ok(())
 }
 
 #[tokio::test]
@@ -111,7 +107,7 @@ async fn test_fetch_scalar() -> dysql::DySqlResult<()>{
 
     let rst = fetch_scalar!(|_, &conn| -> i64 {
         r#"select count (*) from test_user"#
-    });
+    })?;
 
     assert_eq!(3, rst);
 
@@ -127,7 +123,7 @@ async fn test_execute() -> dysql::DySqlResult<()>{
     let dto = UserDto{ id: Some(3), name: None, age: None };
     let affected_rows_num = execute!(|&dto, &mut tran| {
         r#"delete from test_user where id = :id"#
-    });
+    })?;
 
     assert_eq!(1, affected_rows_num);
     tran.rollback().await?;
@@ -144,7 +140,7 @@ async fn test_insert() -> dysql::DySqlResult<()>{
     let dto = UserDto{ id: None, name: Some("lisi".to_owned()), age: Some(50) };
     let insert_id = insert!(|&dto, &mut tran| {
         r#"insert into test_user (name, age) values (:name, :age) returning id"#
-    });
+    })?;
     assert!(insert_id > 3);
     tran.rollback().await?;
 
@@ -159,7 +155,7 @@ async fn test_insert_mysql() -> dysql::DySqlResult<()>{
     let dto = UserDto{ id: Some(4), name: Some("lisi".to_owned()), age: Some(50) };
     let insert_id = insert!(|&dto, &mut tran| -> (_, mysql) {
         r#"insert into test_user (name, age) values ('aa', 1)"#
-    });
+    })?;
     assert!(insert_id > 3);
     tran.rollback().await?;
 
@@ -175,7 +171,7 @@ async fn test_insert_sqlite() -> dysql::DySqlResult<()>{
 
     let insert_id = insert!(|&dto, &mut tran| -> (_, sqlite) {
         r#"insert into test_user (name, age) values ('aa', 1)"#
-    });
+    })?;
     assert!(insert_id > 3);
     tran.rollback().await?;
 

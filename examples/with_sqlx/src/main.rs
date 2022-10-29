@@ -20,7 +20,7 @@ async fn main() -> dysql::DySqlResult<()> {
           {{#name}}AND name = :name{{/name}}
           {{#age}}AND age > :age{{/age}}
         ORDER BY id"#
-    });
+    })?;
     assert_eq!(
         vec![
             User { id: 2, name: Some("zhanglan".to_owned()), age: Some(21) }, 
@@ -36,13 +36,13 @@ async fn main() -> dysql::DySqlResult<()> {
         where 1 = 1
             and id = :id
         order by id"#
-    });
+    })?;
     assert_eq!(User { id: 2, name: Some("zhanglan".to_owned()), age: Some(21) }, rst);
 
     // fetch scalar value
     let rst = fetch_scalar!(|_, &conn| -> i64 {
         r#"select count (*) from test_user"#
-    });
+    })?;
     assert_eq!(3, rst);
 
     // execute with transaction
@@ -50,7 +50,7 @@ async fn main() -> dysql::DySqlResult<()> {
     let dto = UserDto{ id: Some(3), name: None, age: None };
     let affected_rows_num = execute!(|&dto, &mut tran| {
         r#"delete from test_user where id = :id"#
-    });
+    })?;
 
     assert_eq!(1, affected_rows_num);
     tran.rollback().await?;
@@ -61,7 +61,7 @@ async fn main() -> dysql::DySqlResult<()> {
 
     let insert_id = insert!(|&dto, &mut tran| {
         r#"insert into test_user (id, name, age) values (:id, :name, :age) returning id"#
-    });
+    })?;
     assert_eq!(4, insert_id);
     tran.rollback().await?;
 
@@ -73,7 +73,7 @@ async fn main() -> dysql::DySqlResult<()> {
     let dto = UserDto{ id: Some(4), name: Some("lisi".to_owned()), age: Some(50) };
     let insert_id = insert!(|&dto, &mut tran| -> (_, mysql) {
         r#"insert into test_user (name, age) values ('aa', 1)"#
-    });
+    })?;
     assert!(insert_id > 3);
     tran.rollback().await?;
 
@@ -84,7 +84,7 @@ async fn main() -> dysql::DySqlResult<()> {
     let dto = UserDto{ id: Some(4), name: Some("lisi".to_owned()), age: Some(50) };
     let insert_id = insert!(|&dto, &mut tran| -> (_, sqlite) {
         r#"insert into test_user (name, age) values ('aa', 1)"#
-    });
+    })?;
     assert!(insert_id > 3);
 
     Ok(())

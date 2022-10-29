@@ -17,8 +17,8 @@ Full example please see: [Dysql sqlx example](https://github.com/evanzp0/dysql-p
 ### Cargo.toml:
 ```toml
 [dependencies]
-dysql = "0.4"
-dysql-macro = {version = "0.4", features = ["sqlx"]}
+dysql = "0.5"
+dysql-macro = {version = "0.5", features = ["sqlx"]}
 sqlx = { version = "0.6", features = [ "runtime-tokio-native-tls" , "postgres" ] }
 tokio = { version = "1.0", features = ["full"] }
 ramhorns = "0.14"
@@ -41,7 +41,7 @@ async fn main() -> dysql::DySqlResult<()> {
           {{#name}}AND name = :name{{/name}}
           {{#age}}AND age > :age{{/age}}
         ORDER BY id"#
-    });
+    })?;
     assert_eq!(
         vec![
             User { id: 2, name: Some("zhanglan".to_owned()), age: Some(21) }, 
@@ -58,32 +58,32 @@ async fn main() -> dysql::DySqlResult<()> {
         where 1 = 1
             and id = :value
         order by id"#
-    });
+    })?;
     assert_eq!(User { id: 2, name: Some("zhanglan".to_owned()), age: Some(21) }, rst);
 
     // fetch scalar value
     let rst = fetch_scalar!(|_, &conn| -> i64 {
         r#"select count (*) from test_user"#
-    });
+    })?;
     assert_eq!(3, rst);
 
     // execute with transaction
     let affected_rows_num = execute!(|&dto, &mut tran| {
         r#"delete from test_user where id = :id"#
-    });
+    })?;
     ...
 
     // insert with transaction and get id back (postgres)
     let insert_id = insert!(|&dto, &mut tran| {
         r#"insert into test_user (id, name, age) values (:id, :name, :age) returning id"#
-    });
+    })?;
     ...
 
     // insert with transaction and get id back (mysql / sqlite)
     let dto = UserDto{ id: Some(4), name: Some("lisi".to_owned()), age: Some(50) };
     let insert_id = insert!(|dto, &mut tran| -> (_, mysql) { // you can use 'sqlite' replace the 'mysql' dialect
         r#"insert into test_user (name, age) values ('aa', 1)"#
-    });
+    })?;
     ...
 }
 ```

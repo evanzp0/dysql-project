@@ -62,21 +62,7 @@ pub (crate) fn expand(st: &SqlClosure, query_type: QueryType) -> syn::Result<pro
         QueryType::Insert => expand_fetch_insert(st, sql_bind_params_ts),
     };
 
-    // let ret = quote!(
-    //     'block {
-    //         let mut param_values: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = Vec::new();
-
-    //         #expend_sql_bind_params_inner
-
-    //         let stmt = #cot.prepare(&sql).await?;
-    //         let params = param_values.into_iter();
-    //         let params = params.as_slice();
-            
-    //         #expend_query_inner
-    //     }
-    // );
-
-    let ret = quote!({
+    let ret = quote!('rst_block: {
         #rst
     });
 
@@ -87,7 +73,7 @@ fn expand_fetch_all(st: &SqlClosure, sql_bind_params_ts: proc_macro2::TokenStrea
     let cot = &st.cot;
     let ret_type = &st.ret_type;
 
-    let ret = quote!('rst_block: {
+    let ret = quote!(
         let mut param_values: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = Vec::new();
 
         #sql_bind_params_ts
@@ -113,7 +99,7 @@ fn expand_fetch_all(st: &SqlClosure, sql_bind_params_ts: proc_macro2::TokenStrea
             .collect::<Vec<#ret_type>>();
 
         Ok(rst)
-    });
+    );
 
     ret
 }
@@ -122,7 +108,7 @@ fn expand_fetch_one(st: &SqlClosure, sql_bind_params_ts: proc_macro2::TokenStrea
     let cot = &st.cot;
     let ret_type = &st.ret_type;
 
-    let ret = quote!('rst_block: {
+    let ret = quote!(
         let mut param_values: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = Vec::new();
 
         #sql_bind_params_ts
@@ -149,7 +135,7 @@ fn expand_fetch_one(st: &SqlClosure, sql_bind_params_ts: proc_macro2::TokenStrea
         let rst = rst.expect("Unexpected error");
 
         Ok(rst)
-    });
+    );
 
     ret
 }
@@ -158,7 +144,7 @@ fn expand_fetch_scalar(st: &SqlClosure, sql_bind_params_ts: proc_macro2::TokenSt
     let cot = &st.cot;
     let ret_type = &st.ret_type;
 
-    let ret = quote!('rst_block: {
+    let ret = quote!(
         let mut param_values: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = Vec::new();
 
         #sql_bind_params_ts
@@ -181,7 +167,7 @@ fn expand_fetch_scalar(st: &SqlClosure, sql_bind_params_ts: proc_macro2::TokenSt
         let rst: #ret_type = row.get(0);
 
         Ok(rst)
-    });
+    );
 
     ret
 }
@@ -189,7 +175,7 @@ fn expand_fetch_scalar(st: &SqlClosure, sql_bind_params_ts: proc_macro2::TokenSt
 fn expand_execute(st: &SqlClosure, sql_bind_params_ts: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
     let cot = &st.cot;
 
-    let ret = quote!('rst_block: {
+    let ret = quote!(
         let mut param_values: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = Vec::new();
 
         #sql_bind_params_ts
@@ -212,7 +198,7 @@ fn expand_execute(st: &SqlClosure, sql_bind_params_ts: proc_macro2::TokenStream)
         let rst = affectrst_count;
 
         Ok(rst)
-    });
+    );
 
     ret
 }
@@ -225,7 +211,7 @@ fn expand_fetch_insert(st: &SqlClosure, sql_bind_params_ts: proc_macro2::TokenSt
         None => &i64_path,
     };
 
-    let ret = quote!('rst_block: {
+    let ret = quote!(
         let mut param_values: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = Vec::new();
 
         #sql_bind_params_ts
@@ -247,7 +233,7 @@ fn expand_fetch_insert(st: &SqlClosure, sql_bind_params_ts: proc_macro2::TokenSt
         let rst: #ret_type = row.get(0);
 
         Ok(rst)
-    });
+    );
 
     ret
 }

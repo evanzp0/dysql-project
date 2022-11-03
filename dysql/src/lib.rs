@@ -45,12 +45,14 @@
 //! 
 //! ## Example (sqlx)
 //! Full example please see: [Dysql sqlx example](https://github.com/evanzp0/dysql-project/tree/main/examples/with_sqlx)
-use std::{fmt::{Display, Formatter}, sync::RwLock, collections::HashMap};
-use std::error::Error;
 mod extract_sql;
 
 pub use extract_sql::*;
 
+use std::{fmt::{Display, Formatter}, sync::RwLock, collections::HashMap};
+use std::error::Error;
+
+use serde::Serialize;
 use crypto::{md5::Md5, digest::Digest};
 use once_cell::sync::OnceCell;
 use ramhorns::{Template, Content};
@@ -168,11 +170,16 @@ pub enum QueryType {
     Insert,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct DySqlError {
     pub msg: String,
+    #[serde(skip_serializing)]
     pub child_err: Option<Box<dyn Error>>,
 }
+
+unsafe impl Send for DySqlError {}
+
+unsafe impl Sync for DySqlError {}
 
 impl DySqlError {
     pub fn new(msg: &str, child_err: Option<Box<dyn Error>>) -> Self {

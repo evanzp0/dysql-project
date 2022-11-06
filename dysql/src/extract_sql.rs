@@ -1,5 +1,5 @@
 //! Extract name paramters and sql statement from the named sql template.
-use crate::{SqlDialect, DySqlResult, DySqlError, DEFAULT_ERROR_MSG};
+use crate::{SqlDialect, DySqlResult, DySqlError, Kind, ErrorInner};
 
 ///
 /// extract sql and params from raw sql
@@ -57,11 +57,11 @@ pub fn extract_params(o_sql: &str, sql_dial: SqlDialect) -> DySqlResult<(String,
 
             // get named param end index
             if cur == end {
-                return Err(Box::new(DySqlError::new(DEFAULT_ERROR_MSG, None)))
+                return Err(DySqlError(ErrorInner::new(Kind::ExtractSqlParamterError, None)))
             } else {
                 let (found, current_cursor) = char_index(o_sql, cur, vec![' ', '\n', '\t', ',', ';', '{', ')']);
                 if found && current_cursor == cur{
-                    return Err(Box::new(DySqlError::new(DEFAULT_ERROR_MSG, None)))
+                    return Err(DySqlError(ErrorInner::new(Kind::ExtractSqlParamterError, None)))
                 }
 
                 cur = current_cursor;
@@ -114,14 +114,14 @@ mod tests {
         let rst = extract_params(sql, SqlDialect::postgres);
         match rst {
             Ok(_) => panic!("Unexpected error"),
-            Err(e) => assert_eq!(e.to_string(), DEFAULT_ERROR_MSG),
+            Err(e) => assert_eq!(e.to_string(), "error extract sql parameter"),
         };
 
         let sql = "select * from abc where id=:id and name=:";
         let rst = extract_params(sql, SqlDialect::postgres);
         match rst {
             Ok(_) => panic!("Unexpected error"),
-            Err(e) => assert_eq!(e.to_string(), DEFAULT_ERROR_MSG),
+            Err(e) => assert_eq!(e.to_string(), "error extract sql parameter"),
         };
     }
 }

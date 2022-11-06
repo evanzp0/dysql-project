@@ -34,10 +34,10 @@ pub (crate) fn expand(st: &SqlClosure, query_type: QueryType) -> syn::Result<pro
                 None => dysql::put_sql_template(#template_id, #body).expect("Unexpected error when put_sql_template"),
             };
     
-            let sql_rendered = unsafe{(*sql_tpl).render(#dto_ref #dto)};
+            let sql_rendered = sql_tpl.render(#dto_ref #dto);
             let extract_rst = dysql::extract_params(&sql_rendered, dysql::SqlDialect::from(#dialect.to_owned()));
             if let Err(e) = extract_rst {
-                break 'rst_block Err(Box::new(dysql::DySqlError::new(&e.to_string(), Some(e))));
+                break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::ExtractSqlParamterError, Some(Box::new(e)))))
             }
 
             let (sql, param_names) = extract_rst.unwrap();
@@ -80,7 +80,7 @@ fn expand_fetch_all(st: &SqlClosure, sql_bind_params_ts: proc_macro2::TokenStrea
 
         let stmt = #cot.prepare(&sql).await;
         if let Err(e) = stmt {
-            break 'rst_block Err(Box::new(dysql::DySqlError::new(&e.to_string(), Some(Box::new(e)))));
+            break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::PrepareStamentError, Some(Box::new(e)))))
         }
         let stmt = stmt.expect("Unexpected error");
 
@@ -89,7 +89,7 @@ fn expand_fetch_all(st: &SqlClosure, sql_bind_params_ts: proc_macro2::TokenStrea
 
         let rows = #cot.query(&stmt, &params).await;
         if let Err(e) = rows {
-            break 'rst_block Err(Box::new(dysql::DySqlError::new(&e.to_string(), Some(Box::new(e)))));
+            break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)))))
         }
         let rows = rows.expect("Unexpected error");
 
@@ -115,7 +115,7 @@ fn expand_fetch_one(st: &SqlClosure, sql_bind_params_ts: proc_macro2::TokenStrea
 
         let stmt = #cot.prepare(&sql).await;
         if let Err(e) = stmt {
-            break 'rst_block Err(Box::new(dysql::DySqlError::new(&e.to_string(), Some(Box::new(e)))));
+            break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::PrepareStamentError, Some(Box::new(e)))))
         }
         let stmt = stmt.expect("Unexpected error");
 
@@ -124,13 +124,13 @@ fn expand_fetch_one(st: &SqlClosure, sql_bind_params_ts: proc_macro2::TokenStrea
 
         let row = #cot.query_one(&stmt, &params).await;
         if let Err(e) = row {
-            break 'rst_block Err(Box::new(dysql::DySqlError::new(&e.to_string(), Some(Box::new(e)))));
+            break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)))))
         }
         let row = row.expect("Unexpected error");
 
         let rst = #ret_type::from_row(row);
         if let Err(e) = rst {
-            break 'rst_block Err(Box::new(dysql::DySqlError::new(&e.to_string(), Some(Box::new(e)))));
+            break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::ObjectMappingError, Some(Box::new(e)))))
         }
         let rst = rst.expect("Unexpected error");
 
@@ -151,7 +151,7 @@ fn expand_fetch_scalar(st: &SqlClosure, sql_bind_params_ts: proc_macro2::TokenSt
 
         let stmt = #cot.prepare(&sql).await;
         if let Err(e) = stmt {
-            break 'rst_block Err(Box::new(dysql::DySqlError::new(&e.to_string(), Some(Box::new(e)))));
+            break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::PrepareStamentError, Some(Box::new(e)))))
         }
         let stmt = stmt.expect("Unexpected error");
 
@@ -160,7 +160,7 @@ fn expand_fetch_scalar(st: &SqlClosure, sql_bind_params_ts: proc_macro2::TokenSt
 
         let row = #cot.query_one(&stmt, &params).await;
         if let Err(e) = row {
-            break 'rst_block Err(Box::new(dysql::DySqlError::new(&e.to_string(), Some(Box::new(e)))));
+            break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)))))
         }
         let row = row.expect("Unexpected error");
 
@@ -182,7 +182,7 @@ fn expand_execute(st: &SqlClosure, sql_bind_params_ts: proc_macro2::TokenStream)
 
         let stmt = #cot.prepare(&sql).await;
         if let Err(e) = stmt {
-            break 'rst_block Err(Box::new(dysql::DySqlError::new(&e.to_string(), Some(Box::new(e)))));
+            break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::PrepareStamentError, Some(Box::new(e)))))
         }
         let stmt = stmt.expect("Unexpected error");
 
@@ -191,7 +191,7 @@ fn expand_execute(st: &SqlClosure, sql_bind_params_ts: proc_macro2::TokenStream)
 
         let affect_count = #cot.execute(&stmt, &params).await;
         if let Err(e) = affect_count {
-            break 'rst_block Err(Box::new(dysql::DySqlError::new(&e.to_string(), Some(Box::new(e)))));
+            break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)))))
         }
         let affectrst_count = affect_count.expect("Unexpected error");
 
@@ -218,7 +218,7 @@ fn expand_fetch_insert(st: &SqlClosure, sql_bind_params_ts: proc_macro2::TokenSt
 
         let stmt = #cot.prepare(&sql).await;
         if let Err(e) = stmt {
-            break 'rst_block Err(Box::new(dysql::DySqlError::new(&e.to_string(), Some(Box::new(e)))));
+            break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::PrepareStamentError, Some(Box::new(e)))))
         }
         let stmt = stmt.expect("Unexpected error");
 
@@ -227,7 +227,7 @@ fn expand_fetch_insert(st: &SqlClosure, sql_bind_params_ts: proc_macro2::TokenSt
 
         let row = #cot.query_one(&stmt, &params).await;
         if let Err(e) = row {
-            break 'rst_block Err(Box::new(dysql::DySqlError::new(&e.to_string(), Some(Box::new(e)))));
+            break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)))))
         }
         let row = row.expect("Unexpected error");
         let rst: #ret_type = row.get(0);

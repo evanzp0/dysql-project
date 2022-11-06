@@ -6,7 +6,7 @@ use ramhorns::Content;
 use dysql_macro::*;
 
 #[tokio::main]
-async fn main() -> dysql::DySqlResult<()> {
+async fn main() {
     let mut conn = connect_db().await;
 
     // fetch all
@@ -17,7 +17,7 @@ async fn main() -> dysql::DySqlResult<()> {
             {{#name}}and name = :name{{/name}}
             {{#age}}and age > :age{{/age}}
         order by id"#
-    })?;
+    }).unwrap();
     assert_eq!(
         vec![
             User { id: 2, name: Some("zhanglan".to_owned()), age: Some(21) }, 
@@ -33,40 +33,39 @@ async fn main() -> dysql::DySqlResult<()> {
         where 1 = 1
             and id = :id
         order by id"#
-    })?;
+    }).unwrap();
     assert_eq!(User { id: 2, name: Some("zhanglan".to_owned()), age: Some(21) }, rst);
 
     // fetch scalar value
     let rst = fetch_scalar!(|_, &conn| -> i64 {
         r#"select count (*) from test_user"#
-    })?;
+    }).unwrap();
     assert_eq!(3, rst);
 
     // execute with transaction
-    let tran = conn.transaction().await?;
+    let tran = conn.transaction().await.unwrap();
 
     let dto = UserDto{ id: Some(3), name: None, age: None };
     let affected_rows_num = execute!(|&dto, &tran| {
         r#"delete from test_user where id = :id"#
-    })?;
+    }).unwrap();
     assert_eq!(1, affected_rows_num);
 
-    tran.rollback().await?;
+    tran.rollback().await.unwrap();
 
     // insert with transaction and get id back
-    let tran = conn.transaction().await?;
+    let tran = conn.transaction().await.unwrap();
 
     let dto = UserDto{ id: Some(4), name: Some("lisi".to_owned()), age: Some(50) };
     //// Here return type is omitted because default return type of insert_id is i64. 
     //// if the return type is others, you should give a specific type.
     let insert_id = insert!(|&dto, &mut tran| { 
         r#"insert into test_user (id, name, age) values (:id, :name, :age) returning id"#
-    })?;
+    }).unwrap();
     assert!(insert_id > 3);
     
-    tran.rollback().await?;
+    tran.rollback().await.unwrap();
 
-    Ok(())
 }
 
 

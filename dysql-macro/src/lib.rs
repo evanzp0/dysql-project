@@ -10,7 +10,7 @@
 //! //...
 //! 
 //! # #[tokio::main]
-//! async fn main() -> dysql::DySqlResult<()> {
+//! async fn main() {
 //!     let conn = connect_postgres_db().await;
 //!     
 //!     // fetch all
@@ -21,7 +21,7 @@
 //!           {{#name}}AND name = :name{{/name}}
 //!           {{#age}}AND age > :age{{/age}}
 //!         ORDER BY id"#
-//!     });
+//!     }).unwrap();
 //!     assert_eq!(
 //!         vec![
 //!             User { id: 2, name: Some("zhanglan".to_owned()), age: Some(21) }, 
@@ -30,13 +30,13 @@
 //!         rst
 //!     );
 //! 
-//!     let rst = fetch_one!(...);
+//!     let rst = fetch_one!(...).unwrap();
 //! 
-//!     let rst = fetch_scalar!(...);
+//!     let rst = fetch_scalar!(...).unwrap();
 //!     
-//!     let affected_rows_num = execute!(...);
+//!     let affected_rows_num = execute!(...).unwrap();
 //!     
-//!     let insert_id = insert!(...);
+//!     let insert_id = insert!(...).unwrap();
 //! }
 //! ```
 //! 

@@ -41,10 +41,10 @@ pub (crate) fn expand(st: &SqlClosure, query_type: QueryType) -> syn::Result<pro
                 None => dysql::put_sql_template(#template_id, #body).expect("Unexpected error when put_sql_template"),
             };
     
-            let sql_rendered = unsafe{(*sql_tpl).render(#dto_ref #dto)};
+            let sql_rendered = sql_tpl.render(#dto_ref #dto);
             let extract_rst = dysql::extract_params(&sql_rendered, dysql::SqlDialect::from(#dialect.to_owned()));
             if let Err(e) = extract_rst {
-                break 'rst_block Err(Box::new(dysql::DySqlError::new(&e.to_string(), Some(e))));
+                break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::ExtractSqlParamterError, Some(Box::new(e)))))
             }
             let (sql, param_names) = extract_rst.unwrap();
         ),
@@ -90,7 +90,7 @@ pub (crate) fn expand_fetch_all(st: &SqlClosure, param_strings: &Vec<String>, pa
 
             let rst = query.fetch_all(#cot_ref #cot).await;
             if let Err(e) = rst {
-                break 'rst_block Err(Box::new(dysql::DySqlError::new(&e.to_string(), Some(Box::new(e)))));
+                break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)))))
             }
             let rst = rst.expect("Unexpected error");
             Ok(rst)
@@ -99,7 +99,7 @@ pub (crate) fn expand_fetch_all(st: &SqlClosure, param_strings: &Vec<String>, pa
             let mut query = sqlx::query_as::<_, #ret_type>(&sql);
             let rst = query.fetch_all(#cot_ref #cot).await;
             if let Err(e) = rst {
-                break 'rst_block Err(Box::new(dysql::DySqlError::new(&e.to_string(), Some(Box::new(e)))));
+                break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)))))
             }
             let rst = rst.expect("Unexpected error");
             Ok(rst)
@@ -135,7 +135,7 @@ fn expand_fetch_one(st: &SqlClosure, param_strings: &Vec<String>, param_idents: 
     
             let rst = query.fetch_one(#cot_ref #cot).await;
             if let Err(e) = rst {
-                break 'rst_block Err(Box::new(dysql::DySqlError::new(&e.to_string(), Some(Box::new(e)))));
+                break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)))))
             }
             let rst = rst.expect("Unexpected error");
             Ok(rst)
@@ -144,7 +144,7 @@ fn expand_fetch_one(st: &SqlClosure, param_strings: &Vec<String>, param_idents: 
             let mut query = sqlx::query_as::<_, #ret_type>(&sql);
             let rst = query.fetch_one(#cot_ref #cot).await;
             if let Err(e) = rst {
-                break 'rst_block Err(Box::new(dysql::DySqlError::new(&e.to_string(), Some(Box::new(e)))));
+                break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)))))
             }
             let rst = rst.expect("Unexpected error");
             Ok(rst)
@@ -180,7 +180,7 @@ fn expand_fetch_scalar(st: &SqlClosure, param_strings: &Vec<String>, param_ident
     
             let rst = query.fetch_one(#cot_ref #cot).await;
             if let Err(e) = rst {
-                break 'rst_block Err(Box::new(dysql::DySqlError::new(&e.to_string(), Some(Box::new(e)))));
+                break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)))))
             }
             let rst = rst.expect("Unexpected error");
             Ok(rst)
@@ -189,7 +189,7 @@ fn expand_fetch_scalar(st: &SqlClosure, param_strings: &Vec<String>, param_ident
             let mut query = sqlx::query_scalar::<_, #ret_type>(&sql);
             let rst = query.fetch_one(#cot_ref #cot).await;
             if let Err(e) = rst {
-                break 'rst_block Err(Box::new(dysql::DySqlError::new(&e.to_string(), Some(Box::new(e)))));
+                break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)))))
             }
             let rst = rst.expect("Unexpected error");
             Ok(rst)
@@ -224,7 +224,7 @@ fn expand_execute(st: &SqlClosure, param_strings: &Vec<String>, param_idents: &V
     
             let rst = query.execute(#cot_ref #cot).await;
             if let Err(e) = rst {
-                break 'rst_block Err(Box::new(dysql::DySqlError::new(&e.to_string(), Some(Box::new(e)))));
+                break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)))))
             }
             let rst = rst.expect("Unexpected error");
             let af_rows = rst.rows_affected();
@@ -234,7 +234,7 @@ fn expand_execute(st: &SqlClosure, param_strings: &Vec<String>, param_idents: &V
             let mut query = sqlx::query(&sql);
             let rst = query.execute(#cot_ref #cot).await;
             if let Err(e) = rst {
-                break 'rst_block Err(Box::new(dysql::DySqlError::new(&e.to_string(), Some(Box::new(e)))));
+                break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)))))
             }
             let rst = rst.expect("Unexpected error");
             let af_rows = rst.rows_affected();
@@ -281,7 +281,7 @@ fn expand_insert(st: &SqlClosure, param_strings: &Vec<String>, param_idents: &Ve
             
                     let insert_id = query.fetch_one(#cot_ref #cot).await;
                     if let Err(e) = insert_id {
-                        break 'rst_block Err(Box::new(dysql::DySqlError::new(&e.to_string(), Some(Box::new(e)))));
+                        break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)))))
                     }
                     let insert_id = insert_id.expect("Unexpected error");
                     Ok(insert_id)
@@ -296,12 +296,12 @@ fn expand_insert(st: &SqlClosure, param_strings: &Vec<String>, param_idents: &Ve
                         )*
                     }
         
-                    let _rst = query.execute(&mut #cot).await?;
+                    let _rst = query.execute(&mut #cot).await;
                     let insert_id = sqlx::query_as::<_, (u64,)>("SELECT LAST_INSERT_ID();")
                         .fetch_one(#cot_ref #cot)
                         .await;
                     if let Err(e) = insert_id {
-                        break 'rst_block Err(Box::new(dysql::DySqlError::new(&e.to_string(), Some(Box::new(e)))));
+                        break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)))))
                     }
                     let insert_id = insert_id.expect("Unexpected error").0;
                     Ok(insert_id)
@@ -316,12 +316,12 @@ fn expand_insert(st: &SqlClosure, param_strings: &Vec<String>, param_idents: &Ve
                         )*
                     }
         
-                    let _rst = query.execute(&mut #cot).await?;
+                    let _rst = query.execute(&mut #cot).await;
                     let insert_id = sqlx::query_as::<_, (i32,)>("SELECT last_insert_rowid();")
                         .fetch_one(#cot_ref #cot)
                         .await;
                     if let Err(e) = insert_id {
-                        break 'rst_block Err(Box::new(dysql::DySqlError::new(&e.to_string(), Some(Box::new(e)))));
+                        break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)))))
                     }
                     let insert_id = insert_id.expect("Unexpected error").0;
                     Ok(insert_id)
@@ -333,31 +333,31 @@ fn expand_insert(st: &SqlClosure, param_strings: &Vec<String>, param_idents: &Ve
                 let mut query = sqlx::query_scalar::<_, #ret_type>(&sql);
                 let insert_id = query.fetch_one(#cot_ref #cot).await;
                 if let Err(e) = insert_id {
-                    break 'rst_block Err(Box::new(dysql::DySqlError::new(&e.to_string(), Some(Box::new(e)))));
+                    break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)))))
                 }
                 let insert_id = insert_id.expect("Unexpected error");
                 Ok(insert_id)
             ),
             SqlDialect::mysql => quote!(
                 let mut query = sqlx::query(&sql);
-                let _rst = query.execute(&mut #cot).await?;
+                let _rst = query.execute(&mut #cot).await;
                 let insert_id = sqlx::query_as::<_, (u64,)>("SELECT LAST_INSERT_ID();")
                     .fetch_one(#cot_ref #cot)
                     .await;
                 if let Err(e) = insert_id {
-                    break 'rst_block Err(Box::new(dysql::DySqlError::new(&e.to_string(), Some(Box::new(e)))));
+                    break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)))))
                 }
                 let insert_id = insert_id.expect("Unexpected error").0;
                 Ok(insert_id)
             ),
             SqlDialect::sqlite => quote!(
                 let mut query = sqlx::query(&sql);
-                let _rst = query.execute(&mut #cot).await?;
+                let _rst = query.execute(&mut #cot).await;
                 let insert_id = sqlx::query_as::<_, (i32,)>("SELECT last_insert_rowid();")
                     .fetch_one(#cot_ref #cot)
                     .await;
                 if let Err(e) = insert_id {
-                    break 'rst_block Err(Box::new(dysql::DySqlError::new(&e.to_string(), Some(Box::new(e)))));
+                    break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)))))
                 }
                 let insert_id = insert_id.expect("Unexpected error").0;
                 Ok(insert_id)

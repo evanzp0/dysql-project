@@ -331,16 +331,17 @@ checksum = "03d8c417d7a8cb362e0c37e5d815f5eb7c37f79ff93707329d5a194e42e54ca0"
 
 [[package]]
 name = "dysql"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "once_cell",
  "ramhorns",
  "rust-crypto",
+ "serde",
 ]
 
 [[package]]
 name = "dysql-macro"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "dysql",
  "proc-macro2",
@@ -2132,7 +2133,7 @@ checksum = "f40009d85759725a34da6d89a94e63d7bdc50a862acf0dbc7c8e488f1edcb6f5"
 
 [[package]]
 name = "with_sqlx"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "dysql",
  "dysql-macro",

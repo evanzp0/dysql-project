@@ -10,7 +10,7 @@
 //! //...
 //! 
 //! # #[tokio::main]
-//! async fn main() -> dysql::DySqlResult<()> {
+//! async fn main() {
 //!     let conn = connect_postgres_db().await;
 //!     
 //!     // fetch all
@@ -21,7 +21,7 @@
 //!           {{#name}}AND name = :name{{/name}}
 //!           {{#age}}AND age > :age{{/age}}
 //!         ORDER BY id"#
-//!     });
+//!     }).unwrap();
 //!     assert_eq!(
 //!         vec![
 //!             User { id: 2, name: Some("zhanglan".to_owned()), age: Some(21) }, 
@@ -30,13 +30,13 @@
 //!         rst
 //!     );
 //! 
-//!     let rst = fetch_one!(...);
+//!     let rst = fetch_one!(...).unwrap();
 //! 
-//!     let rst = fetch_scalar!(...);
+//!     let rst = fetch_scalar!(...).unwrap();
 //!     
-//!     let affected_rows_num = execute!(...);
+//!     let affected_rows_num = execute!(...).unwrap();
 //!     
-//!     let insert_id = insert!(...);
+//!     let insert_id = insert!(...).unwrap();
 //! }
 //! ```
 //! 
@@ -49,7 +49,8 @@ mod extract_sql;
 
 pub use extract_sql::*;
 
-use std::{fmt::{Display, Formatter}, sync::RwLock, collections::HashMap};
+use core::fmt;
+use std::{fmt::{Display, Formatter}, sync::{RwLock, Arc}, collections::HashMap};
 use std::error::Error;
 
 use serde::Serialize;
@@ -57,11 +58,11 @@ use crypto::{md5::Md5, digest::Digest};
 use once_cell::sync::OnceCell;
 use ramhorns::{Template, Content};
 
-pub static DEFAULT_ERROR_MSG: &str = "Error occurs when extracting sql parameters.";
-pub static SQL_TEMPLATE_CACHE: OnceCell<RwLock<HashMap<String, Template>>> = OnceCell::new();
+// pub static DEFAULT_ERROR_MSG: &str = "Error occurs when extracting sql parameters.";
+pub static SQL_TEMPLATE_CACHE: OnceCell<RwLock<HashMap<String, Arc<Template>>>> = OnceCell::new();
 pub static DYSQL_CONFIG: OnceCell<DySqlConfig> = OnceCell::new();
 
-pub type DySqlResult<T> = Result<T, Box<dyn Error>>;
+pub type DySqlResult<T> = Result<T, DySqlError>;
 pub struct DySqlConfig {
     pub  dialect: SqlDialect
 }
@@ -83,7 +84,7 @@ pub fn get_dysql_config() -> &'static DySqlConfig {
 }
 
 #[allow(dead_code)]
-fn get_sql_template_cache() -> &'static RwLock<HashMap<String, Template<'static>>> {
+fn get_sql_template_cache() -> &'static RwLock<HashMap<String, Arc<Template<'static>>>> {
     let cache = SQL_TEMPLATE_CACHE.get_or_init(|| {
         RwLock::new(HashMap::new())
     });
@@ -91,7 +92,7 @@ fn get_sql_template_cache() -> &'static RwLock<HashMap<String, Template<'static>
     cache
 }
 
-pub fn get_sql_template(template_id: &str) -> Option<*const Template<'static>> {
+pub fn get_sql_template(template_id: &str) -> Option<Arc<Template<'static>>> {
     let cache = get_sql_template_cache();
 
     let template_stub = cache.read().unwrap();
@@ -99,26 +100,29 @@ pub fn get_sql_template(template_id: &str) -> Option<*const Template<'static>> {
 
     if let Some(tmpl) = template {
         // println!("get template from cache: {}", template_id);
-        return Some(tmpl as *const Template)
+        return Some(tmpl.clone())
     }
 
     None
 }
 
-pub fn put_sql_template(template_id: &str, sql: &'static str) -> DySqlResult<*const Template<'static>> {
+pub fn put_sql_template(template_id: &str, sql: &'static str) -> DySqlResult<Arc<Template<'static>>> {
     // println!("put template to cache: {}", template_id);
     let cache = get_sql_template_cache();
 
-    let template = Template::new(sql)?;
-    cache.write().unwrap().insert(template_id.to_string(), template);
+    let template = Template::new(sql).map_err(|e| {
+        DySqlError(ErrorInner::new(Kind::TemplateParseError, Some(Box::new(e))))
+    })?;
+    cache.write().unwrap().insert(template_id.to_string(), Arc::new(template));
 
     let template = get_sql_template(template_id);
 
     if let Some(tmpl) = template {
-        return Ok(tmpl as *const Template)
+        return Ok(tmpl.clone())
     }
 
-    Err(Box::new(DySqlError::new(&format!("Template({}) is not find.", template_id), None)))
+    Err(DySqlError(ErrorInner::new(Kind::TemplateNotFound, None)))
+
 }
 
 #[allow(non_camel_case_types)]
@@ -170,40 +174,74 @@ pub enum QueryType {
     Insert,
 }
 
-#[derive(Debug, Serialize)]
-pub struct DySqlError {
-    pub msg: String,
-    #[serde(skip_serializing)]
-    pub child_err: Option<Box<dyn Error>>,
+
+#[derive(Debug, Serialize, PartialEq)]
+pub enum Kind {
+    ParseSqlError,
+    PrepareStamentError,
+    BindParamterError,
+    TemplateNotFound,
+    TemplateParseError,
+    ExtractSqlParamterError,
+    QueryError,
+    ObjectMappingError,
 }
 
-unsafe impl Send for DySqlError {}
+#[derive(Debug, Serialize)]
+pub struct ErrorInner {
+    pub kind: Kind,
+    #[serde(skip_serializing)]
+    pub cause: Option<Box<dyn Error + Sync + Send>>,
+}
 
-unsafe impl Sync for DySqlError {}
-
-impl DySqlError {
-    pub fn new(msg: &str, child_err: Option<Box<dyn Error>>) -> Self {
+impl ErrorInner {
+    pub fn new(kind: Kind, cause: Option<Box<dyn Error + Sync + Send>>) -> Self {
         Self {
-            msg: msg.to_owned(),
-            child_err
+            kind,
+            cause
         }
     }
 }
 
-impl Display for DySqlError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.msg)
+#[derive(Serialize)]
+pub struct DySqlError(pub ErrorInner);
+
+impl fmt::Debug for DySqlError {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt.debug_struct("Error")
+            .field("kind", &self.0.kind)
+            .field("cause", &self.0.cause)
+            .finish()
+    }
+}
+
+impl fmt::Display for DySqlError {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match &self.0.kind {
+            Kind::ParseSqlError => fmt.write_str("error parse sql")?,
+            Kind::PrepareStamentError => fmt.write_str("error preparement db statement")?,
+            Kind::BindParamterError => fmt.write_str("error bind db parameter")?,
+            Kind::TemplateNotFound => fmt.write_str("error sql template is not found")?,
+            Kind::TemplateParseError => fmt.write_str("error sql template parse")?,
+            Kind::ExtractSqlParamterError => fmt.write_str("error extract sql parameter")?,
+            Kind::QueryError => fmt.write_str("error db query")?,
+            Kind::ObjectMappingError => fmt.write_str("error object mapping")?,
+        };
+        if let Some(ref cause) = self.0.cause {
+            write!(fmt, ": {}", cause)?;
+        }
+        Ok(())
     }
 }
 
 impl Error for DySqlError {
-    fn cause(&self) -> Option<&dyn Error> {
-        match &self.child_err {
-            None => None,
-            Some(err) => Some(&**err),
-        }
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        self.0.cause.as_ref().map(|e| &**e as _)
     }
 }
+
+unsafe impl Send for DySqlError {}
+unsafe impl Sync for DySqlError {}
 
 #[allow(unused)]
 #[derive(Content)]

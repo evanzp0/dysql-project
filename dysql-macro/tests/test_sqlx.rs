@@ -1,6 +1,6 @@
 #![cfg(feature = "sqlx")]
 
-use std::str::FromStr;
+use std::{str::FromStr, error::Error};
 
 use dysql_macro::{fetch_all, fetch_one, fetch_scalar, execute, insert};
 use ramhorns::Content;
@@ -116,7 +116,7 @@ async fn test_fetch_scalar() -> dysql::DySqlResult<()>{
 
 
 #[tokio::test]
-async fn test_execute() -> dysql::DySqlResult<()>{
+async fn test_execute() -> Result<(), Box<dyn Error>> {
     let conn = connect_postgres_db().await;
     let mut tran = conn.begin().await?;
 
@@ -133,7 +133,7 @@ async fn test_execute() -> dysql::DySqlResult<()>{
 
 
 #[tokio::test]
-async fn test_insert() -> dysql::DySqlResult<()>{
+async fn test_insert() -> Result<(), Box<dyn Error>> {
     let conn = connect_postgres_db().await;
     let mut tran = conn.begin().await?;
 
@@ -148,7 +148,7 @@ async fn test_insert() -> dysql::DySqlResult<()>{
 }
 
 #[tokio::test]
-async fn test_insert_mysql() -> dysql::DySqlResult<()>{
+async fn test_insert_mysql() -> Result<(), Box<dyn Error>> {
     let conn = connect_mysql_db().await;
     let mut tran = conn.begin().await?;
 
@@ -163,7 +163,7 @@ async fn test_insert_mysql() -> dysql::DySqlResult<()>{
 }
 
 #[tokio::test]
-async fn test_insert_sqlite() -> dysql::DySqlResult<()>{
+async fn test_insert_sqlite() -> Result<(), Box<dyn Error>> {
     let mut conn = connect_sqlite_db().await;
     let mut tran = conn.begin().await?;
 

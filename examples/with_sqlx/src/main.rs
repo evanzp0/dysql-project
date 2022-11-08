@@ -1,4 +1,4 @@
-use dysql_macro::{fetch_all, fetch_one, fetch_scalar, execute, insert};
+use dysql_macro::{fetch_all, fetch_one, fetch_scalar, execute, insert, sql};
 use ramhorns::Content;
 use sqlx::{
     postgres::PgPoolOptions, FromRow, Pool, Postgres, mysql::MySqlPoolOptions, MySql, 
@@ -11,12 +11,13 @@ use std::str::FromStr;
 #[tokio::main]
 async fn main() {
     let conn = connect_postgres_db().await;
-    
+    sql!("select_sql", "SELECT * FROM test_user ");
+
     // fetch all
     let dto = UserDto{ id: None, name: None, age: Some(15) };
     let rst = fetch_all!(|&dto, &conn| -> User {
-        r#"SELECT * FROM test_user 
-        WHERE 1 = 1
+        select_sql + 
+        r#"WHERE 1 = 1
           {{#name}}AND name = :name{{/name}}
           {{#age}}AND age > :age{{/age}}
         ORDER BY id"#
@@ -30,18 +31,17 @@ async fn main() {
     );
 
     // fetch one
+
     let dto = UserDto{ id: Some(2), name: None, age: None };
     let rst = fetch_one!(|&dto, &conn| -> User {
-        r#"select * from test_user 
-        where 1 = 1
-            and id = :id
-        order by id"#
+        select_sql + r#"WHERE 1 = 1 AND id = :id ORDER BY id"#
     }).unwrap();
     assert_eq!(User { id: 2, name: Some("zhanglan".to_owned()), age: Some(21) }, rst);
 
     // fetch scalar value
+    sql!("count_sql", "SELECT count(*) ");
     let rst = fetch_scalar!(|_, &conn| -> i64 {
-        r#"select count (*) from test_user"#
+        count_sql + "from test_user"
     }).unwrap();
     assert_eq!(3, rst);
 

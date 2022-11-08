@@ -37,6 +37,9 @@
 //!     let affected_rows_num = execute!(...).unwrap();
 //!     
 //!     let insert_id = insert!(...).unwrap();
+//! 
+//!     sql!('sql_fragment_1', "select * from table1");
+//!     let rst = fetch_one!(|...| sql_fragment_1 + "where age > 10").unwrap();
 //! }
 //! ```
 //! 
@@ -47,6 +50,7 @@
 //! Full example please see: [Dysql sqlx example](https://github.com/evanzp0/dysql-project/tree/main/examples/with_sqlx)
 #[cfg(not(feature = "tokio-postgres"))]
 mod dy_sqlx;
+
 #[cfg(not(feature = "tokio-postgres"))]
 use dy_sqlx::expand;
 
@@ -55,9 +59,29 @@ mod dy_tokio_postgres;
 #[cfg(feature = "tokio-postgres")]
 use dy_tokio_postgres::expand;
 
-use dysql::{QueryType, get_dysql_config};
 use proc_macro::TokenStream;
-use syn::punctuated::Punctuated;
+use syn::{punctuated::Punctuated, parse_macro_input, Token};
+use std::{collections::HashMap, sync::RwLock};
+use quote::quote;
+
+
+use dysql::{QueryType, get_dysql_config, STATIC_SQL_FRAGMENT_MAP, get_sql_fragment};
+
+#[derive(Debug)]
+struct SqlFragment {
+    name: String,
+    value: String,
+}
+
+impl syn::parse::Parse for SqlFragment {
+    fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
+        let name= input.parse::<syn::LitStr>()?.value();
+        input.parse::<syn::Token!(,)>()?;
+        let value= input.parse::<syn::LitStr>()?.value();
+
+        Ok(Self { name, value })
+    }
+} 
 
 #[allow(dead_code)]
 #[derive(Debug)]
@@ -184,17 +208,50 @@ impl syn::parse::Parse for SqlClosure {
         };
 
         // parse closure sql body
-        let body_buf;
-        syn::braced!(body_buf in input);
-        let body: syn::LitStr = body_buf.parse()?;
-        let body = body.value();
-        let body:Vec<_> = body.split("\n").map(|f| f.trim()).collect();
-        let body = body.join(" ");
+        let body = parse_body(input)?;
         let sc = SqlClosure { dto, is_dto_ref, cot, is_cot_ref, is_cot_ref_mut, sql_name, ret_type, dialect, body };
         // eprintln!("{:#?}", sc);
 
         Ok(sc)
     }
+}
+
+fn parse_body(input: &syn::parse::ParseBuffer) -> Result<String, syn::Error> {
+    let body_buf;
+    syn::braced!(body_buf in input);
+    let ts = body_buf.cursor().token_stream().into_iter();
+    let mut sql = String::new();
+    for it in ts {
+        match it {
+            proc_macro2::TokenTree::Group(_) => {
+                return Err(syn::Error::new(input.span(), "error not support group in sql".to_owned()));
+            },
+            proc_macro2::TokenTree::Ident(_) => {
+                let v: syn::Ident = body_buf.parse()?;
+                let sql_fragment = get_sql_fragment(&v.to_string());
+                
+                if let Some(s) = sql_fragment {
+                    sql.push_str(&s);
+                } else {
+                    return Err(syn::Error::new(input.span(), "error not found sql identity".to_owned()));
+                }
+            },
+            proc_macro2::TokenTree::Punct(v) => {
+                if v.to_string() == "+" {
+                    body_buf.parse::<Token!(+)>()?;
+                } else {
+                    return Err(syn::Error::new(input.span(), "error only support '+' expr".to_owned()));
+                }
+            },
+            proc_macro2::TokenTree::Literal(_) => {
+                let rst: syn::LitStr = body_buf.parse()?;
+                
+                sql.push_str(&rst.value());
+            },
+        };
+    }
+
+    Ok(sql)
 }
 
 pub(crate) fn gen_path(s: &str) -> syn::Path {
@@ -375,4 +432,32 @@ pub fn insert(input: TokenStream) -> TokenStream {
         Ok(ret) => ret.into(),
         Err(e) => e.into_compile_error().into(),
     }
+}
+
+///
+/// Define a global sql fragment
+/// 
+/// # Examples
+///
+/// Basic usage:
+/// 
+/// ```ignore
+/// sql!("select_sql", "select * from table1 ")
+/// 
+/// let last_insert_id = fetch_all!(|&dto, &mut tran| {
+///     select_sql + "where age > 10 "
+/// }).unwrap();
+/// 
+/// tran.rollback().await?;
+/// ```
+#[proc_macro]
+pub fn sql(input: TokenStream) -> TokenStream {
+    let st = parse_macro_input!(input as SqlFragment);
+    let cache = STATIC_SQL_FRAGMENT_MAP.get_or_init(|| {
+        RwLock::new(HashMap::new())
+    });
+
+    cache.write().unwrap().insert(st.name, st.value.to_string());
+
+    quote!().into()
 }

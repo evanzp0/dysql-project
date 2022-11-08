@@ -2,7 +2,7 @@
 
 use std::{str::FromStr, error::Error};
 
-use dysql_macro::{fetch_all, fetch_one, fetch_scalar, execute, insert};
+use dysql_macro::*;
 use ramhorns::Content;
 use sqlx::{
     postgres::PgPoolOptions, FromRow, Pool, Postgres, mysql::MySqlPoolOptions, MySql, 
@@ -87,16 +87,14 @@ async fn test_fetch_all() {
     );
 }
 
+sql!("select_sql","select * from test_user ");
 #[tokio::test]
 async fn test_fetch_one() {
     let conn = connect_postgres_db().await;
 
     let dto = UserDto{ id: Some(2), name: None, age: None };
     let rst = fetch_one!(|&dto, &conn| -> User {
-        r#"select * from test_user 
-        where 1 = 1
-            and id = :id
-        order by id"#
+        select_sql + "where 1 = 1 and id = :id order by id"
     }).unwrap();
     assert_eq!(User { id: 2, name: Some("zhanglan".to_owned()), age: Some(21) }, rst);
 }
@@ -156,6 +154,7 @@ async fn test_insert_mysql() -> Result<(), Box<dyn Error>> {
     let insert_id = insert!(|&dto, &mut tran| -> (_, mysql) {
         r#"insert into test_user (name, age) values ('aa', 1)"#
     })?;
+
     assert!(insert_id > 3);
     tran.rollback().await?;
 

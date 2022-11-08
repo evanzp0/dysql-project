@@ -32,12 +32,13 @@ tokio-postgres = { version = "0.7", features = ["with-chrono-0_4"] }
 #[tokio::main]
 async fn main() {
     let conn = connect_postgres_db().await;
-    
+    sql!("select_sql_fragment_1", "SELECT * FROM test_user ")
+
     // fetch all
     let dto = UserDto{ id: None, name: None, age: Some(15) };
     let rst = fetch_all!(|&dto, &conn| -> User {
-        r#"SELECT * FROM test_user 
-        WHERE 1 = 1
+        select_sql_fragment_1 +
+        r#"WHERE 1 = 1
           {{#name}}AND name = :name{{/name}}
           {{#age}}AND age > :age{{/age}}
         ORDER BY id"#
@@ -51,11 +52,11 @@ async fn main() {
     );
 
     // fetch one
-    // let dto = UserDto{ id: Some(2), name: None, age: None };
+
     let dto = dysql::Value::new(2_i64); // use value wrapper object
     let rst = fetch_one!(|&dto, &conn| -> User {
-        r#"select * from test_user 
-        where 1 = 1
+        select_sql_fragment_1 +
+        r#"where 1 = 1
             and id = :value
         order by id"#
     }).unwrap();

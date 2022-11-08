@@ -80,13 +80,13 @@ async fn test_fetch_one() {
     assert_eq!(User { id: 2, name: Some("zhanglan".to_owned()), age: Some(21) }, rst);
 }
 
-
+sql!("count_sql","select count (*)");
 #[tokio::test]
 async fn test_fetch_scalar() -> dysql::DySqlResult<()>{
     let conn = connect_db().await;
 
     let rst = fetch_scalar!(|_, &conn| -> (i64, postgres) {
-        r#"select count (*) from test_user"#
+        count_sql + r#" from test_user"#
     }).unwrap();
     assert_eq!(3, rst);
 

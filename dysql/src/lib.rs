@@ -37,6 +37,9 @@
 //!     let affected_rows_num = execute!(...).unwrap();
 //!     
 //!     let insert_id = insert!(...).unwrap();
+//! 
+//!     sql!('sql_fragment_1', "select * from table1");
+//!     let rst = fetch_one!(|...| sql_fragment_1 + "where age > 10").unwrap();
 //! }
 //! ```
 //! 
@@ -63,6 +66,21 @@ pub static SQL_TEMPLATE_CACHE: OnceCell<RwLock<HashMap<String, Arc<Template>>>> 
 pub static DYSQL_CONFIG: OnceCell<DySqlConfig> = OnceCell::new();
 
 pub type DySqlResult<T> = Result<T, DySqlError>;
+
+pub static STATIC_SQL_FRAGMENT_MAP: OnceCell<RwLock<HashMap<String, String>>> = OnceCell::new();
+
+pub fn get_sql_fragment(name: &str)-> Option<String> {
+    let cache = STATIC_SQL_FRAGMENT_MAP.get().expect("Unexpect error: get_sql_fragment()");
+    let fragment = cache.read().expect("Unexpect error: get_sql_fragment()");
+    let fragment = fragment.get(name);
+    let rst = match fragment {
+        Some(v) => Some(v.to_owned()),
+        None => None,
+    };
+
+    rst
+}
+
 pub struct DySqlConfig {
     pub  dialect: SqlDialect
 }

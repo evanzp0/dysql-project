@@ -5,15 +5,16 @@ use ramhorns::Content;
 
 use dysql_macro::*;
 
+sql!("select_sql", "select * from test_user ");
+
 #[tokio::main]
 async fn main() {
     let mut conn = connect_db().await;
-
     // fetch all
     let dto = UserDto{ id: None, name: None, age: Some(15) };
     let rst: Vec<User> = fetch_all!(|&dto, &conn| -> User {
-        r#"select * from test_user 
-        where 1 = 1
+        select_sql + 
+        r#"where 1 = 1
             {{#name}}and name = :name{{/name}}
             {{#age}}and age > :age{{/age}}
         order by id"#

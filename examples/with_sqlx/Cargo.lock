@@ -344,6 +344,7 @@ name = "dysql-macro"
 version = "0.6.0"
 dependencies = [
  "dysql",
+ "once_cell",
  "proc-macro2",
  "quote",
  "ramhorns",

@@ -1,6 +1,6 @@
 //! tokio-postegres feature implement
 use dysql::QueryType;
-use quote::quote;
+use quote::{quote, ToTokens};
 
 use crate::{SqlClosure, gen_path};
 
@@ -23,7 +23,24 @@ pub (crate) fn expand(st: &SqlClosure, query_type: QueryType) -> syn::Result<pro
             .1,
         None => vec![],
     };
-    let param_idents: Vec<_> = param_strings.iter().map( |p| proc_macro2::Ident::new(p, proc_macro2::Span::call_site()) ).collect();
+
+    let param_idents: Vec<_> = param_strings.iter().map(|p| {
+            let mut rst = proc_macro2::TokenStream::new();
+            let arr: Vec<&str> = p.split(".").collect();
+            let mut comm_count = arr.len() as i32 - 1;
+            for s in arr {
+                let idt = proc_macro2::Ident::new(s, proc_macro2::Span::call_site());
+                rst.extend(idt.to_token_stream());
+
+                if comm_count >= 1 {
+                    let punct = proc_macro2::Punct::new('.', proc_macro2::Spacing::Joint);
+                    rst.extend(punct.to_token_stream());
+                }
+                comm_count -= 1;
+            }
+            rst
+        }
+    ).collect();
 
     // gen sql render and bind params statement
     let sql_bind_params_ts = match dto {

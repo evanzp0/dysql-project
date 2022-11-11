@@ -1,7 +1,6 @@
 use ramhorns::Content;
 use serde::{Deserialize, Serialize};
 
-
 #[derive(Content, Debug, Deserialize)]
 pub struct PageDto <T> {
     pub dto: T,

@@ -12,7 +12,7 @@ pub struct PageDto <T> {
 }
 
 #[derive(Content, Debug, Serialize)]
-pub struct Pagenation <T> {
+pub struct Pagination <T> {
     pub data: T,
     pub page_size: u64,
     pub page_no: u64,
@@ -69,7 +69,7 @@ impl<T> PageDto<T>
     }
 }
 
-impl<T> Pagenation<T> {
+impl<T> Pagination<T> {
     pub fn from_dto<Dto>(dto: &PageDto<Dto>, data: T) -> Self {
         Self {
             data,

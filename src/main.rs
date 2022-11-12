@@ -1,4 +1,4 @@
-use dysql::{PageDto, Pagenation};
+use dysql::{PageDto, Pagination};
 use dysql_macro::{fetch_scalar, fetch_all};
 use ramhorns::Content;
 use tokio_pg_mapper_derive::PostgresMapper;
@@ -48,7 +48,7 @@ async fn main() {
         "select * from test_user limit {{page_size}} offset {{start}}"
     }).unwrap();
 
-    let pg_data = Pagenation::from_dto(&pg_dto, rst);
+    let pg_data = Pagination::from_dto(&pg_dto, rst);
 
     println!("{:?}", pg_dto);
     println!("{:#?}", pg_data);

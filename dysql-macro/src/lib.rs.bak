@@ -48,7 +48,6 @@
 //! 
 //! ## Example (sqlx)
 //! Full example please see: [Dysql sqlx example](https://github.com/evanzp0/dysql-project/tree/main/examples/with_sqlx)
-
 #[cfg(not(feature = "tokio-postgres"))]
 mod dy_sqlx;
 #[cfg(not(feature = "tokio-postgres"))]
@@ -57,7 +56,7 @@ use dy_sqlx::expand;
 #[cfg(feature = "tokio-postgres")]
 mod dy_tokio_postgres;
 #[cfg(feature = "tokio-postgres")]
-use dy_tokio_postgres::expand;
+// use dy_tokio_postgres::expand;
 
 mod sql_expand;
 
@@ -66,6 +65,7 @@ use syn::{punctuated::Punctuated, parse_macro_input, Token};
 use std::{collections::HashMap, sync::RwLock};
 use quote::quote;
 
+use sql_expand::*;
 use dysql::{QueryType, get_dysql_config, STATIC_SQL_FRAGMENT_MAP, get_sql_fragment};
 
 #[derive(Debug)]
@@ -266,6 +266,7 @@ pub(crate) fn gen_path(s: &str) -> syn::Path {
 
     path
 }
+
 
 fn parse_return_tuple(input: syn::parse::ParseStream) -> syn::Result<syn::parse::ParseBuffer> {
     let tuple_buf;

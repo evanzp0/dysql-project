@@ -54,13 +54,7 @@ async fn test_fetch_all() {
         order by id"#
     }).unwrap();
 
-    assert_eq!(
-        vec![
-            User { id: 2, name: Some("zhanglan".to_owned()), age: Some(21) }, 
-            User { id: 3, name: Some("zhangsan".to_owned()), age: Some(35) }
-        ], 
-        rst
-    );
+    assert_eq!(7, rst.len());
 }
 
 #[tokio::test]
@@ -68,7 +62,6 @@ async fn test_fetch_one() {
     let conn = connect_db().await;
     // let dto = UserDto::new(Some(2), None, None);
     let dto = Value::new(2_i64);
-    // let a = &dto;
 
     let rst = fetch_one!(|&dto, &conn, "get_user_by_id"| -> User {
         r#"select * from test_user 
@@ -88,7 +81,7 @@ async fn test_fetch_scalar() -> dysql::DySqlResult<()>{
     let rst = fetch_scalar!(|_, &conn| -> (i64, postgres) {
         count_sql + r#" from test_user"#
     }).unwrap();
-    assert_eq!(3, rst);
+    assert_eq!(9, rst);
 
     Ok(())
 }
@@ -112,12 +105,12 @@ async fn test_insert() {
     let mut conn = connect_db().await;
     let tran = conn.transaction().await.unwrap();
 
-    let dto = UserDto{ id: Some(4), name: Some("lisi".to_owned()), age: Some(50) };
+    let dto = UserDto{ id: Some(10), name: Some("lisi".to_owned()), age: Some(50) };
     let insert_id = insert!(|&dto, &mut tran| -> (_, _) {
         r#"insert into test_user (id, name, age) values (:id, :name, :age) returning id"#
     }).unwrap();
     
-    assert!(insert_id > 3);
+    assert!(insert_id > 9);
 
     tran.rollback().await.unwrap();
 }

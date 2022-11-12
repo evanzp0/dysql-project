@@ -62,7 +62,13 @@ async fn connect_sqlite_db() -> SqliteConnection {
     sqlx::query("INSERT INTO test_user (name, age) VALUES ('huanglan', 10)").execute(&mut conn).await.unwrap();
     sqlx::query("INSERT INTO test_user (name, age) VALUES ('zhanglan', 21)").execute(&mut conn).await.unwrap();
     sqlx::query("INSERT INTO test_user (name, age) VALUES ('zhangsan', 35)").execute(&mut conn).await.unwrap();
-
+    sqlx::query("INSERT INTO test_user (name, age) VALUES ('a4', 12)").execute(&mut conn).await.unwrap();
+    sqlx::query("INSERT INTO test_user (name, age) VALUES ('a5', 21)").execute(&mut conn).await.unwrap();
+    sqlx::query("INSERT INTO test_user (name, age) VALUES ('a6', 22)").execute(&mut conn).await.unwrap();
+    sqlx::query("INSERT INTO test_user (name, age) VALUES ('a7', 24)").execute(&mut conn).await.unwrap();
+    sqlx::query("INSERT INTO test_user (name, age) VALUES ('a8', 31)").execute(&mut conn).await.unwrap();
+    sqlx::query("INSERT INTO test_user (name, age) VALUES ('a9', 33)").execute(&mut conn).await.unwrap();
+    
     conn
 }
 
@@ -70,7 +76,7 @@ async fn connect_sqlite_db() -> SqliteConnection {
 async fn test_fetch_all() {
     let conn = connect_postgres_db().await;
 
-    let dto = UserDto{ id: None, name: None, age: Some(15) };
+    let dto = UserDto{ id: None, name: None, age: Some(13) };
     let rst = fetch_all!(|&dto, &conn| -> User {
         r#"SELECT * FROM test_user 
         WHERE 1 = 1
@@ -78,13 +84,7 @@ async fn test_fetch_all() {
           {{#age}}AND age > :age{{/age}}
         ORDER BY id"#
     }).unwrap();
-    assert_eq!(
-        vec![
-            User { id: 2, name: Some("zhanglan".to_owned()), age: Some(21) }, 
-            User { id: 3, name: Some("zhangsan".to_owned()), age: Some(35) }
-        ], 
-        rst
-    );
+    assert_eq!(7, rst.len());
 }
 
 sql!("select_sql","select * from test_user ");
@@ -107,7 +107,7 @@ async fn test_fetch_scalar() -> dysql::DySqlResult<()>{
         r#"select count (*) from test_user"#
     })?;
 
-    assert_eq!(3, rst);
+    assert_eq!(9, rst);
 
     Ok(())
 }
@@ -135,13 +135,13 @@ async fn test_insert() -> Result<(), Box<dyn Error>> {
     let conn = connect_postgres_db().await;
     let mut tran = conn.begin().await?;
 
-    let dto = UserDto{ id: None, name: Some("lisi".to_owned()), age: Some(50) };
+    let dto = UserDto{ id: Some(10), name: Some("lisi".to_owned()), age: Some(50) };
     let insert_id = insert!(|&dto, &mut tran| {
         r#"insert into test_user (name, age) values (:name, :age) returning id"#
     })?;
-    assert!(insert_id > 3);
-    tran.rollback().await?;
 
+    assert!(insert_id > 9);
+    tran.rollback().await?;
     Ok(())
 }
 
@@ -150,12 +150,12 @@ async fn test_insert_mysql() -> Result<(), Box<dyn Error>> {
     let conn = connect_mysql_db().await;
     let mut tran = conn.begin().await?;
 
-    let dto = UserDto{ id: Some(4), name: Some("lisi".to_owned()), age: Some(50) };
+    let dto = UserDto{ id: Some(10), name: Some("lisi".to_owned()), age: Some(50) };
     let insert_id = insert!(|&dto, &mut tran| -> (_, mysql) {
         r#"insert into test_user (name, age) values ('aa', 1)"#
     })?;
 
-    assert!(insert_id > 3);
+    assert!(insert_id > 9);
     tran.rollback().await?;
 
     Ok(())
@@ -166,12 +166,13 @@ async fn test_insert_sqlite() -> Result<(), Box<dyn Error>> {
     let mut conn = connect_sqlite_db().await;
     let mut tran = conn.begin().await?;
 
-    let dto = UserDto{ id: Some(4), name: Some("lisi".to_owned()), age: Some(50) };
+    let dto = UserDto{ id: Some(10), name: Some("lisi".to_owned()), age: Some(50) };
 
     let insert_id = insert!(|&dto, &mut tran| -> (_, sqlite) {
         r#"insert into test_user (name, age) values ('aa', 1)"#
     })?;
-    assert!(insert_id > 3);
+
+    assert!(insert_id > 9);
     tran.rollback().await?;
 
     Ok(())

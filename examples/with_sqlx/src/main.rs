@@ -14,7 +14,7 @@ async fn main() {
     sql!("select_sql", "SELECT * FROM test_user ");
 
     // fetch all
-    let dto = UserDto{ id: None, name: None, age: Some(15) };
+    let dto = UserDto{ id: None, name: None, age: Some(13) };
     let rst = fetch_all!(|&dto, &conn| -> User {
         select_sql + 
         r#"WHERE 1 = 1
@@ -22,13 +22,7 @@ async fn main() {
           {{#age}}AND age > :age{{/age}}
         ORDER BY id"#
     }).unwrap();
-    assert_eq!(
-        vec![
-            User { id: 2, name: Some("zhanglan".to_owned()), age: Some(21) }, 
-            User { id: 3, name: Some("zhangsan".to_owned()), age: Some(35) }
-        ], 
-        rst
-    );
+    assert_eq!(7, rst.len());
 
     // fetch one
 
@@ -43,7 +37,7 @@ async fn main() {
     let rst = fetch_scalar!(|_, &conn| -> i64 {
         count_sql + "from test_user"
     }).unwrap();
-    assert_eq!(3, rst);
+    assert_eq!(9, rst);
 
     // execute with transaction
     let mut tran = conn.begin().await.unwrap();
@@ -57,12 +51,12 @@ async fn main() {
 
     // insert with transaction and get id back (postgres)
     let mut tran = conn.begin().await.unwrap();
-    let dto = UserDto{ id: Some(4), name: Some("lisi".to_owned()), age: Some(50) };
+    let dto = UserDto{ id: Some(10), name: Some("lisi".to_owned()), age: Some(50) };
 
     let insert_id = insert!(|&dto, &mut tran| {
         r#"insert into test_user (id, name, age) values (:id, :name, :age) returning id"#
     }).unwrap();
-    assert_eq!(4, insert_id);
+    assert!(insert_id > 9);
     tran.rollback().await.unwrap();
 
     
@@ -70,23 +64,23 @@ async fn main() {
     let conn = connect_mysql_db().await;
     let mut tran = conn.begin().await.unwrap();
 
-    let dto = UserDto{ id: Some(4), name: Some("lisi".to_owned()), age: Some(50) };
+    let dto = UserDto{ id: Some(10), name: Some("lisi".to_owned()), age: Some(50) };
     let insert_id = insert!(|&dto, &mut tran| -> (_, mysql) {
         r#"insert into test_user (name, age) values ('aa', 1)"#
     }).unwrap();
-    assert!(insert_id > 3);
+    assert!(insert_id > 9);
     tran.rollback().await.unwrap();
 
     // insert with transaction and get id back (sqlite)
     let mut conn = connect_sqlite_db().await;
     let mut tran = conn.begin().await.unwrap();
 
-    let dto = UserDto{ id: Some(4), name: Some("lisi".to_owned()), age: Some(50) };
+    let dto = UserDto{ id: Some(10), name: Some("lisi".to_owned()), age: Some(50) };
     let insert_id = insert!(|&dto, &mut tran| -> (_, sqlite) {
         r#"insert into test_user (name, age) values ('aa', 1)"#
     }).unwrap();
-    assert!(insert_id > 3);
-
+    assert!(insert_id > 9);
+    tran.rollback().await.unwrap();
 }
 
 #[derive(Content)]
@@ -141,6 +135,12 @@ async fn connect_sqlite_db() -> SqliteConnection {
     sqlx::query("INSERT INTO test_user (name, age) VALUES ('huanglan', 10)").execute(&mut conn).await.unwrap();
     sqlx::query("INSERT INTO test_user (name, age) VALUES ('zhanglan', 21)").execute(&mut conn).await.unwrap();
     sqlx::query("INSERT INTO test_user (name, age) VALUES ('zhangsan', 35)").execute(&mut conn).await.unwrap();
-
+    sqlx::query("INSERT INTO test_user (name, age) VALUES ('a4', 12)").execute(&mut conn).await.unwrap();
+    sqlx::query("INSERT INTO test_user (name, age) VALUES ('a5', 21)").execute(&mut conn).await.unwrap();
+    sqlx::query("INSERT INTO test_user (name, age) VALUES ('a6', 22)").execute(&mut conn).await.unwrap();
+    sqlx::query("INSERT INTO test_user (name, age) VALUES ('a7', 24)").execute(&mut conn).await.unwrap();
+    sqlx::query("INSERT INTO test_user (name, age) VALUES ('a8', 31)").execute(&mut conn).await.unwrap();
+    sqlx::query("INSERT INTO test_user (name, age) VALUES ('a9', 33)").execute(&mut conn).await.unwrap();
+    
     conn
 }

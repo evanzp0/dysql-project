@@ -40,6 +40,9 @@
 //! 
 //!     sql!('sql_fragment_1', "select * from table1");
 //!     let rst = fetch_one!(|...| sql_fragment_1 + "where age > 10").unwrap();
+//! 
+//!     let page_dto = ...;
+//!     let pagination = page!(|&mut page_dto, &conn| -> User).unwrap();
 //! }
 //! ```
 //! 
@@ -210,6 +213,9 @@ impl syn::parse::Parse for SqlClosure {
 
         // parse closure sql body
         let body = parse_body(input)?;
+        let body: Vec<String> = body.split('\n').into_iter().map(|f| f.trim().to_owned()).collect();
+        let body = body.join(" ").to_owned();
+
         let sc = SqlClosure { dto, is_dto_ref, cot, is_cot_ref, is_cot_ref_mut, sql_name, ret_type, dialect, body };
         // eprintln!("{:#?}", sc);
 
@@ -460,4 +466,37 @@ pub fn sql(input: TokenStream) -> TokenStream {
     cache.write().unwrap().insert(st.name, st.value.to_string());
 
     quote!().into()
+}
+
+///
+/// page query
+/// 
+/// # Examples
+///
+/// Basic usage:
+/// 
+/// ```ignore
+/// let conn = connect_db().await;
+/// let dto = UserDto::new(None, None, Some(13));
+/// let mut pg_dto = PageDto::new(3, 10, &dto);
+/// 
+/// let rst = page!(|&mut pg_dto, &conn| -> User {
+///     "select * from test_user 
+///     where 1 = 1
+///         {{#data}}{{#name}}and name = :data.name{{/name}}{{/data}}
+///         {{#data}}{{#age}}and age > :data.age{{/age}}{{/data}}
+///     order by id"
+/// }).unwrap();
+/// 
+/// assert_eq!(7, rst.total);
+/// /// ```
+#[proc_macro]
+pub fn page(input: TokenStream) -> TokenStream {
+    let st = syn::parse_macro_input!(input as SqlClosure);
+    if st.ret_type.is_none() { panic!("ret_type can't be null.") }
+
+    match expand(&st, QueryType::Page) {
+        Ok(ret) => ret.into(),
+        Err(e) => e.into_compile_error().into(),
+    }
 }

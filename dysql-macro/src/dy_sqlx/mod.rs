@@ -3,6 +3,7 @@ mod fetch_one;
 mod fetch_scalar;
 mod execute;
 mod insert;
+mod page;
 
 use dysql::QueryType;
 
@@ -11,6 +12,7 @@ pub use fetch_one::*;
 pub use fetch_scalar::*;
 pub use execute::*;
 pub use insert::*;
+pub use page::*;
 
 use crate::{SqlClosure, sql_expand::SqlExpand};
 
@@ -21,5 +23,6 @@ pub (crate) fn expand(st: &SqlClosure, query_type: QueryType) -> syn::Result<pro
         QueryType::FetchScalar => FetchScalar.expand(st),
         QueryType::Execute => Execute.expand(st),
         QueryType::Insert => Insert.expand(st),
+        QueryType::Page => Page.expand(st),
     }
 }

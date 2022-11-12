@@ -76,6 +76,7 @@ pub enum QueryType {
     FetchScalar,
     Execute,
     Insert,
+    Page,
 }
 
 #[allow(unused)]

@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Content, Debug, Deserialize)]
 pub struct PageDto <T> {
-    pub dto: T,
+    pub data: T,
     pub page_size: u64,
     pub page_no: u64,
     pub total_page: Option<u64>,
@@ -23,11 +23,11 @@ pub struct Pagination <T> {
 
 impl<T> PageDto<T>
 {
-    pub fn new(page_size: u64, page_no: u64, dto: T) -> Self {
+    pub fn new(page_size: u64, page_no: u64, data: T) -> Self {
         Self {
             page_size,
             page_no,
-            dto,
+            data,
             total_page: None,
             start: None,
             total: None,
@@ -65,7 +65,11 @@ impl<T> PageDto<T>
     }
 
     fn start_of_page(&self, page_no: u64) -> u64 {
-        self.page_size * (page_no - 1) 
+        if page_no > 0 {
+            self.page_size * (page_no - 1) 
+        } else {
+            0
+        }
     }
 }
 

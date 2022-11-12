@@ -17,7 +17,7 @@ Full example please see: [Dysql sqlx example](https://github.com/evanzp0/dysql-p
 ### Cargo.toml:
 ```toml
 [dependencies]
-dysql = "0.6"
+dysql = "0.8"
 dysql-macro = {version = "0.5", features = ["sqlx"]}
 sqlx = { version = "0.6", features = [ "runtime-tokio-native-tls" , "postgres" ] }
 tokio = { version = "1.0", features = ["full"] }
@@ -85,6 +85,19 @@ async fn main() {
     let insert_id = insert!(|dto, &mut tran| -> (_, mysql) { // you can use 'sqlite' replace the 'mysql' dialect
         r#"insert into test_user (name, age) values ('aa', 1)"#
     }).unwrap();
+    ...
+
+    // page query
+    let dto = UserDto{ id: None, name: None, age: Some(13) };
+    let mut pg_dto = PageDto::new(3, 10, &dto);
+    let rst = page!(|&mut pg_dto, &conn| -> User {
+        "select * from test_user 
+        where 1 = 1
+            {{#data}}{{#name}}and name = :data.name{{/name}}{{/data}}
+            {{#data}}{{#age}}and age > :data.age{{/age}}{{/data}}
+        order by id"
+    }).unwrap();
+    assert_eq!(7, rst.total);
     ...
 }
 ```

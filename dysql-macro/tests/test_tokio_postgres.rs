@@ -1,6 +1,6 @@
 #![cfg(not(feature = "sqlx"))]
 
-use dysql::Value;
+use dysql::{Value, PageDto};
 use tokio_pg_mapper::FromTokioPostgresRow;
 use tokio_pg_mapper_derive::PostgresMapper;
 use tokio_postgres::{NoTls, connect};
@@ -113,4 +113,21 @@ async fn test_insert() {
     assert!(insert_id > 9);
 
     tran.rollback().await.unwrap();
+}
+
+#[tokio::test]
+async fn test_page() {
+    let conn = connect_db().await;
+    let dto = UserDto::new(None, None, Some(13));
+    let mut pg_dto = PageDto::new(3, 10, &dto);
+    
+    let rst = page!(|&mut pg_dto, &conn| -> User {
+        "select * from test_user 
+        where 1 = 1
+            {{#data}}{{#name}}and name = :data.name{{/name}}{{/data}}
+            {{#data}}{{#age}}and age > :data.age{{/age}}{{/data}}
+        order by id"
+    }).unwrap();
+
+    assert_eq!(7, rst.total);
 }

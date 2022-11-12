@@ -2,6 +2,7 @@
 
 use std::{str::FromStr, error::Error};
 
+use dysql::PageDto;
 use dysql_macro::*;
 use ramhorns::Content;
 use sqlx::{
@@ -178,3 +179,56 @@ async fn test_insert_sqlite() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+#[tokio::test]
+async fn test_page() {
+    let conn = connect_postgres_db().await;
+
+    let dto = UserDto{ id: None, name: None, age: Some(13) };
+    let mut pg_dto = PageDto::new(3, 10, &dto);
+    
+    let rst = page!(|&mut pg_dto, &conn| -> User {
+        "select * from test_user 
+        where 1 = 1
+            {{#data}}{{#name}}and name = :data.name{{/name}}{{/data}}
+            {{#data}}{{#age}}and age > :data.age{{/age}}{{/data}}
+        order by id"
+    }).unwrap();
+
+    assert_eq!(7, rst.total);
+}
+
+#[tokio::test]
+async fn test_page_mysql() {
+    let conn = connect_mysql_db().await;
+
+    let dto = UserDto{ id: None, name: None, age: Some(13) };
+    let mut pg_dto = PageDto::new(3, 10, &dto);
+    
+    let rst = page!(|&mut pg_dto, &conn| -> (User, mysql) {
+        "select * from test_user 
+        where 1 = 1
+            {{#data}}{{#name}}and name = :data.name{{/name}}{{/data}}
+            {{#data}}{{#age}}and age > :data.age{{/age}}{{/data}}
+        order by id"
+    }).unwrap();
+
+    assert_eq!(7, rst.total);
+}
+
+#[tokio::test]
+async fn test_page_sqlite() {
+    let mut conn = connect_sqlite_db().await;
+
+    let dto = UserDto{ id: None, name: None, age: Some(13) };
+    let mut pg_dto = PageDto::new(3, 0, &dto);
+    
+    let rst = page!(|&mut pg_dto, &mut conn| -> (User, sqlite) {
+        "select * from test_user 
+        where 1 = 1
+            {{#data}}{{#name}}and name = :data.name{{/name}}{{/data}}
+            {{#data}}{{#age}}and age > :data.age{{/age}}{{/data}}
+        order by id"
+    }).unwrap();
+    
+    assert_eq!(7, rst.total);
+}

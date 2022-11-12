@@ -1,10 +1,11 @@
-use dysql_macro::{fetch_all, fetch_one, fetch_scalar, execute, insert, sql};
+use dysql_macro::*;
 use ramhorns::Content;
 use sqlx::{
     postgres::PgPoolOptions, FromRow, Pool, Postgres, mysql::MySqlPoolOptions, MySql, 
     sqlite::{SqliteConnectOptions, SqliteJournalMode}, 
     ConnectOptions, SqliteConnection, Acquire
 };
+use dysql::*;
 
 use std::str::FromStr;
 
@@ -81,6 +82,21 @@ async fn main() {
     }).unwrap();
     assert!(insert_id > 9);
     tran.rollback().await.unwrap();
+
+    // page query
+    let conn = connect_postgres_db().await;
+    let dto = UserDto{ id: None, name: None, age: Some(13) };
+    let mut pg_dto = PageDto::new(3, 10, &dto);
+    
+    let rst = page!(|&mut pg_dto, &conn| -> User {
+        "select * from test_user 
+        where 1 = 1
+            {{#data}}{{#name}}and name = :data.name{{/name}}{{/data}}
+            {{#data}}{{#age}}and age > :data.age{{/age}}{{/data}}
+        order by id"
+    }).unwrap();
+    assert_eq!(7, rst.total);
+
 }
 
 #[derive(Content)]

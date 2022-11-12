@@ -42,9 +42,14 @@ pub(crate) trait SqlExpand {
     }
     
     /// declare sql and bind params at runtime
-    fn gen_declare_rt(&self, st: &crate::SqlClosure) -> syn::Result<proc_macro2::TokenStream> {
+    fn gen_declare_rt(&self, st: &crate::SqlClosure, sql: Option<&str>) -> syn::Result<proc_macro2::TokenStream> {
         let dto = &st.dto;
-        let body = &st.body;
+        let body = if let Some(bd) = sql {
+            bd
+        } else {
+            &st.body
+        };
+
         let dialect = &st.dialect.to_string();
         let template_id = dysql::md5(body);
         let is_dto_ref = &st.is_dto_ref;
@@ -70,7 +75,7 @@ pub(crate) trait SqlExpand {
                 let param_names: Vec<String> = vec![];
             ),
         };
-        
+
         Ok(rst)
     }
 

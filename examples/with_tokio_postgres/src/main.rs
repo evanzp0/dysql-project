@@ -4,6 +4,7 @@ use tokio_postgres::{NoTls, connect};
 use ramhorns::Content;
 
 use dysql_macro::*;
+use dysql::*;
 
 sql!("select_sql", "select * from test_user ");
 
@@ -61,6 +62,19 @@ async fn main() {
     assert!(insert_id > 9);
     tran.rollback().await.unwrap();
 
+    // page query
+    let conn = connect_db().await;
+    let dto = UserDto{ id: None, name: None, age: Some(13) };
+    let mut pg_dto = PageDto::new(3, 10, &dto);
+    
+    let rst = page!(|&mut pg_dto, &conn| -> User {
+        "select * from test_user 
+        where 1 = 1
+            {{#data}}{{#name}}and name = :data.name{{/name}}{{/data}}
+            {{#data}}{{#age}}and age > :data.age{{/age}}{{/data}}
+        order by id"
+    }).unwrap();
+    assert_eq!(7, rst.total);
 }
 
 

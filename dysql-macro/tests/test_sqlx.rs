@@ -190,8 +190,8 @@ async fn test_page() {
         "select * from test_user 
         where 1 = 1
         {{#data}}
-            {{#name}}and name = :data.name{{/name}}{{/data}}
-            {{#data}}{{#age}}and age > :data.age{{/age}}
+            {{#name}}and name = :data.name{{/name}}
+            {{#age}}and age > :data.age{{/age}}
         {{/data}}
         order by id"
     }).unwrap();

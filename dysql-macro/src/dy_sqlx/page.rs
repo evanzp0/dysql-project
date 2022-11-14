@@ -10,6 +10,9 @@ impl SqlExpand for Page {
         let dto = &st.dto;
         let cot = &st.cot;
         let ret_type = &st.ret_type;
+        let is_dto_ref = &st.is_dto_ref;
+        let is_dto_ref_mut = &st.is_dto_ref_mut;
+        let dto_ref = if *is_dto_ref { quote!(&) } else if *is_dto_ref_mut { quote!(&mut) } else { quote!() }; 
 
         let cot_ref = if st.is_cot_ref_mut {
             quote!(&mut )
@@ -47,7 +50,10 @@ impl SqlExpand for Page {
                 }
                 let count = rst.expect("Unexpected error");
 
-                #dto.init(count as u64);
+                {
+                    let _tmp_dto: &mut PageDto<_> = #dto_ref #dto;
+                    _tmp_dto.init(count as u64);
+                }
             ),
             None => quote!(
                 #declare_rt
@@ -59,7 +65,10 @@ impl SqlExpand for Page {
                 }
                 let count = rst.expect("Unexpected error");
 
-                #dto.init(count as u64);
+                {
+                    let _tmp_dto: &mut PageDto<_> = #dto_ref #dto;
+                    _tmp_dto.init(count as u64);
+                }
             ),
         };
     
@@ -88,7 +97,7 @@ impl SqlExpand for Page {
                     break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)))))
                 }
                 let rst = rst.expect("Unexpected error");
-                let pg_data = dysql::Pagination::from_dto(&#dto, rst);
+                let pg_data = dysql::Pagination::from_dto(#dto_ref #dto, rst);
 
                 Ok(pg_data)
             ),
@@ -101,7 +110,7 @@ impl SqlExpand for Page {
                     break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)))))
                 }
                 let rst = rst.expect("Unexpected error");
-                let pg_data = dysql::Pagination::from_dto(&#dto, rst);
+                let pg_data = dysql::Pagination::from_dto(#dto_ref #dto, rst);
                 
                 Ok(pg_data)
             ),

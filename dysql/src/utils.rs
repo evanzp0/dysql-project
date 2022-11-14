@@ -95,8 +95,8 @@ impl<T> Value<T> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
+    use crate::SqlDialect;
+    
     #[test]
     fn test_to_string() {
         let s = SqlDialect::postgres.to_string();

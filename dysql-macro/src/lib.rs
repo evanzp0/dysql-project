@@ -92,6 +92,7 @@ impl syn::parse::Parse for SqlFragment {
 struct SqlClosure {
     dto: Option<syn::Ident>,
     is_dto_ref: bool,
+    is_dto_ref_mut: bool,
     cot: syn::Ident, // database connection or transaction
     is_cot_ref: bool,
     is_cot_ref_mut: bool,
@@ -106,17 +107,30 @@ impl syn::parse::Parse for SqlClosure {
         // parse closure parameters
 
         let mut is_dto_ref = false;
+        let mut is_dto_ref_mut = false;
         //// parse dto
         input.parse::<syn::Token!(|)>()?;
-        if let Ok(_) = input.parse::<syn::Token!(&)>() {
-            is_dto_ref = true;
-            input.parse::<syn::Token!(mut)>().ok();
-        };
+
         let dto = match input.parse::<syn::Ident>() {
             Ok(i) => Some(i),
             Err(e) => match input.parse::<syn::Token!(_)>() {
                 Ok(_) => None,
-                Err(_) => return Err(e),
+                Err(_) => {
+                    match input.parse::<syn::Token!(&)>() {
+                        Ok(_) => {
+                            is_dto_ref = true;
+                            match input.parse::<syn::Token!(mut)>() {
+                                Ok(_) => {
+                                    is_dto_ref = false;
+                                    is_dto_ref_mut = true;
+                                    Some(input.parse::<syn::Ident>()?)
+                                },
+                                Err(_) => Some(input.parse::<syn::Ident>()?),
+                            }
+                        },
+                        Err(_) => return Err(e),
+                    }
+                },
             },
         };
 
@@ -216,7 +230,7 @@ impl syn::parse::Parse for SqlClosure {
         let body: Vec<String> = body.split('\n').into_iter().map(|f| f.trim().to_owned()).collect();
         let body = body.join(" ").to_owned();
 
-        let sc = SqlClosure { dto, is_dto_ref, cot, is_cot_ref, is_cot_ref_mut, sql_name, ret_type, dialect, body };
+        let sc = SqlClosure { dto, is_dto_ref, is_dto_ref_mut, cot, is_cot_ref, is_cot_ref_mut, sql_name, ret_type, dialect, body };
         // eprintln!("{:#?}", sc);
 
         Ok(sc)

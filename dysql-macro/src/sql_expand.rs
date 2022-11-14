@@ -53,7 +53,8 @@ pub(crate) trait SqlExpand {
         let dialect = &st.dialect.to_string();
         let template_id = dysql::md5(body);
         let is_dto_ref = &st.is_dto_ref;
-        let dto_ref = if *is_dto_ref { quote!(&) }  else { quote!() }; 
+        let is_dto_ref_mut = &st.is_dto_ref_mut;
+        let dto_ref = if *is_dto_ref { quote!(&) }  else if *is_dto_ref_mut { quote!(&mut) } else { quote!() }; 
         
         let rst = match dto {
             Some(_) => quote!(

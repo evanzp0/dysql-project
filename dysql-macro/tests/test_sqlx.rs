@@ -184,9 +184,9 @@ async fn test_page() {
     let conn = connect_postgres_db().await;
 
     let dto = UserDto{ id: None, name: None, age: Some(13) };
-    let mut pg_dto = PageDto::new(3, 10, &dto);
+    let pg_dto = PageDto::new(3, 10, &dto);
     
-    let rst = page!(|&mut pg_dto, &conn| -> User {
+    let rst = page!(|&pg_dto, &conn| -> User {
         "select * from test_user 
         where 1 = 1
         {{#data}}
@@ -204,9 +204,9 @@ async fn test_page_mysql() {
     let conn = connect_mysql_db().await;
 
     let dto = UserDto{ id: None, name: None, age: Some(13) };
-    let mut pg_dto = PageDto::new(3, 10, &dto);
+    let pg_dto = PageDto::new(3, 10, &dto);
     
-    let rst = page!(|&mut pg_dto, &conn| -> (User, mysql) {
+    let rst = page!(|&pg_dto, &conn| -> (User, mysql) {
         "select * from test_user 
         where 1 = 1
         {{#data}}
@@ -224,9 +224,9 @@ async fn test_page_sqlite() {
     let mut conn = connect_sqlite_db().await;
 
     let dto = UserDto{ id: None, name: None, age: Some(13) };
-    let mut pg_dto = PageDto::new(3, 0, &dto);
+    let pg_dto = PageDto::new(3, 0, &dto);
     
-    let rst = page!(|&mut pg_dto, &mut conn| -> (User, sqlite) {
+    let rst = page!(|&pg_dto, &mut conn| -> (User, sqlite) {
         "select * from test_user 
         where 1 = 1
         {{#data}}

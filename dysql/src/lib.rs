@@ -40,6 +40,9 @@
 //! 
 //!     sql!('sql_fragment_1', "select * from table1");
 //!     let rst = fetch_one!(|...| sql_fragment_1 + "where age > 10").unwrap();
+//! 
+//!     let page_dto = ...;
+//!     let pagination = page!(|&mut page_dto, &conn| -> User).unwrap();
 //! }
 //! ```
 //! 
@@ -48,6 +51,7 @@
 //! 
 //! ## Example (sqlx)
 //! Full example please see: [Dysql sqlx example](https://github.com/evanzp0/dysql-project/tree/main/examples/with_sqlx)
+
 mod extract_sql;
 mod pagination;
 mod sql_dialect;

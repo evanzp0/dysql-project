@@ -10,9 +10,6 @@ impl SqlExpand for Page {
         let dto = &st.dto;
         let cot = &st.cot;
         let ret_type = &st.ret_type;
-        let is_dto_ref = &st.is_dto_ref;
-        let is_dto_ref_mut = &st.is_dto_ref_mut;
-        let dto_ref = if *is_dto_ref { quote!(&) } else if *is_dto_ref_mut { quote!(&mut) } else { quote!() }; 
 
         let cot_ref = if st.is_cot_ref_mut {
             quote!(&mut )
@@ -28,7 +25,7 @@ impl SqlExpand for Page {
 
         // declare sql and bind params at runtime
         let count_sql = format!("SELECT count(*) FROM ({}) as _tmp", &st.body);
-        let declare_rt = self.gen_declare_rt(st, Some(&count_sql))?;
+        let declare_rt = self.gen_declare_rt(st, Some(&count_sql), false)?;
 
         let rst_count = match dto {
             Some(_) => quote!(
@@ -50,10 +47,8 @@ impl SqlExpand for Page {
                 }
                 let count = rst.expect("Unexpected error");
 
-                {
-                    let _tmp_dto: &mut PageDto<_> = #dto_ref #dto;
-                    _tmp_dto.init(count as u64);
-                }
+                let mut _tmp_pg_dto = #dto.clone();
+                _tmp_pg_dto.init(count as u64);
             ),
             None => quote!(
                 #declare_rt
@@ -65,10 +60,8 @@ impl SqlExpand for Page {
                 }
                 let count = rst.expect("Unexpected error");
 
-                {
-                    let _tmp_dto: &mut PageDto<_> = #dto_ref #dto;
-                    _tmp_dto.init(count as u64);
-                }
+                let mut _tmp_pg_dto = #dto.clone();
+                _tmp_pg_dto.init(count as u64);
             ),
         };
     
@@ -77,7 +70,7 @@ impl SqlExpand for Page {
         // declare sql and bind params at runtime
         let mut page_sql = st.body.to_owned();
         page_sql.push_str(" LIMIT {{page_size}} OFFSET {{start}}");
-        let declare_rt = self.gen_declare_rt(st, Some(&page_sql))?;
+        let declare_rt = self.gen_declare_rt(st, Some(&page_sql), true)?;
 
         let rst_page = match dto {
             Some(_) => quote!(
@@ -97,7 +90,7 @@ impl SqlExpand for Page {
                     break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)))))
                 }
                 let rst = rst.expect("Unexpected error");
-                let pg_data = dysql::Pagination::from_dto(#dto_ref #dto, rst);
+                let pg_data = dysql::Pagination::from_dto(&_tmp_pg_dto, rst);
 
                 Ok(pg_data)
             ),
@@ -110,7 +103,7 @@ impl SqlExpand for Page {
                     break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)))))
                 }
                 let rst = rst.expect("Unexpected error");
-                let pg_data = dysql::Pagination::from_dto(#dto_ref #dto, rst);
+                let pg_data = dysql::Pagination::from_dto(&_tmp_pg_dto, rst);
                 
                 Ok(pg_data)
             ),

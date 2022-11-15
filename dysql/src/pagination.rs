@@ -1,7 +1,7 @@
 use ramhorns::Content;
 use serde::{Deserialize, Serialize};
 
-#[derive(Content, Debug, Deserialize)]
+#[derive(Content, Debug, Deserialize, Clone)]
 pub struct PageDto <T> {
     pub data: T,
     pub page_size: u64,
@@ -21,7 +21,7 @@ pub struct Pagination <T> {
     pub total: u64,
 }
 
-impl<T> PageDto<T>
+impl<T: Clone> PageDto<T>
 {
     pub fn new(page_size: u64, page_no: u64, data: T) -> Self {
         Self {

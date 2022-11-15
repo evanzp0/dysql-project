@@ -65,9 +65,9 @@ async fn main() {
     // page query
     let conn = connect_db().await;
     let dto = UserDto{ id: None, name: None, age: Some(13) };
-    let mut pg_dto = PageDto::new(3, 10, &dto);
+    let pg_dto = PageDto::new(3, 10, &dto);
     
-    let rst = page!(|&mut pg_dto, &conn| -> User {
+    let rst = page!(|&pg_dto, &conn| -> User {
         "select * from test_user 
         where 1 = 1
         {{#data}}

@@ -8,7 +8,7 @@ use ramhorns::Content;
 
 use dysql_macro::*;
 
-#[derive(Content)]
+#[derive(Content, Clone, Debug)]
 struct UserDto {
     id: Option<i64>,
     name: Option<String>,
@@ -119,9 +119,10 @@ async fn test_insert() {
 async fn test_page() {
     let conn = connect_db().await;
     let dto = UserDto::new(None, None, Some(13));
-    let mut pg_dto = PageDto::new(3, 10, &dto);
+    let pg_dto = PageDto::new(3, 10, dto);
+    let pg_dto = &pg_dto;
     
-    let rst = page!(|&mut pg_dto, &conn| -> User {
+    let rst = page!(|pg_dto, &conn| -> User {
         "select * from test_user 
         where 1 = 1
         {{#data}}

@@ -18,7 +18,7 @@ Full example please see: [Dysql sqlx example](https://github.com/evanzp0/dysql-p
 ```toml
 [dependencies]
 dysql = "0.8"
-dysql-macro = {version = "0.5", features = ["sqlx"]}
+dysql-macro = {version = "0.8", features = ["sqlx"]}
 sqlx = { version = "0.6", features = [ "runtime-tokio-native-tls" , "postgres" ] }
 tokio = { version = "1.0", features = ["full"] }
 ramhorns = "0.14"

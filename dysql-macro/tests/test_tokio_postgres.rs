@@ -131,5 +131,7 @@ async fn test_page() {
         order by id"
     }).unwrap();
 
+    println!("{:?}", rst);
+
     assert_eq!(7, rst.total);
 }

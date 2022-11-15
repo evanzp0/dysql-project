@@ -13,7 +13,7 @@ pub struct PageDto <T> {
 
 #[derive(Content, Debug, Serialize)]
 pub struct Pagination <T> {
-    pub data: T,
+    pub data: Vec<T>,
     pub page_size: u64,
     pub page_no: u64,
     pub total_page: u64,
@@ -74,7 +74,7 @@ impl<T> PageDto<T>
 }
 
 impl<T> Pagination<T> {
-    pub fn from_dto<Dto>(dto: &PageDto<Dto>, data: T) -> Self {
+    pub fn from_dto<Dto>(dto: &PageDto<Dto>, data: Vec<T>) -> Self {
         Self {
             data,
             page_size: dto.page_size,

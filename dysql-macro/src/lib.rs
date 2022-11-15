@@ -497,8 +497,10 @@ pub fn sql(input: TokenStream) -> TokenStream {
 /// let rst = page!(|&mut pg_dto, &conn| -> User {
 ///     "select * from test_user 
 ///     where 1 = 1
-///         {{#data}}{{#name}}and name = :data.name{{/name}}{{/data}}
-///         {{#data}}{{#age}}and age > :data.age{{/age}}{{/data}}
+///         {{#data}}
+///             {{#name}}and name = :data.name{{/name}}
+///             {{#age}}and age > :data.age{{/age}}
+///         {{/data}}
 ///     order by id"
 /// }).unwrap();
 /// 

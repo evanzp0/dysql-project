@@ -56,7 +56,11 @@ impl<T: Clone> PageDto<T>
         let mut start = self.start_of_page(page_no);
 
         if start as u64 > total {
-            page_no = self.total_page(total);
+            page_no = if self.total_page(total) > 0 {
+                self.total_page(total) - 1
+            } else {
+                0
+            };
             start = self.start_of_page(page_no);
             
         }
@@ -65,11 +69,7 @@ impl<T: Clone> PageDto<T>
     }
 
     fn start_of_page(&self, page_no: u64) -> u64 {
-        if page_no > 0 {
-            self.page_size * (page_no - 1) 
-        } else {
-            0
-        }
+        self.page_size * page_no
     }
 }
 

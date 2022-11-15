@@ -118,7 +118,7 @@ async fn test_insert() {
 #[tokio::test]
 async fn test_page() {
     let conn = connect_db().await;
-    let dto = UserDto::new(None, None, Some(13));
+    let dto = UserDto::new(None, Some("a".to_owned()), Some(13));
     let pg_dto = PageDto::new(3, 10, dto);
     let pg_dto = &pg_dto;
     
@@ -126,7 +126,7 @@ async fn test_page() {
         "select * from test_user 
         where 1 = 1
         {{#data}}
-            {{#name}}and name = :data.name{{/name}}
+            {{#name}}and name like '%' || :data.name || '%'{{/name}}
             {{#age}}and age > :data.age{{/age}}
         {{/data}}
         order by id"

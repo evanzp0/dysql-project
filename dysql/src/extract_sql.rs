@@ -59,7 +59,7 @@ pub fn extract_params(o_sql: &str, sql_dial: SqlDialect) -> DySqlResult<(String,
             if cur == end {
                 return Err(DySqlError(ErrorInner::new(Kind::ExtractSqlParamterError, None)))
             } else {
-                let (found, current_cursor) = char_index(o_sql, cur, vec![' ', '\n', '\t', ',', ';', '{', ')']);
+                let (found, current_cursor) = char_index(o_sql, cur, vec![' ', '\n', '\t', ',', ';', '{', ')', '|']);
                 if found && current_cursor == cur{
                     return Err(DySqlError(ErrorInner::new(Kind::ExtractSqlParamterError, None)))
                 }

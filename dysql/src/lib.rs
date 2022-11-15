@@ -52,11 +52,11 @@
 //! ## Example (sqlx)
 //! Full example please see: [Dysql sqlx example](https://github.com/evanzp0/dysql-project/tree/main/examples/with_sqlx)
 
-mod extract_sql;
-mod pagination;
-mod sql_dialect;
-mod error;
-mod utils;
+pub mod extract_sql;
+pub mod pagination;
+pub mod sql_dialect;
+pub mod error;
+pub mod utils;
 
 pub use extract_sql::*;
 pub use pagination::*;

@@ -42,12 +42,8 @@ pub(crate) trait SqlExpand {
     }
     
     /// declare sql and bind params at runtime
-    fn gen_declare_rt(&self, st: &crate::SqlClosure, sql: Option<&str>, is_tmp_page: bool) -> syn::Result<proc_macro2::TokenStream> {
-        let dto = if is_tmp_page {
-            &st.tmp_pg_dto
-        } else {
-            &st.dto
-        };
+    fn gen_declare_rt(&self, st: &crate::SqlClosure, sql: Option<&str>) -> syn::Result<proc_macro2::TokenStream> {
+        let dto = &st.dto;
         
         let body = if let Some(bd) = sql {
             bd
@@ -57,19 +53,19 @@ pub(crate) trait SqlExpand {
 
         let dialect = &st.dialect.to_string();
         let template_id = dysql::md5(body);
-        // let is_dto_ref = &st.is_dto_ref;
-        // let is_dto_ref_mut = &st.is_dto_ref_mut;
-        // let dto_ref = if *is_dto_ref { quote!(&) }  else if *is_dto_ref_mut { quote!(&mut) } else { quote!() }; 
+
+        let is_dto_ref = &st.is_dto_ref;
+        let is_dto_ref_mut = &st.is_dto_ref_mut;
+        let dto_ref = if *is_dto_ref { quote!(&) }  else if *is_dto_ref_mut { quote!(&mut) } else { quote!() }; 
         
         let rst = match dto {
             Some(_) => quote!(
-                let sql_tpl = ramhorns::Template::new(#body).unwrap();
                 let sql_tpl = match dysql::get_sql_template(#template_id) {
                     Some(tpl) => tpl,
                     None => dysql::put_sql_template(#template_id, #body).expect("Unexpected error when put_sql_template"),
                 };
         
-                let sql_rendered = sql_tpl.render(&#dto);
+                let sql_rendered = sql_tpl.render(#dto_ref #dto);
                 let extract_rst = dysql::extract_params(&sql_rendered, dysql::SqlDialect::from(#dialect.to_owned()));
                 if let Err(e) = extract_rst {
                     break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::ExtractSqlParamterError, Some(Box::new(e)))))

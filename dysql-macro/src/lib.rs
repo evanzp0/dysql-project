@@ -41,7 +41,7 @@
 //!     sql!('sql_fragment_1', "select * from table1");
 //!     let rst = fetch_one!(|...| sql_fragment_1 + "where age > 10").unwrap();
 //! 
-//!     let page_dto = ...;
+//!     let mut page_dto = ...;
 //!     let pagination = page!(|&mut page_dto, &conn| -> User).unwrap();
 //! }
 //! ```
@@ -93,7 +93,6 @@ struct SqlClosure {
     dto: Option<syn::Ident>,
     is_dto_ref: bool,
     is_dto_ref_mut: bool,
-    tmp_pg_dto: Option<syn::Ident>,
     cot: syn::Ident, // database connection or transaction
     is_cot_ref: bool,
     is_cot_ref_mut: bool,
@@ -231,8 +230,7 @@ impl syn::parse::Parse for SqlClosure {
         let body: Vec<String> = body.split('\n').into_iter().map(|f| f.trim().to_owned()).collect();
         let body = body.join(" ").to_owned();
 
-        let tmp_pg_dto = Some(syn::Ident::new("_tmp_pg_dto", proc_macro2::Span::call_site()));
-        let sc = SqlClosure { dto, is_dto_ref, is_dto_ref_mut, tmp_pg_dto, cot, is_cot_ref, is_cot_ref_mut, sql_name, ret_type, dialect, body };
+        let sc = SqlClosure { dto, is_dto_ref, is_dto_ref_mut, cot, is_cot_ref, is_cot_ref_mut, sql_name, ret_type, dialect, body };
         // eprintln!("{:#?}", sc);
 
         Ok(sc)
@@ -494,9 +492,9 @@ pub fn sql(input: TokenStream) -> TokenStream {
 /// ```ignore
 /// let conn = connect_db().await;
 /// let dto = UserDto::new(None, None, Some(13));
-/// let pg_dto = PageDto::new(3, 10, &dto);
+/// let mut pg_dto = PageDto::new(3, 10, &dto);
 /// 
-/// let rst = page!(|&pg_dto, &conn| -> User {
+/// let rst = page!(|&mut pg_dto, &conn| -> User {
 ///     "select * from test_user 
 ///     where 1 = 1
 ///         {{#data}}

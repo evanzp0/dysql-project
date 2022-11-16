@@ -10,9 +10,10 @@ impl SqlExpand for Page {
         let dto = &st.dto;
         let cot = &st.cot;
         let ret_type = &st.ret_type;
-        // let is_dto_ref = &st.is_dto_ref;
-        // let is_dto_ref_mut = &st.is_dto_ref_mut;
-        // let dto_ref = if *is_dto_ref { quote!(&) } else if *is_dto_ref_mut { quote!(&mut) } else { quote!() }; 
+
+        let is_dto_ref = &st.is_dto_ref;
+        let is_dto_ref_mut = &st.is_dto_ref_mut;
+        let dto_ref = if *is_dto_ref { quote!(&) } else if *is_dto_ref_mut { quote!(&mut) } else { quote!() }; 
 
         let (param_strings, param_idents) = self.extra_params(st)?;
 
@@ -20,7 +21,7 @@ impl SqlExpand for Page {
 
         // declare sql and bind params at runtime
         let count_sql = format!("SELECT count(*) FROM ({}) as _tmp", &st.body);
-        let declare_rt = self.gen_declare_rt(st, Some(&count_sql), false)?;
+        let declare_rt = self.gen_declare_rt(st, Some(&count_sql))?;
 
         let rst_count = quote!(
             let mut param_values: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = Vec::new();
@@ -41,7 +42,7 @@ impl SqlExpand for Page {
             }
             let stmt = stmt.expect("Unexpected error");
     
-            let params = param_values.clone().into_iter();
+            let params = param_values.into_iter();
             let params = params.as_slice();
     
             let row = #cot.query_one(&stmt, &params).await;
@@ -51,9 +52,10 @@ impl SqlExpand for Page {
             let row = row.expect("Unexpected error");
             let count: i64 = row.get(0);
 
-
-            let mut _tmp_pg_dto = #dto.clone();
-            _tmp_pg_dto.init(count as u64);
+            {
+                let _tmp_pg_dto: &mut PageDto<_> = #dto_ref #dto;
+                _tmp_pg_dto.init(count as u64);
+            }
         );
     
         // page query ----------------------
@@ -61,7 +63,7 @@ impl SqlExpand for Page {
         // declare sql and bind params at runtime
         let mut page_sql = st.body.to_owned();
         page_sql.push_str(" limit {{page_size}} offset {{start}}");
-        let declare_rt = self.gen_declare_rt(st, Some(&page_sql), true)?;
+        let declare_rt = self.gen_declare_rt(st, Some(&page_sql))?;
 
         let rst_page = quote!(
             #declare_rt
@@ -72,6 +74,15 @@ impl SqlExpand for Page {
             }
             let stmt = stmt.expect("Unexpected error");
     
+            let mut param_values: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = Vec::new();
+            for i in 0..param_names.len() {
+                #(
+                    if param_names[i] == #param_strings {
+                        param_values.push(&#dto.#param_idents);
+                    }
+                )*
+            }
+
             let params = param_values.into_iter();
             let params = params.as_slice();
     
@@ -86,7 +97,7 @@ impl SqlExpand for Page {
                 .map(|row| #ret_type::from_row_ref(row).expect("query unexpected error"))
                 .collect::<Vec<#ret_type>>();
     
-            let pg_data = dysql::Pagination::from_dto(&_tmp_pg_dto, rst);
+            let pg_data = dysql::Pagination::from_dto(#dto_ref #dto, rst);
 
             Ok(pg_data)
         );

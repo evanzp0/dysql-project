@@ -119,8 +119,8 @@ async fn test_insert() {
 async fn test_page() {
     let conn = connect_db().await;
     let dto = UserDto::new(None, Some("a".to_owned()), Some(13));
-    let pg_dto = PageDto::new(3, 10, dto);
-    let pg_dto = &pg_dto;
+    let mut pg_dto = PageDto::new(3, 10, dto);
+    let pg_dto = &mut pg_dto;
     
     let rst = page!(|pg_dto, &conn| -> User {
         "select * from test_user 

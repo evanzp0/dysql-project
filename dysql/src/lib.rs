@@ -41,7 +41,7 @@
 //!     sql!('sql_fragment_1', "select * from table1");
 //!     let rst = fetch_one!(|...| sql_fragment_1 + "where age > 10").unwrap();
 //! 
-//!     let page_dto = ...;
+//!     let mut page_dto = ...;
 //!     let pagination = page!(|&mut page_dto, &conn| -> User).unwrap();
 //! }
 //! ```

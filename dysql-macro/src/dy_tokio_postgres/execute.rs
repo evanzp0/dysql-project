@@ -13,7 +13,7 @@ impl SqlExpand for Execute {
         let (param_strings, param_idents) = self.extra_params(st)?;
 
         // declare sql and bind params at runtime
-        let declare_rt = self.gen_declare_rt(st, None, false)?;
+        let declare_rt = self.gen_declare_rt(st, None)?;
 
         let ret = quote!(
             let mut param_values: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = Vec::new();

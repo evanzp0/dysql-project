@@ -67,7 +67,7 @@ async fn main() {
 
     let dto = UserDto{ id: Some(10), name: Some("lisi".to_owned()), age: Some(50) };
     let insert_id = insert!(|&dto, &mut tran| -> (_, mysql) {
-        r#"insert into test_user (name, age) values ('aa', 1)"#
+        r#"insert into test_user (name, age) values (:name, :age)"#
     }).unwrap();
     assert!(insert_id > 9);
     tran.rollback().await.unwrap();
@@ -78,7 +78,7 @@ async fn main() {
 
     let dto = UserDto{ id: Some(10), name: Some("lisi".to_owned()), age: Some(50) };
     let insert_id = insert!(|&dto, &mut tran| -> (_, sqlite) {
-        r#"insert into test_user (name, age) values ('aa', 1)"#
+        r#"insert into test_user (name, age) values (:name, :age)"#
     }).unwrap();
     assert!(insert_id > 9);
     tran.rollback().await.unwrap();

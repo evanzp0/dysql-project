@@ -57,11 +57,11 @@ pub mod pagination;
 pub mod sql_dialect;
 pub mod error;
 pub mod utils;
-pub mod affect_sql;
+pub mod trim_sql;
 
 pub use extract_sql::*;
 pub use pagination::*;
 pub use sql_dialect::*;
 pub use error::*;
 pub use utils::*;
-pub use affect_sql::*;
+pub use trim_sql::*;

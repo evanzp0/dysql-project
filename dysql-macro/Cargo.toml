@@ -1,12 +1,12 @@
 [package]
 name = "dysql-macro"
-version = "0.8.5"
+version = "0.8.6"
 edition = "2021"
 description = "Dysql is a rust crate that do dynamic-sql query through proc-macro, it bases on tokio-postgres (default feature) and sqlx crate"
 license = "Apache-2.0"
 
 [features]
-default = ["sqlx"]
+default = ["tokio-postgres"]
 tokio-postgres = []
 sqlx = []
 

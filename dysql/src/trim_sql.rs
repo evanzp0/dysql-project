@@ -27,10 +27,12 @@ pub struct SqlNodeLinkList<'a> {
 
 impl<'a> SqlNodeLinkList<'a> {
     pub fn new(sql: &'a str) -> Self {
-        Self { sql, first: None, last: None }
+        let mut s = Self { sql, first: None, last: None };
+        SqlNodeLinkList::init(&mut s);
+        s
     }
 
-    pub fn init(&mut self) -> &mut Self {
+    fn init(&mut self) -> &mut Self {
         let mut start;
         let mut end = 0;
         let sql_len = self.sql.len();
@@ -274,7 +276,6 @@ mod tests {
                 )
             "
         );
-        node_list.init();
         let rst = node_list.trim().to_string();
 
         assert_eq!("update test_user set id = :id, name = :name where age in ( 10, 20, 30 )", &rst);

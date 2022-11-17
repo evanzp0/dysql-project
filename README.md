@@ -101,6 +101,26 @@ async fn main() {
     }).unwrap();
     assert_eq!(7, rst.total);
     ...
+
+    // trim sql by ![F_DEL(xxx)] and ![B_DEL(xxx)]
+    let rst = fetch_all!(|pg_dto, &conn| -> User {
+        // after trim the sql is: 
+        //   "select * from test_user where name like '%' || :data.name || '%' and age > :data.age and id in ( 1, 2, 3 ) order by id"
+        "select * from test_user 
+        where
+        {{#data}}
+            ![F_DEL(and)]
+            {{#name}}and name like '%' || :data.name || '%'{{/name}}
+            {{#age}}and age > :data.age{{/age}}
+            {{#is_id_rng}}
+                and id in (
+                    {{#id_rng}} {{value}}, {{/id_rng}} ![B_DEL(,)]
+                )
+            {{/is_id_rng}}
+        {{/data}}
+        order by id"
+    }).unwrap();
+    assert_eq!(2, rst.len());
 }
 ```
 

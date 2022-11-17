@@ -80,7 +80,7 @@ pub enum QueryType {
 }
 
 #[allow(unused)]
-#[derive(Content)]
+#[derive(Content, Debug)]
 pub struct Value<T> {
     pub value: T
 }

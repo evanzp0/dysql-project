@@ -8,16 +8,18 @@ use ramhorns::Content;
 
 use dysql_macro::*;
 
-#[derive(Content, Clone, Debug)]
+#[derive(Content, Debug)]
 struct UserDto {
     id: Option<i64>,
     name: Option<String>,
     age: Option<i32>,
+    id_rng: Option<Vec<Value<i32>>>,
+    is_id_rng: bool,
 }
 
 impl UserDto {
-    fn new(id: Option<i64>, name: Option<String>, age: Option<i32>) -> Self {
-        Self { id, name,  age }
+    fn new(id: Option<i64>, name: Option<String>, age: Option<i32>, id_rng: Option<Vec<Value<i32>>>, is_id_rng: bool) -> Self {
+        Self { id, name,  age, id_rng, is_id_rng}
     }
 }
 
@@ -44,7 +46,7 @@ async fn connect_db() -> tokio_postgres::Client {
 #[tokio::test]
 async fn test_fetch_all() {
     let conn = connect_db().await;
-    let dto = UserDto::new(None, None,Some(13));
+    let dto = UserDto::new(None, None, Some(13), None, false);
 
     let rst = fetch_all!(|&dto, &conn| -> User {
         r#"select * from test_user 
@@ -91,7 +93,7 @@ async fn test_execute() {
     let mut conn = connect_db().await;
     let tran = conn.transaction().await.unwrap();
 
-    let dto = UserDto::new(Some(2), None, None);
+    let dto = UserDto::new(Some(2), None, None, None, false);
     let rst = execute!(|&dto, &tran| {
         r#"delete from test_user where id = :id"#
     }).unwrap();
@@ -105,7 +107,7 @@ async fn test_insert() {
     let mut conn = connect_db().await;
     let tran = conn.transaction().await.unwrap();
 
-    let dto = UserDto{ id: Some(10), name: Some("lisi".to_owned()), age: Some(50) };
+    let dto = UserDto{ id: Some(10), name: Some("lisi".to_owned()), age: Some(50), id_rng: None, is_id_rng: false};
     let insert_id = insert!(|&dto, &mut tran| -> (_, _) {
         r#"insert into test_user (id, name, age) values (:id, :name, :age) returning id"#
     }).unwrap();
@@ -118,7 +120,7 @@ async fn test_insert() {
 #[tokio::test]
 async fn test_page() {
     let conn = connect_db().await;
-    let dto = UserDto::new(None, Some("a".to_owned()), Some(13));
+    let dto = UserDto::new(None, Some("a".to_owned()), Some(13), None, false);
     let mut pg_dto = PageDto::new(3, 10, dto);
     let pg_dto = &mut pg_dto;
     
@@ -132,7 +134,30 @@ async fn test_page() {
         order by id"
     }).unwrap();
 
-    println!("{:?}", rst);
-
     assert_eq!(7, rst.total);
+}
+
+#[tokio::test]
+async fn test_trim_sql() {
+    let conn = connect_db().await;
+    let dto = UserDto::new(None, Some("z".to_owned()), Some(13), Some(vec![Value::new(1), Value::new(2), Value::new(3)]), true);
+    let mut pg_dto = PageDto::new(3, 10, dto);
+    let pg_dto = &mut pg_dto;
+    
+    let rst = fetch_all!(|pg_dto, &conn| -> User {
+        "select * from test_user 
+        where
+        {{#data}}
+            ![F_DEL(and)]
+            {{#name}}and name like '%' || :data.name || '%'{{/name}}
+            {{#age}}and age > :data.age{{/age}}
+            {{#is_id_rng}}
+                and id in (
+                    {{#id_rng}} {{value}}, {{/id_rng}} ![B_DEL(,)]
+                )
+            {{/is_id_rng}}
+        {{/data}}
+        order by id"
+    }).unwrap();
+    assert_eq!(2, rst.len());
 }

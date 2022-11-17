@@ -1,5 +1,4 @@
 use quote::{ToTokens, quote};
-
 use crate::SqlClosure;
 
 pub(crate) trait SqlExpand {
@@ -66,6 +65,8 @@ pub(crate) trait SqlExpand {
                 };
         
                 let sql_rendered = sql_tpl.render(#dto_ref #dto);
+                let sql_rendered = dysql::SqlNodeLinkList::new(&sql_rendered).trim().to_string();
+                // println!("{}", sql_rendered);
                 let extract_rst = dysql::extract_params(&sql_rendered, dysql::SqlDialect::from(#dialect.to_owned()));
                 if let Err(e) = extract_rst {
                     break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::ExtractSqlParamterError, Some(Box::new(e)))))

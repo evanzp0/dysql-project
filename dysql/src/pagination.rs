@@ -11,7 +11,7 @@ pub struct PageDto <T> {
     pub total_page: Option<u64>,
     pub start: Option<u64>,
     pub total: Option<u64>,
-    pub is_sort: bool,
+    pub is_sort: Option<bool>,
     pub sort_model: Option<Vec<SortModel>>,
 }
 
@@ -35,7 +35,7 @@ impl<T> PageDto<T>
             total_page: None,
             start: None,
             total: None,
-            is_sort: false,
+            is_sort: None,
             sort_model: None
         }
     }
@@ -48,7 +48,7 @@ impl<T> PageDto<T>
             total_page: None,
             start: None,
             total: None,
-            is_sort: true,
+            is_sort: Some(true),
             sort_model: Some(sort_model),
         }
     }
@@ -68,12 +68,12 @@ impl<T> PageDto<T>
     pub fn init_sort(&mut self) -> &mut Self {
         if let Some(sm) = &self.sort_model {
             if sm.len() > 0 {
-                self.is_sort = true;
+                self.is_sort = Some(true);
             } else {
-                self.is_sort = false;
+                self.is_sort = None;
             }
         } else {
-            self.is_sort = false;
+            self.is_sort = None;
         }
 
         self

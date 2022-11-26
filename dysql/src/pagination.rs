@@ -1,6 +1,8 @@
 use ramhorns::Content;
 use serde::{Deserialize, Serialize};
 
+use crate::SortModel;
+
 #[derive(Content, Debug, Deserialize)]
 pub struct PageDto <T> {
     pub data: T,
@@ -9,6 +11,7 @@ pub struct PageDto <T> {
     pub total_page: Option<u64>,
     pub start: Option<u64>,
     pub total: Option<u64>,
+    pub sort_model: Option<Vec<SortModel>>,
 }
 
 #[derive(Content, Debug, Serialize)]
@@ -31,6 +34,7 @@ impl<T> PageDto<T>
             total_page: None,
             start: None,
             total: None,
+            sort_model: None
         }
     }
 

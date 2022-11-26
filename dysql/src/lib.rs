@@ -58,6 +58,7 @@ pub mod sql_dialect;
 pub mod error;
 pub mod utils;
 pub mod trim_sql;
+pub mod sort_model;
 
 pub use extract_sql::*;
 pub use pagination::*;
@@ -65,3 +66,4 @@ pub use sql_dialect::*;
 pub use error::*;
 pub use utils::*;
 pub use trim_sql::*;
+pub use sort_model::*;

@@ -62,7 +62,14 @@ impl SqlExpand for Page {
 
         // declare sql and bind params at runtime
         let mut page_sql = st.body.to_owned();
-        page_sql.push_str(" limit {{page_size}} offset {{start}}");
+        page_sql.push_str(
+            "{{#is_sort}}
+                ORDER BY 
+                    {{#sort_model}} {{field}} {{sort}}, {{/sort_model}}
+                    ![B_DEL(,)]
+            {{/is_sort}}
+            LIMIT {{page_size}} OFFSET {{start}}"
+        );
         let declare_rt = self.gen_declare_rt(st, Some(&page_sql))?;
 
         let rst_page = quote!(

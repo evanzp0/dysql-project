@@ -2,7 +2,7 @@
 
 use std::{str::FromStr, error::Error};
 
-use dysql::PageDto;
+use dysql::{PageDto, SortModel};
 use dysql_macro::*;
 use ramhorns::Content;
 use sqlx::{
@@ -184,7 +184,10 @@ async fn test_page() {
     let conn = connect_postgres_db().await;
 
     let dto = UserDto{ id: None, name: None, age: Some(13) };
-    let mut pg_dto = PageDto::new(3, 10, dto);
+    let sort_model = vec![
+        SortModel {field: "id".to_owned(), sort: "desc".to_owned()}
+    ];
+    let mut pg_dto = PageDto::new_with_sort(3, 10, dto, sort_model);
     
     let rst = page!(|&mut pg_dto, &conn| -> User {
         "select * from test_user 
@@ -192,8 +195,7 @@ async fn test_page() {
         {{#data}}
             {{#name}}and name = :data.name{{/name}}
             {{#age}}and age > :data.age{{/age}}
-        {{/data}}
-        order by id"
+        {{/data}}"
     }).unwrap();
 
     assert_eq!(7, rst.total);
@@ -204,7 +206,10 @@ async fn test_page_mysql() {
     let conn = connect_mysql_db().await;
 
     let dto = UserDto{ id: None, name: None, age: Some(13) };
-    let mut pg_dto = PageDto::new(3, 10, dto);
+    let sort_model = vec![
+        SortModel {field: "id".to_owned(), sort: "desc".to_owned()}
+    ];
+    let mut pg_dto = PageDto::new_with_sort(3, 10, dto, sort_model);
     
     let rst = page!(|&mut pg_dto, &conn| -> (User, mysql) {
         "select * from test_user 
@@ -212,8 +217,7 @@ async fn test_page_mysql() {
         {{#data}}
             {{#name}}and name = :data.name{{/name}}{{/data}}
             {{#data}}{{#age}}and age > :data.age{{/age}}
-        {{/data}}
-        order by id"
+        {{/data}}"
     }).unwrap();
 
     assert_eq!(7, rst.total);
@@ -224,7 +228,10 @@ async fn test_page_sqlite() {
     let mut conn = connect_sqlite_db().await;
 
     let dto = UserDto{ id: None, name: None, age: Some(13) };
-    let mut pg_dto = PageDto::new(3, 0, dto);
+    let sort_model = vec![
+        SortModel {field: "id".to_owned(), sort: "desc".to_owned()}
+    ];
+    let mut pg_dto = PageDto::new_with_sort(3, 10, dto, sort_model);
     
     let rst = page!(|&mut pg_dto, &mut conn| -> (User, sqlite) {
         "select * from test_user 
@@ -232,8 +239,7 @@ async fn test_page_sqlite() {
         {{#data}}
             {{#name}}and name = :data.name{{/name}}{{/data}}
             {{#data}}{{#age}}and age > :data.age{{/age}}
-        {{/data}}
-        order by id"
+        {{/data}}"
     }).unwrap();
     
     assert_eq!(7, rst.total);

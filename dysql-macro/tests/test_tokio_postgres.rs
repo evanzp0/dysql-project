@@ -1,6 +1,6 @@
 #![cfg(not(feature = "sqlx"))]
 
-use dysql::{Value, PageDto};
+use dysql::{Value, PageDto, SortModel};
 use tokio_pg_mapper::FromTokioPostgresRow;
 use tokio_pg_mapper_derive::PostgresMapper;
 use tokio_postgres::{NoTls, connect};
@@ -8,7 +8,7 @@ use ramhorns::Content;
 
 use dysql_macro::*;
 
-#[derive(Content, Debug)]
+#[derive(Content)]
 struct UserDto {
     id: Option<i64>,
     name: Option<String>,
@@ -130,8 +130,7 @@ async fn test_page() {
         {{#data}}
             {{#name}}and name like '%' || :data.name || '%'{{/name}}
             {{#age}}and age > :data.age{{/age}}
-        {{/data}}
-        order by id"
+        {{/data}}"
     }).unwrap();
 
     assert_eq!(7, rst.total);
@@ -141,10 +140,13 @@ async fn test_page() {
 async fn test_trim_sql() {
     let conn = connect_db().await;
     let dto = UserDto::new(None, Some("z".to_owned()), Some(13), Some(vec![Value::new(1), Value::new(2), Value::new(3)]), true);
-    let mut pg_dto = PageDto::new(3, 10, dto);
+    let sort_model = vec![
+        SortModel {field: "id".to_owned(), sort: "desc".to_owned()}
+    ];
+    let mut pg_dto = PageDto::new_with_sort(3, 10, dto, sort_model);
     let pg_dto = &mut pg_dto;
     
-    let rst = fetch_all!(|pg_dto, &conn| -> User {
+    let rst = page!(|pg_dto, &conn| -> User {
         "select * from test_user 
         where
         {{#data}}
@@ -156,8 +158,9 @@ async fn test_trim_sql() {
                     {{#id_rng}} {{value}}, {{/id_rng}} ![B_DEL(,)]
                 )
             {{/is_id_rng}}
-        {{/data}}
-        order by id"
+        {{/data}}"
     }).unwrap();
-    assert_eq!(2, rst.len());
+    // println!("{:?}", rst);
+
+    assert_eq!(2, rst.total);
 }

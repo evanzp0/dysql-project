@@ -54,8 +54,18 @@ impl<T> PageDto<T>
     }
 
     pub fn init(&mut self, total: u64) {
-        let (start, page_no) = self.start(total);
         let total_page = self.total_page(total);
+        if total_page < self.page_no {
+            if total_page > 0 {
+                self.page_no = total_page - 1;
+            } else {
+                self.page_no = 0;
+            }
+        }
+
+        println!("page no: {}", self.page_no);
+
+        let (start, page_no) = self.start(total);
 
         self.start = Some(start);
         self.total_page = Some(total_page);
@@ -97,7 +107,6 @@ impl<T> PageDto<T>
                 0
             };
             start = self.start_of_page(page_no);
-            
         }
 
         (start, page_no)

@@ -1,6 +1,6 @@
 [package]
 name = "dysql-project"
-version = "0.8.9"
+version = "0.8.10"
 edition = "2021"
 description = "Dysql is a rust crate that do dynamic-sql query through proc-macro, it bases on tokio-postgres and sqlx crate (default feature)"
 license = "Apache-2.0"

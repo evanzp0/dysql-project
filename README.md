@@ -21,7 +21,7 @@ dysql = "0.8"
 dysql-macro = {version = "0.8", features = ["sqlx"]}
 sqlx = { version = "0.6", features = [ "runtime-tokio-native-tls" , "postgres" ] }
 tokio = { version = "1.0", features = ["full"] }
-ramhorns = "0.14"
+ramhorns-ext = { version = "0.14", features = ["chrono", "uuid"] }
 tokio-postgres = { version = "0.7", features = ["with-chrono-0_4"] }
 ```
 
@@ -112,11 +112,11 @@ async fn main() {
             ![F_DEL(and)]
             {{#name}}and name like '%' || :data.name || '%'{{/name}}
             {{#age}}and age > :data.age{{/age}}
-            {{#is_id_rng}}
+            {{?id_rng}}
                 and id in (
                     {{#id_rng}} {{value}}, {{/id_rng}} ![B_DEL(,)]
                 )
-            {{/is_id_rng}}
+            {{/id_rng}}
         {{/data}}
         order by id"
     }).unwrap();

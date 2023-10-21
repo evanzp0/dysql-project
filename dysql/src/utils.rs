@@ -2,7 +2,7 @@ use std::{sync::{RwLock, Arc}, collections::HashMap};
 
 use crypto::{md5::Md5, digest::Digest};
 use once_cell::sync::OnceCell;
-use ramhorns::{Template, Content};
+use ramhorns_ext::{Template, Content};
 
 use crate::{DySqlResult, Kind, DySqlError, ErrorInner};
 

@@ -1,5 +1,5 @@
 use dysql::{PageDto, Pagination};
-use ramhorns::Content;
+use ramhorns_ext::Content;
 // use tokio_pg_mapper::FromTokioPostgresRow;
 use tokio_pg_mapper_derive::PostgresMapper;
 use tokio_postgres::{connect, NoTls};

@@ -4,7 +4,7 @@ use std::{str::FromStr, error::Error};
 
 use dysql::{PageDto, SortModel};
 use dysql_macro::*;
-use ramhorns::Content;
+use ramhorns_ext::Content;
 use sqlx::{
     postgres::PgPoolOptions, FromRow, Pool, Postgres, mysql::MySqlPoolOptions, MySql, 
     sqlite::{SqliteConnectOptions, SqliteJournalMode}, 
@@ -15,7 +15,14 @@ use sqlx::{
 struct UserDto {
     id: Option<i64>,
     name: Option<String>,
-    age: Option<i32>
+    age: Option<i32>,
+    id_rng: Option<Vec<Value<i32>>>,
+}
+
+impl UserDto {
+    fn new(id: Option<i64>, name: Option<String>, age: Option<i32>, id_rng: Option<Vec<Value<i32>>>) -> Self {
+        Self { id, name, age, id_rng }
+    }
 }
 
 #[allow(dead_code)]
@@ -24,7 +31,7 @@ struct UserDto {
 struct User {
     id: i64,
     name: Option<String>,
-    age: Option<i32>
+    age: Option<i32>,
 }
 
 async fn connect_postgres_db() -> Pool<Postgres> {
@@ -77,7 +84,7 @@ async fn connect_sqlite_db() -> SqliteConnection {
 async fn test_fetch_all() {
     let conn = connect_postgres_db().await;
 
-    let dto = UserDto{ id: None, name: None, age: Some(13) };
+    let dto = UserDto{ id: None, name: None, age: Some(13) , id_rng: None };
     let rst = fetch_all!(|&dto, &conn| -> User {
         r#"SELECT * FROM test_user 
         WHERE 1 = 1
@@ -93,7 +100,7 @@ sql!("select_sql","select * from test_user ");
 async fn test_fetch_one() {
     let conn = connect_postgres_db().await;
 
-    let dto = UserDto{ id: Some(2), name: None, age: None };
+    let dto = UserDto{ id: Some(2), name: None, age: None, id_rng: None };
     let rst = fetch_one!(|&dto, &conn| -> User {
         select_sql + "where 1 = 1 and id = :id order by id"
     }).unwrap();
@@ -119,7 +126,7 @@ async fn test_execute() -> Result<(), Box<dyn Error>> {
     let conn = connect_postgres_db().await;
     let mut tran = conn.begin().await?;
 
-    let dto = UserDto{ id: Some(3), name: None, age: None };
+    let dto = UserDto{ id: Some(3), name: None, age: None, id_rng: None };
     let affected_rows_num = execute!(|&dto, &mut tran| {
         r#"delete from test_user where id = :id"#
     })?;
@@ -136,7 +143,7 @@ async fn test_insert() -> Result<(), Box<dyn Error>> {
     let conn = connect_postgres_db().await;
     let mut tran = conn.begin().await?;
 
-    let dto = UserDto{ id: Some(10), name: Some("lisi".to_owned()), age: Some(50) };
+    let dto = UserDto{ id: Some(10), name: Some("lisi".to_owned()), age: Some(50), id_rng: None };
     let insert_id = insert!(|&dto, &mut tran| {
         r#"insert into test_user (name, age) values (:name, :age) returning id"#
     })?;
@@ -151,7 +158,7 @@ async fn test_insert_mysql() -> Result<(), Box<dyn Error>> {
     let conn = connect_mysql_db().await;
     let mut tran = conn.begin().await?;
 
-    let dto = UserDto{ id: Some(10), name: Some("lisi".to_owned()), age: Some(50) };
+    let dto = UserDto{ id: Some(10), name: Some("lisi".to_owned()), age: Some(50), id_rng: None };
     let insert_id = insert!(|&dto, &mut tran| -> (_, mysql) {
         r#"insert into test_user (name, age) values ('aa', 1)"#
     })?;
@@ -167,7 +174,7 @@ async fn test_insert_sqlite() -> Result<(), Box<dyn Error>> {
     let mut conn = connect_sqlite_db().await;
     let mut tran = conn.begin().await?;
 
-    let dto = UserDto{ id: Some(10), name: Some("lisi".to_owned()), age: Some(50) };
+    let dto = UserDto{ id: Some(10), name: Some("lisi".to_owned()), age: Some(50), id_rng: None };
 
     let insert_id = insert!(|&dto, &mut tran| -> (_, sqlite) {
         r#"insert into test_user (name, age) values ('aa', 1)"#
@@ -183,7 +190,7 @@ async fn test_insert_sqlite() -> Result<(), Box<dyn Error>> {
 async fn test_page() {
     let conn = connect_postgres_db().await;
 
-    let dto = UserDto{ id: None, name: None, age: Some(13) };
+    let dto = UserDto{ id: None, name: None, age: Some(13), id_rng: None };
     let sort_model = vec![
         SortModel {field: "id".to_owned(), sort: "desc".to_owned()}
     ];
@@ -205,7 +212,7 @@ async fn test_page() {
 async fn test_page_mysql() {
     let conn = connect_mysql_db().await;
 
-    let dto = UserDto{ id: None, name: None, age: Some(13) };
+    let dto = UserDto{ id: None, name: None, age: Some(13), id_rng: None };
     let sort_model = vec![
         SortModel {field: "id".to_owned(), sort: "desc".to_owned()}
     ];
@@ -227,7 +234,7 @@ async fn test_page_mysql() {
 async fn test_page_sqlite() {
     let mut conn = connect_sqlite_db().await;
 
-    let dto = UserDto{ id: None, name: None, age: Some(13) };
+    let dto = UserDto{ id: None, name: None, age: Some(13), id_rng: None };
     let sort_model = vec![
         SortModel {field: "id".to_owned(), sort: "desc".to_owned()}
     ];
@@ -243,4 +250,33 @@ async fn test_page_sqlite() {
     }).unwrap();
     
     assert_eq!(7, rst.total);
+}
+
+#[tokio::test]
+async fn test_trim_sql() {
+    let conn = connect_postgres_db().await;
+    let dto = UserDto::new(None, Some("z".to_owned()), Some(13), Some(vec![Value::new(1), Value::new(2), Value::new(3)]));
+    let sort_model = vec![
+        SortModel {field: "id".to_owned(), sort: "desc".to_owned()}
+    ];
+    let mut pg_dto = PageDto::new_with_sort(3, 10, dto, sort_model);
+    let pg_dto = &mut pg_dto;
+    
+    let rst = page!(|pg_dto, &conn| -> User {
+        "select * from test_user 
+        where
+        {{#data}}
+            ![F_DEL(and)]
+            {{#name}}and name like '%' || :data.name || '%'{{/name}}
+            {{#age}}and age > :data.age{{/age}}
+            {{?id_rng}}
+                and id in (
+                    {{#id_rng}} {{value}}, {{/id_rng}} ![B_DEL(,)]
+                )
+            {{/id_rng}}
+        {{/data}}"
+    }).unwrap();
+    // println!("{:?}", rst);
+
+    assert_eq!(2, rst.total);
 }

@@ -4,7 +4,7 @@ use dysql::{Value, PageDto, SortModel};
 use tokio_pg_mapper::FromTokioPostgresRow;
 use tokio_pg_mapper_derive::PostgresMapper;
 use tokio_postgres::{NoTls, connect};
-use ramhorns::Content;
+use ramhorns_ext::Content;
 
 use dysql_macro::*;
 
@@ -14,12 +14,11 @@ struct UserDto {
     name: Option<String>,
     age: Option<i32>,
     id_rng: Option<Vec<Value<i32>>>,
-    is_id_rng: bool,
 }
 
 impl UserDto {
-    fn new(id: Option<i64>, name: Option<String>, age: Option<i32>, id_rng: Option<Vec<Value<i32>>>, is_id_rng: bool) -> Self {
-        Self { id, name,  age, id_rng, is_id_rng}
+    fn new(id: Option<i64>, name: Option<String>, age: Option<i32>, id_rng: Option<Vec<Value<i32>>>) -> Self {
+        Self { id, name, age, id_rng }
     }
 }
 
@@ -46,7 +45,7 @@ async fn connect_db() -> tokio_postgres::Client {
 #[tokio::test]
 async fn test_fetch_all() {
     let conn = connect_db().await;
-    let dto = UserDto::new(None, None, Some(13), None, false);
+    let dto = UserDto::new(None, None, Some(13), None);
 
     let rst = fetch_all!(|&dto, &conn| -> User {
         r#"select * from test_user 
@@ -93,7 +92,7 @@ async fn test_execute() {
     let mut conn = connect_db().await;
     let tran = conn.transaction().await.unwrap();
 
-    let dto = UserDto::new(Some(2), None, None, None, false);
+    let dto = UserDto::new(Some(2), None, None, None);
     let rst = execute!(|&dto, &tran| {
         r#"delete from test_user where id = :id"#
     }).unwrap();
@@ -120,7 +119,7 @@ async fn test_insert() {
 #[tokio::test]
 async fn test_page() {
     let conn = connect_db().await;
-    let dto = UserDto::new(None, Some("a".to_owned()), Some(13), None, false);
+    let dto = UserDto::new(None, Some("a".to_owned()), Some(13), None);
     let mut pg_dto = PageDto::new(3, 10, dto);
     let pg_dto = &mut pg_dto;
     
@@ -139,7 +138,7 @@ async fn test_page() {
 #[tokio::test]
 async fn test_trim_sql() {
     let conn = connect_db().await;
-    let dto = UserDto::new(None, Some("z".to_owned()), Some(13), Some(vec![Value::new(1), Value::new(2), Value::new(3)]), true);
+    let dto = UserDto::new(None, Some("z".to_owned()), Some(13), Some(vec![Value::new(1), Value::new(2), Value::new(3)]));
     let sort_model = vec![
         SortModel {field: "id".to_owned(), sort: "desc".to_owned()}
     ];
@@ -153,11 +152,11 @@ async fn test_trim_sql() {
             ![F_DEL(and)]
             {{#name}}and name like '%' || :data.name || '%'{{/name}}
             {{#age}}and age > :data.age{{/age}}
-            {{#is_id_rng}}
+            {{?id_rng}}
                 and id in (
                     {{#id_rng}} {{value}}, {{/id_rng}} ![B_DEL(,)]
                 )
-            {{/is_id_rng}}
+            {{/id_rng}}
         {{/data}}"
     }).unwrap();
     // println!("{:?}", rst);

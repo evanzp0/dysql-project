@@ -1,5 +1,5 @@
 use dysql_macro::*;
-use ramhorns::Content;
+use ramhorns_ext::Content;
 use sqlx::{
     postgres::PgPoolOptions, FromRow, Pool, Postgres, mysql::MySqlPoolOptions, MySql, 
     sqlite::{SqliteConnectOptions, SqliteJournalMode}, 

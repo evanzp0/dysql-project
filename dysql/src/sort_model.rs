@@ -1,4 +1,4 @@
-use ramhorns::Content;
+use ramhorns_ext::Content;
 use serde::Deserialize;
 
 

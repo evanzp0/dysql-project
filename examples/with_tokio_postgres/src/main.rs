@@ -1,7 +1,7 @@
 use tokio_pg_mapper::FromTokioPostgresRow;
 use tokio_pg_mapper_derive::PostgresMapper;
 use tokio_postgres::{NoTls, connect};
-use ramhorns::Content;
+use ramhorns_ext::Content;
 
 use dysql_macro::*;
 use dysql::*;

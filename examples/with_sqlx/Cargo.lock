@@ -335,19 +335,19 @@ checksum = "03d8c417d7a8cb362e0c37e5d815f5eb7c37f79ff93707329d5a194e42e54ca0"
 
 [[package]]
 name = "dysql"
-version = "0.8.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0b0e58e221e98c641a9040e4c3ec168f61cef7d276d2934ee89b98e76be51d5b"
+version = "0.8.13"
 dependencies = [
  "once_cell",
- "ramhorns",
+ "ramhorns-ext",
  "rust-crypto",
  "serde",
 ]
 
 [[package]]
 name = "dysql"
-version = "0.8.11"
+version = "0.8.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "64dbddf816b02fecb7100b331736526888d9e1be517a2ad400a233e45d7a6c08"
 dependencies = [
  "once_cell",
  "ramhorns-ext",
@@ -357,9 +357,9 @@ dependencies = [
 
 [[package]]
 name = "dysql-macro"
-version = "0.8.11"
+version = "0.8.13"
 dependencies = [
- "dysql 0.8.10",
+ "dysql 0.8.13 (registry+https://github.com/rust-lang/crates.io-index)",
  "once_cell",
  "proc-macro2",
  "quote",
@@ -753,20 +753,11 @@ dependencies = [
 
 [[package]]
 name = "logos"
-version = "0.12.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bf8b031682c67a8e3d5446840f9573eb7fe26efe7ec8d195c9ac4c0647c502f1"
-dependencies = [
- "logos-derive 0.12.1",
-]
-
-[[package]]
-name = "logos"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c000ca4d908ff18ac99b93a062cb8958d331c3220719c52e77cb19cc6ac5d2c1"
 dependencies = [
- "logos-derive 0.13.0",
+ "logos-derive",
 ]
 
 [[package]]
@@ -781,20 +772,6 @@ dependencies = [
  "quote",
  "regex-syntax",
  "syn 2.0.38",
-]
-
-[[package]]
-name = "logos-derive"
-version = "0.12.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a1d849148dbaf9661a6151d1ca82b13bb4c4c128146a88d05253b38d4e2f496c"
-dependencies = [
- "beef",
- "fnv",
- "proc-macro2",
- "quote",
- "regex-syntax",
- "syn 1.0.103",
 ]
 
 [[package]]
@@ -1224,37 +1201,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "ramhorns"
-version = "0.14.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "47008ae2e2a9085a3f658203609d79f8a027829cf88a088d0c0084e18ba8f0b9"
-dependencies = [
- "arrayvec",
- "beef",
- "fnv",
- "logos 0.12.1",
- "pulldown-cmark",
- "ramhorns-derive",
-]
-
-[[package]]
-name = "ramhorns-derive"
-version = "0.14.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ada9bbdd21adf426f932bf76b3db7d553538dffc16afd5fb8ce2ce2110a75536"
-dependencies = [
- "bae",
- "fnv",
- "proc-macro2",
- "quote",
- "syn 1.0.103",
-]
-
-[[package]]
 name = "ramhorns-derive-ext"
-version = "0.14.0"
+version = "0.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fe8da897864016d41d18cb703bc0a129d469af50127c1b9672deb31f3e6b7191"
+checksum = "9a88288e51ad964fd3123bac72b76192a4a7a78d1938a3973ed0deb90c36a5c9"
 dependencies = [
  "bae",
  "fnv",
@@ -1265,15 +1215,15 @@ dependencies = [
 
 [[package]]
 name = "ramhorns-ext"
-version = "0.14.0"
+version = "0.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "52de18f584a846ba37199539e3c27e78c36962919add7526ed4e9292300861cf"
+checksum = "9060bdfb97846bcee4a161bcede3357d982fdfb8a450a0144a7f682443f39b3b"
 dependencies = [
  "arrayvec",
  "beef",
  "chrono",
  "fnv",
- "logos 0.13.0",
+ "logos",
  "pulldown-cmark",
  "ramhorns-derive-ext",
  "uuid",
@@ -2231,9 +2181,9 @@ checksum = "f40009d85759725a34da6d89a94e63d7bdc50a862acf0dbc7c8e488f1edcb6f5"
 
 [[package]]
 name = "with_sqlx"
-version = "0.8.5"
+version = "0.8.13"
 dependencies = [
- "dysql 0.8.11",
+ "dysql 0.8.13",
  "dysql-macro",
  "ramhorns-ext",
  "sqlx",

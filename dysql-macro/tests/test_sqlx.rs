@@ -16,11 +16,11 @@ struct UserDto {
     id: Option<i64>,
     name: Option<String>,
     age: Option<i32>,
-    id_rng: Option<Vec<Value<i32>>>,
+    id_rng: Option<Vec<i32>>,
 }
 
 impl UserDto {
-    fn new(id: Option<i64>, name: Option<String>, age: Option<i32>, id_rng: Option<Vec<Value<i32>>>) -> Self {
+    fn new(id: Option<i64>, name: Option<String>, age: Option<i32>, id_rng: Option<Vec<i32>>) -> Self {
         Self { id, name, age, id_rng }
     }
 }
@@ -255,7 +255,7 @@ async fn test_page_sqlite() {
 #[tokio::test]
 async fn test_trim_sql() {
     let conn = connect_postgres_db().await;
-    let dto = UserDto::new(None, Some("z".to_owned()), Some(13), Some(vec![Value::new(1), Value::new(2), Value::new(3)]));
+    let dto = UserDto::new(None, Some("z".to_owned()), Some(13), Some(vec![1, 2, 3,]));
     let sort_model = vec![
         SortModel {field: "id".to_owned(), sort: "desc".to_owned()}
     ];
@@ -271,7 +271,7 @@ async fn test_trim_sql() {
             {{#age}}and age > :data.age{{/age}}
             {{?id_rng}}
                 and id in (
-                    {{#id_rng}} {{value}}, {{/id_rng}} ![B_DEL(,)]
+                    {{#id_rng}} {{$value}}, {{/id_rng}} ![B_DEL(,)]
                 )
             {{/id_rng}}
         {{/data}}"

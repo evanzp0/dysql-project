@@ -1,6 +1,6 @@
 [package]
 name = "with_tokio_postgres"
-version = "0.8.6"
+version = "0.8.13"
 edition = "2021"
 
 [dependencies]
@@ -10,4 +10,4 @@ tokio = { version = "1.0", features = ["full"] }
 tokio-postgres = { version = "0.7", features = ["with-chrono-0_4"] }
 tokio-pg-mapper = "0.2"
 tokio-pg-mapper-derive = "0.2"
-ramhorns = "0.14"
+ramhorns-ext = { version = "0.16", features = ["chrono", "uuid"] }

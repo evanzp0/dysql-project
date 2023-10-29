@@ -1,18 +1,9 @@
-[package]
-name = "dysql-project"
-version = "0.8.13"
-edition = "2021"
-description = "Dysql is a rust crate that do dynamic-sql query through proc-macro, it bases on tokio-postgres and sqlx crate (default feature)"
-license = "Apache-2.0"
+[workspace]
+members = [
+    "dysql",
+    "dysql-macro",
+    "tests"
+]
 
-[dependencies]
-dysql-macro = { path = "./dysql-macro", features = ["tokio-postgres"] }
+[patch.crates-io]
 dysql = { path = "./dysql" }
-axum = "0.5"
-tokio = { version = "1.0", features = ["full"] }
-tokio-postgres = { version = "0.7", features = ["with-chrono-0_4"] }
-tokio-pg-mapper = "0.2"
-tokio-pg-mapper-derive = "0.2"
-ramhorns-ext = { version = "0.16", features = ["chrono", "uuid"] }
-serde = { version = "1.0", features = ["derive"] }
-once_cell = "1.13"

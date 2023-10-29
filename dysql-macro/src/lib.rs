@@ -1,6 +1,6 @@
 //! Do dynamic-sql query through proc-macro
 //! 
-//! It bases on [**tokio-postgres**] and [**sqlx**] crate (default feature), you can switch them by setting the features. 
+//! It bases on [**sqlx**] crate (default feature), you can switch them by setting the features. 
 //! It uses [**Ramhorns**] the high performance template engine implementation of [**Mustache**]
 //! 
 //! ## Example (Sqlx)
@@ -46,21 +46,11 @@
 //! }
 //! ```
 //! 
-//! ## Example (tokio-postgres)
-//! Full example please see: [Dysql tokio-postgres example](https://github.com/evanzp0/dysql-project/tree/main/examples/with_tokio_postgres)
-//! 
 //! ## Example (sqlx)
-//! Full example please see: [Dysql sqlx example](https://github.com/evanzp0/dysql-project/tree/main/examples/with_sqlx)
+//! Full example please see: [Dysql sqlx example](https://github.com/evanzp0/dysql-project/tests)
 
-#[cfg(not(feature = "tokio-postgres"))]
 mod dy_sqlx;
-#[cfg(not(feature = "tokio-postgres"))]
 use dy_sqlx::expand;
-
-#[cfg(feature = "tokio-postgres")]
-mod dy_tokio_postgres;
-#[cfg(feature = "tokio-postgres")]
-use dy_tokio_postgres::expand;
 
 mod sql_expand;
 

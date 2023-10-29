@@ -2,7 +2,7 @@
 
 **Dysql** is a highly Performant Rust SQL Toolkit and ORM Library. An async, pure Rust SQL crate featuring compile-time Dynamic SQL.
 
-It bases on [**tokio-postgres**](https://github.com/sfackler/rust-postgres) and [**sqlx**](https://github.com/launchbadge/sqlx) crate (default feature), you can switch them by setting the features. 
+It bases on [**sqlx**](https://github.com/launchbadge/sqlx) crate (default feature), you can switch them by setting the features. 
 It uses [**Ramhorns**](https://github.com/maciejhirsz/ramhorns) the high performance template engine implementation of [**Mustache**](https://mustache.github.io/) template language (a very very very simply template language) :-).
 
 It invokes like blow:
@@ -12,17 +12,16 @@ dysql_macro!(| dto, conn_or_tran | [-> return_type | -> (return_type ,dialect)] 
 > Note: **Dialect can be blank**, and the default value is **postgres**, and dialect also supports  **mysql**, **sqlite**.
 
 ## Example (sqlx)
-Full example please see: [Dysql sqlx example](https://github.com/evanzp0/dysql-project/tree/main/examples/with_sqlx)
+Full example please see: [Dysql sqlx example](https://github.com/evanzp0/dysql-project/tests)
 
 ### Cargo.toml:
 ```toml
 [dependencies]
-dysql = "0.8"
-dysql-macro = {version = "0.8", features = ["sqlx"]}
+dysql = "0.9"
+dysql-macro = {version = "0.9"}
 sqlx = { version = "0.6", features = [ "runtime-tokio-native-tls" , "postgres" ] }
 tokio = { version = "1.0", features = ["full"] }
-ramhorns-ext = { version = "0.16", features = ["chrono", "uuid"] }
-tokio-postgres = { version = "0.7", features = ["with-chrono-0_4"] }
+ramhorns-ext = { version = "0.17", features = ["chrono", "uuid"] }
 ```
 
 ### main.rs
@@ -123,9 +122,6 @@ async fn main() {
     assert_eq!(2, rst.len());
 }
 ```
-
-## Example (tokio-postgres)
-Full example please see: [Dysql tokio-postgres example](https://github.com/evanzp0/dysql-project/tree/main/examples/with_tokio_postgres)
 
 ### License
 

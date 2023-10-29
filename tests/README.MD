@@ -4,14 +4,15 @@
 ```
 $docker-compose up -d
 ```
-## 2. Prepare test data (Goto the "with_tokio_postgres" or "with_sqlx" folder first)
+## 2. Prepare test data 
 ```
+$cd <workspace>/db_init/<db folder>
 $sqlx database create
 $sqlx mig run
 ```
-### 3. Goto the "with_tokio_postgres" or "with_sqlx" folder, and run it
+### 3. test it
 ```
-$cargo run
+$cargo test
 ```
 ### 4. After all, you can uninstall database container
 ```

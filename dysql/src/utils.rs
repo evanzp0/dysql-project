@@ -1,7 +1,7 @@
 use std::{sync::{RwLock, Arc}, collections::HashMap};
 
 use once_cell::sync::OnceCell;
-use ramhorns_ext::{Template, Content};
+use dysql_tpl::Template;
 
 use crate::{DySqlResult, Kind, DySqlError, ErrorInner};
 
@@ -47,18 +47,4 @@ pub fn put_sql_template(template_id: &str, sql: &'static str) -> DySqlResult<Arc
 
     Err(DySqlError(ErrorInner::new(Kind::TemplateNotFound, None, None)))
 
-}
-
-#[allow(unused)]
-#[derive(Content, Debug)]
-pub struct Value<T> {
-    pub value: T
-}
-
-impl<T> Value<T> {
-    pub fn new(value: T) -> Self {
-        Self {
-            value
-        }
-    }
 }

@@ -1,11 +1,19 @@
 [workspace]
 members = [
+    "dysql-tpl",
+    "dysql-tpl-derive",
     "dysql-core",
     "dysql-macro",
     "dysql",
-    "tests"
+    "tests",
 ]
 
 [patch.crates-io]
+dysql-tpl = { path = "./dysql-tpl" }
+dysql-tpl-derive = { path = "./dysql-tpl-derive" }
 dysql-core = { path = "./dysql-core" }
 dysql-macro = { path = "./dysql-macro" }
+
+[profile.bench]
+lto = "fat"
+codegen-units = 1

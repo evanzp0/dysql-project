@@ -4,7 +4,17 @@ version = "0.0.0"
 edition = "2021"
 
 [dependencies]
+# test_sql dependence
 dysql = { path = "../dysql"}
-ramhorns-ext = { version = "0.17", features = ["chrono", "uuid"] }
 sqlx = { version = "0.6", features = [ "runtime-tokio-native-tls" , "postgres", "mysql", "sqlite"] }
 tokio = { version = "1.0", features = ["full"] }
+
+# test_tpl dependence
+dysql-tpl = { path = "../dysql-tpl"}
+askama = "0.9"
+handlebars = "3.1.0-beta.2"
+serde = "1.0"
+serde_derive = "1.0"
+mustache = "0.9"
+tera = "1.2.0"
+ahash = "0.7"

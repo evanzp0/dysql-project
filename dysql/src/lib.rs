@@ -50,17 +50,20 @@
 //! Full example please see: [Dysql sqlx example](https://github.com/evanzp0/dysql-project/tests)
 
 
-pub mod pagination;
-pub mod error;
-pub mod utils;
-pub mod sort_model;
-pub mod trim_sql;
+mod pagination;
+mod error;
+mod utils;
+mod sort_model;
+mod trim_sql;
+mod page_dto;
 
 pub use pagination::*;
 pub use error::*;
 pub use utils::*;
 pub use sort_model::*;
 pub use trim_sql::*;
+pub use page_dto::*;
 
 pub use dysql_macro::*;
 pub use dysql_core::*;
+pub use dysql_tpl::*;

@@ -11,7 +11,7 @@ pub(crate) trait SqlExpand {
         let dialect = &st.dialect.to_string();
 
         // check the template syntax is ok
-        ramhorns_ext::Template::new(sql.clone()).unwrap(); 
+        dysql_tpl::Template::new(sql.clone()).unwrap(); 
     
         // get raw sql and all params as both string and ident type at compile time!
         let param_strings = match dto {

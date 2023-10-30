@@ -2,7 +2,7 @@
 extern crate test;
 
 use test::{Bencher, black_box};
-use dysql_tpl::Content;
+use dysql::Content;
 use serde_derive::Serialize;
 use askama::Template;
 
@@ -41,7 +41,7 @@ struct Post<'a> {
 
 #[bench]
 fn a_simple_ramhorns(b: &mut Bencher) {
-    use dysql_tpl::Template;
+    use dysql::Template;
 
     let tpl = Template::new(SOURCE).unwrap();
     let post = POST;
@@ -128,7 +128,7 @@ fn e_simple_handlebars(b: &mut Bencher) {
 
 #[bench]
 fn pa_partials_ramhorns(b: &mut Bencher) {
-    use dysql_tpl::Ramhorns;
+    use dysql::Ramhorns;
 
     let mut tpls: Ramhorns<ahash::RandomState> = Ramhorns::lazy("templates").unwrap();
     let tpl = tpls.from_file("basic.html").unwrap();
@@ -194,7 +194,7 @@ fn pd_partials_handlebars(b: &mut Bencher) {
 
 #[bench]
 fn xa_parse_ramhorns(b: &mut Bencher) {
-    use dysql_tpl::Template;
+    use dysql::Template;
 
     b.bytes = PARSE.len() as u64;
 

@@ -1,4 +1,4 @@
-use dysql_tpl::{Content, Ramhorns, Template};
+use dysql::{Content, Ramhorns, Template};
 
 #[derive(Content)]
 struct Post<'a> {
@@ -479,7 +479,7 @@ fn can_render_markdown() {
 fn can_render_callback() {
     fn double<E>(s: &str, enc: &mut E) -> Result<(), E::Error>
     where
-        E: dysql_tpl::encoding::Encoder,
+        E: dysql::encoding::Encoder,
     {
         enc.write_escaped(s)?;
         enc.write_escaped("+")?;
@@ -765,7 +765,7 @@ fn simple_partials_extend() {
 
 #[test]
 fn illegal_partials() {
-    use dysql_tpl::TemplateError;
+    use dysql::TemplateError;
 
     let mut tpls: Ramhorns = Ramhorns::lazy("templates").unwrap();
 

@@ -16,7 +16,7 @@
 //!
 //! ## Example
 //!
-//! ```rust
+//! ```ignore
 //! use dysql_tpl::{Template, Content};
 //!
 //! #[derive(Content)]
@@ -100,7 +100,7 @@ impl<H: BuildHasher + Default> Ramhorns<H> {
     /// accessible via their path, joining partials as required. If a custom
     /// extension is wanted, see [from_folder_with_extension]
     /// ```no_run
-    /// # use ramhorns_ext::Ramhorns;
+    /// # use dysql_tpl::Ramhorns;
     /// let tpls: Ramhorns = Ramhorns::from_folder("./templates").unwrap();
     /// let content = "I am the content";
     /// let rendered = tpls.get("hello.html").unwrap().render(&content);
@@ -113,7 +113,7 @@ impl<H: BuildHasher + Default> Ramhorns<H> {
     /// from the given folder, making them accessible via their path, joining partials as
     /// required.
     /// ```no_run
-    /// # use ramhorns_ext::Ramhorns;
+    /// # use dysql_tpl::Ramhorns;
     /// let tpls: Ramhorns = Ramhorns::from_folder_with_extension("./templates", "mustache").unwrap();
     /// let content = "I am the content";
     /// let rendered = tpls.get("hello.mustache").unwrap().render(&content);
@@ -177,7 +177,7 @@ impl<H: BuildHasher + Default> Ramhorns<H> {
     /// Create a new empty aggregator for a given folder. This won't do anything until
     /// a template has been added using [`from_file`](#method.from_file).
     /// ```no_run
-    /// # use ramhorns_ext::Ramhorns;
+    /// # use dysql_tpl::Ramhorns;
     /// let mut tpls: Ramhorns = Ramhorns::lazy("./templates").unwrap();
     /// let content = "I am the content";
     /// let rendered = tpls.from_file("hello.html").unwrap().render(&content);

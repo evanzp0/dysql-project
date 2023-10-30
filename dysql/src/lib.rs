@@ -1,7 +1,7 @@
 //! Do dynamic-sql query through proc-macro
 //! 
 //! It bases on [**sqlx**] crate (default feature), you can switch them by setting the features. 
-//! It uses [**Ramhorns**] the high performance template engine implementation of [**Mustache**]
+//! It uses [**Ramhorns-ext**] the high performance template engine implementation of [**Mustache**]
 //! 
 //! ## Example (Sqlx)
 //! 

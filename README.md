@@ -3,7 +3,7 @@
 **Dysql** is a highly Performant Rust SQL Toolkit and ORM Library. An async, pure Rust SQL crate featuring compile-time Dynamic SQL.
 
 It bases on [**sqlx**](https://github.com/launchbadge/sqlx) crate (default feature), you can switch them by setting the features. 
-It uses [**Ramhorns**](https://github.com/maciejhirsz/ramhorns) the high performance template engine implementation of [**Mustache**](https://mustache.github.io/) template language (a very very very simply template language) :-).
+It uses [**Ramhorns-ext**](https://github.com/maciejhirsz/ramhorns) the high performance template engine implementation of [**Mustache**](https://mustache.github.io/) template language (a very very very simply template language) :-).
 
 It invokes like blow:
 ```(
@@ -18,7 +18,6 @@ Full example please see: [Dysql sqlx example](https://github.com/evanzp0/dysql-p
 ```toml
 [dependencies]
 dysql = "0.9"
-dysql-macro = {version = "0.9"}
 sqlx = { version = "0.6", features = [ "runtime-tokio-native-tls" , "postgres" ] }
 tokio = { version = "1.0", features = ["full"] }
 ramhorns-ext = { version = "0.17", features = ["chrono", "uuid"] }

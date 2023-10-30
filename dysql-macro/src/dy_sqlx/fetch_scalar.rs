@@ -37,7 +37,7 @@ impl SqlExpand for FetchScalar {
         
                 let rst = query.fetch_one(#cot_ref #cot).await;
                 if let Err(e) = rst {
-                    break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)))))
+                    break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)), None)))
                 }
                 let rst = rst.expect("Unexpected error");
                 Ok(rst)
@@ -46,7 +46,7 @@ impl SqlExpand for FetchScalar {
                 let mut query = sqlx::query_scalar::<_, #ret_type>(&sql);
                 let rst = query.fetch_one(#cot_ref #cot).await;
                 if let Err(e) = rst {
-                    break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)))))
+                    break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)), None)))
                 }
                 let rst = rst.expect("Unexpected error");
                 Ok(rst)

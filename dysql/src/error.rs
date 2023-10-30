@@ -22,13 +22,15 @@ pub struct ErrorInner {
     pub kind: Kind,
     #[serde(skip_serializing)]
     pub cause: Option<Box<dyn Error + Sync + Send>>,
+    pub message: Option<String>,
 }
 
 impl ErrorInner {
-    pub fn new(kind: Kind, cause: Option<Box<dyn Error + Sync + Send>>) -> Self {
+    pub fn new(kind: Kind, cause: Option<Box<dyn Error + Sync + Send>>, message: Option<String>) -> Self {
         Self {
             kind,
-            cause
+            cause,
+            message
         }
     }
 }
@@ -47,18 +49,26 @@ impl fmt::Debug for DySqlError {
 
 impl fmt::Display for DySqlError {
     fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match &self.0.kind {
-            Kind::ParseSqlError => fmt.write_str("error parse sql")?,
-            Kind::PrepareStamentError => fmt.write_str("error preparement db statement")?,
-            Kind::BindParamterError => fmt.write_str("error bind db parameter")?,
-            Kind::TemplateNotFound => fmt.write_str("error sql template is not found")?,
-            Kind::TemplateParseError => fmt.write_str("error sql template parse")?,
-            Kind::ExtractSqlParamterError => fmt.write_str("error extract sql parameter")?,
-            Kind::QueryError => fmt.write_str("error db query")?,
-            Kind::ObjectMappingError => fmt.write_str("error object mapping")?,
+        let rst = if let Some(ref message) = self.0.message {
+            let message = "sql error: ".to_owned() + message;
+            fmt.write_str(&message)
+        } else {
+            match &self.0.kind {
+                Kind::ParseSqlError => fmt.write_str("sql error: error parse sql"),
+                Kind::PrepareStamentError => fmt.write_str("sql error: error preparement db statement"),
+                Kind::BindParamterError => fmt.write_str("sql error: error bind db parameter"),
+                Kind::TemplateNotFound => fmt.write_str("sql error: error sql template is not found"),
+                Kind::TemplateParseError => fmt.write_str("sql error: error sql template parse"),
+                Kind::QueryError => fmt.write_str("sql error: error db query"),
+                Kind::ObjectMappingError => fmt.write_str("sql error: error object mapping"),
+                Kind::ExtractSqlParamterError => fmt.write_str("sql error: error extract sql parameter"),
+            }
         };
+        
+        let _= rst?;
+
         if let Some(ref cause) = self.0.cause {
-            write!(fmt, ": {}", cause)?;
+            write!(fmt, ", cause: {}", cause)?;
         }
         Ok(())
     }

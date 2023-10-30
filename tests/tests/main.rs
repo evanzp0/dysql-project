@@ -1,7 +1,6 @@
 use std::{str::FromStr, error::Error};
 
-use dysql::{PageDto, SortModel};
-use dysql_macro::*;
+use dysql::{PageDto, SortModel, fetch_all, insert, sql, fetch_one, fetch_scalar, execute, page};
 use ramhorns_ext::Content;
 use sqlx::{
     postgres::PgPoolOptions, FromRow, Pool, Postgres, mysql::MySqlPoolOptions, MySql, 

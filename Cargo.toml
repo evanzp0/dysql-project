@@ -1,9 +1,11 @@
 [workspace]
 members = [
-    "dysql",
+    "dysql-core",
     "dysql-macro",
+    "dysql",
     "tests"
 ]
 
 [patch.crates-io]
-dysql = { path = "./dysql" }
+dysql-core = { path = "./dysql-core" }
+dysql-macro = { path = "./dysql-macro" }

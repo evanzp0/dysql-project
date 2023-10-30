@@ -36,7 +36,7 @@ impl SqlExpand for Execute {
         
                 let rst = query.execute(#cot_ref #cot).await;
                 if let Err(e) = rst {
-                    break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)))))
+                    break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)), None)))
                 }
                 let rst = rst.expect("Unexpected error");
                 let af_rows = rst.rows_affected();
@@ -46,7 +46,7 @@ impl SqlExpand for Execute {
                 let mut query = sqlx::query(&sql);
                 let rst = query.execute(#cot_ref #cot).await;
                 if let Err(e) = rst {
-                    break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)))))
+                    break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)), None)))
                 }
                 let rst = rst.expect("Unexpected error");
                 let af_rows = rst.rows_affected();

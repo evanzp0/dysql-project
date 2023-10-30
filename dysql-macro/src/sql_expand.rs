@@ -1,4 +1,6 @@
+use dysql_core::{extract_params, SqlDialect, md5};
 use quote::{ToTokens, quote};
+
 use crate::SqlClosure;
 
 pub(crate) trait SqlExpand {
@@ -13,7 +15,7 @@ pub(crate) trait SqlExpand {
     
         // get raw sql and all params as both string and ident type at compile time!
         let param_strings = match dto {
-            Some(_) => dysql::extract_params(&sql, dysql::SqlDialect::from(dialect.to_owned()))
+            Some(_) => extract_params(&sql, SqlDialect::from(dialect.to_owned()))
                 .map_err(|_| syn::Error::new(proc_macro2::Span::call_site(), format!("Parse sql error: {} ", sql)))?
                 .1,
             None => vec![],
@@ -51,7 +53,7 @@ pub(crate) trait SqlExpand {
         };
 
         let dialect = &st.dialect.to_string();
-        let template_id = dysql::md5(body);
+        let template_id = md5(body);
 
         let is_dto_ref = &st.is_dto_ref;
         let is_dto_ref_mut = &st.is_dto_ref_mut;
@@ -69,7 +71,7 @@ pub(crate) trait SqlExpand {
                 // println!("!!! {}", sql_rendered);
                 let extract_rst = dysql::extract_params(&sql_rendered, dysql::SqlDialect::from(#dialect.to_owned()));
                 if let Err(e) = extract_rst {
-                    break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::ExtractSqlParamterError, Some(Box::new(e)))))
+                    break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::ExtractSqlParamterError, Some(Box::new(e)), None)))
                 }
                 let (sql, param_names) = extract_rst.unwrap();
             ),

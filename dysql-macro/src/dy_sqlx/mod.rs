@@ -5,7 +5,7 @@ mod execute;
 mod insert;
 mod page;
 
-use dysql::QueryType;
+use dysql_core::QueryType;
 
 pub use fetch_all::*;
 pub use fetch_one::*;

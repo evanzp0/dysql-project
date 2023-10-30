@@ -1,4 +1,4 @@
-use dysql::SqlDialect;
+use dysql_core::SqlDialect;
 use quote::quote;
 
 use crate::{sql_expand::SqlExpand, gen_path};
@@ -47,7 +47,7 @@ impl SqlExpand for Insert {
                 
                         let insert_id = query.fetch_one(#cot_ref #cot).await;
                         if let Err(e) = insert_id {
-                            break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)))))
+                            break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)), None)))
                         }
                         let insert_id = insert_id.expect("Unexpected error");
                         Ok(insert_id)
@@ -67,7 +67,7 @@ impl SqlExpand for Insert {
                             .fetch_one(#cot_ref #cot)
                             .await;
                         if let Err(e) = insert_id {
-                            break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)))))
+                            break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)), None)))
                         }
                         let insert_id = insert_id.expect("Unexpected error").0;
                         Ok(insert_id)
@@ -87,7 +87,7 @@ impl SqlExpand for Insert {
                             .fetch_one(#cot_ref #cot)
                             .await;
                         if let Err(e) = insert_id {
-                            break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)))))
+                            break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)), None)))
                         }
                         let insert_id = insert_id.expect("Unexpected error").0;
                         Ok(insert_id)
@@ -99,7 +99,7 @@ impl SqlExpand for Insert {
                     let mut query = sqlx::query_scalar::<_, #ret_type>(&sql);
                     let insert_id = query.fetch_one(#cot_ref #cot).await;
                     if let Err(e) = insert_id {
-                        break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)))))
+                        break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)), None)))
                     }
                     let insert_id = insert_id.expect("Unexpected error");
                     Ok(insert_id)
@@ -111,7 +111,7 @@ impl SqlExpand for Insert {
                         .fetch_one(#cot_ref #cot)
                         .await;
                     if let Err(e) = insert_id {
-                        break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)))))
+                        break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)), None)))
                     }
                     let insert_id = insert_id.expect("Unexpected error").0;
                     Ok(insert_id)
@@ -123,7 +123,7 @@ impl SqlExpand for Insert {
                         .fetch_one(#cot_ref #cot)
                         .await;
                     if let Err(e) = insert_id {
-                        break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)))))
+                        break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)), None)))
                     }
                     let insert_id = insert_id.expect("Unexpected error").0;
                     Ok(insert_id)

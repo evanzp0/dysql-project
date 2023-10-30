@@ -194,7 +194,7 @@ impl<'a> SqlNodeData<'a> {
             if tmp == ")]" {
                 SqlNodeData::FDel{ literal: token, data: &token[8..tlen - 2] }
             } else {
-                return Err(DySqlError(ErrorInner::new(Kind::ParseSqlError, None)))
+                return Err(DySqlError(ErrorInner::new(Kind::ParseSqlError, None, Some("![F_DEL(...)] syntax is not correct".to_owned()))))
             }
         } else if token.starts_with("![B_DEL(") {
             
@@ -202,7 +202,7 @@ impl<'a> SqlNodeData<'a> {
             if tmp == ")]" {
                 SqlNodeData::BDel { literal: token, data: &token[8..tlen - 2] }
             } else {
-                return Err(DySqlError(ErrorInner::new(Kind::ParseSqlError, None)))
+                return Err(DySqlError(ErrorInner::new(Kind::ParseSqlError, None, Some("![B_DEL(...)] syntax is not correct".to_owned()))))
             }
         } else {
             SqlNodeData::Str(token)

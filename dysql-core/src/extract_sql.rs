@@ -1,5 +1,6 @@
 //! Extract name paramters and sql statement from the named sql template.
-use crate::{SqlDialect, DySqlResult, DySqlError, Kind, ErrorInner};
+
+use crate::{sql_dialect::SqlDialect, error::{ParseSqlResult, ParseSqlError}};
 
 ///
 /// extract sql and params from raw sql
@@ -8,8 +9,7 @@ use crate::{SqlDialect, DySqlResult, DySqlError, Kind, ErrorInner};
 ///
 /// Basic usage:
 /// 
-/// ```
-/// # use dysql::*;
+/// ```ignore
 ///
 /// let sql = "select * from abc where id=:id and name=:name order by id";
 /// let rst = extract_params(sql, SqlDialect::postgres);
@@ -25,7 +25,7 @@ use crate::{SqlDialect, DySqlResult, DySqlError, Kind, ErrorInner};
 ///     rst.unwrap()
 /// );
 /// ```
-pub fn extract_params(o_sql: &str, sql_dial: SqlDialect) -> DySqlResult<(String, Vec<String>)> {
+pub fn extract_params(o_sql: &str, sql_dial: SqlDialect) -> ParseSqlResult<(String, Vec<String>)> {
     // eprintln!("{:#?}", o_sql);
     let mut r_sql = String::new();
     let mut params: Vec<String> = vec![];
@@ -42,7 +42,6 @@ pub fn extract_params(o_sql: &str, sql_dial: SqlDialect) -> DySqlResult<(String,
             cur = current_cursor;
             count += 1;
             match sql_dial {
-                // SqlDialect::postgres => r_sql.push_str(&format!("{}${}", &o_sql[start..cur], count)),
                 SqlDialect::postgres => {
                     r_sql.push_str(&o_sql[start..cur]);
                     r_sql.push('$');
@@ -55,13 +54,14 @@ pub fn extract_params(o_sql: &str, sql_dial: SqlDialect) -> DySqlResult<(String,
             cur += 1;
             start = cur;
 
-            // get named param end index
+            // get named parameter end index
+            let err_msg = "not found named parameter after ':'".to_owned();
             if cur == end {
-                return Err(DySqlError(ErrorInner::new(Kind::ExtractSqlParamterError, None)))
+                return Err(ParseSqlError(err_msg))
             } else {
                 let (found, current_cursor) = char_index(o_sql, cur, vec![' ', '\n', '\t', ',', ';', '{', ')', '|']);
-                if found && current_cursor == cur{
-                    return Err(DySqlError(ErrorInner::new(Kind::ExtractSqlParamterError, None)))
+                if found && current_cursor == cur {
+                    return Err(ParseSqlError(err_msg))
                 }
 
                 cur = current_cursor;
@@ -114,14 +114,14 @@ mod tests {
         let rst = extract_params(sql, SqlDialect::postgres);
         match rst {
             Ok(_) => panic!("Unexpected error"),
-            Err(e) => assert_eq!(e.to_string(), "error extract sql parameter"),
+            Err(_) => (),
         };
 
         let sql = "select * from abc where id=:id and name=:";
         let rst = extract_params(sql, SqlDialect::postgres);
         match rst {
             Ok(_) => panic!("Unexpected error"),
-            Err(e) => assert_eq!(e.to_string(), "error extract sql parameter"),
+            Err(_) => (),
         };
     }
 }

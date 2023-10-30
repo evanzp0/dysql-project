@@ -1,25 +1,11 @@
 use std::{sync::{RwLock, Arc}, collections::HashMap};
 
-use crypto::{md5::Md5, digest::Digest};
 use once_cell::sync::OnceCell;
 use ramhorns_ext::{Template, Content};
 
 use crate::{DySqlResult, Kind, DySqlError, ErrorInner};
 
 pub static SQL_TEMPLATE_CACHE: OnceCell<RwLock<HashMap<String, Arc<Template>>>> = OnceCell::new();
-pub static STATIC_SQL_FRAGMENT_MAP: OnceCell<RwLock<HashMap<String, String>>> = OnceCell::new();
-
-pub fn get_sql_fragment(name: &str)-> Option<String> {
-    let cache = STATIC_SQL_FRAGMENT_MAP.get().expect("Unexpect error: get_sql_fragment()");
-    let fragment = cache.read().expect("Unexpect error: get_sql_fragment()");
-    let fragment = fragment.get(name);
-    let rst = match fragment {
-        Some(v) => Some(v.to_owned()),
-        None => None,
-    };
-
-    rst
-}
 
 #[allow(dead_code)]
 fn get_sql_template_cache() -> &'static RwLock<HashMap<String, Arc<Template<'static>>>> {
@@ -49,7 +35,7 @@ pub fn put_sql_template(template_id: &str, sql: &'static str) -> DySqlResult<Arc
     let cache = get_sql_template_cache();
 
     let template = Template::new(sql).map_err(|e| {
-        DySqlError(ErrorInner::new(Kind::TemplateParseError, Some(Box::new(e))))
+        DySqlError(ErrorInner::new(Kind::TemplateParseError, Some(Box::new(e)), None))
     })?;
     cache.write().unwrap().insert(template_id.to_string(), Arc::new(template));
 
@@ -59,24 +45,8 @@ pub fn put_sql_template(template_id: &str, sql: &'static str) -> DySqlResult<Arc
         return Ok(tmpl.clone())
     }
 
-    Err(DySqlError(ErrorInner::new(Kind::TemplateNotFound, None)))
+    Err(DySqlError(ErrorInner::new(Kind::TemplateNotFound, None, None)))
 
-}
-
-pub fn md5<S:Into<String>>(input: S) -> String {
-    let mut md5 = Md5::new();
-    md5.input_str(&input.into());
-    md5.result_str()
-}
-
-#[derive(Debug)]
-pub enum QueryType {
-    FetchAll,
-    FetchOne,
-    FetchScalar,
-    Execute,
-    Insert,
-    Page,
 }
 
 #[allow(unused)]
@@ -90,16 +60,5 @@ impl<T> Value<T> {
         Self {
             value
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::SqlDialect;
-    
-    #[test]
-    fn test_to_string() {
-        let s = SqlDialect::postgres.to_string();
-        assert_eq!("postgres", s);
     }
 }

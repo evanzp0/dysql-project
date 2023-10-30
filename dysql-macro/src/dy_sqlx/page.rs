@@ -47,7 +47,7 @@ impl SqlExpand for Page {
         
                 let rst = query.fetch_one(#cot_ref #cot).await;
                 if let Err(e) = rst {
-                    break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)))))
+                    break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)), None)))
                 }
                 let count = rst.expect("Unexpected error");
 
@@ -62,7 +62,7 @@ impl SqlExpand for Page {
 
                 let rst = query.fetch_one(#cot_ref #cot).await;
                 if let Err(e) = rst {
-                    break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)))))
+                    break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)), None)))
                 }
                 let count = rst.expect("Unexpected error");
 
@@ -102,7 +102,7 @@ impl SqlExpand for Page {
     
                 let rst = query.fetch_all(#cot_ref #cot).await;
                 if let Err(e) = rst {
-                    break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)))))
+                    break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)), None)))
                 }
                 let rst = rst.expect("Unexpected error");
                 let pg_data = dysql::Pagination::from_dto(#dto_ref #dto, rst);
@@ -115,7 +115,7 @@ impl SqlExpand for Page {
                 let mut query = sqlx::query_as::<_, #ret_type>(&sql);
                 let rst = query.fetch_all(#cot_ref #cot).await;
                 if let Err(e) = rst {
-                    break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)))))
+                    break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)), None)))
                 }
                 let rst = rst.expect("Unexpected error");
                 let pg_data = dysql::Pagination::from_dto(#dto_ref #dto, rst);

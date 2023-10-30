@@ -50,16 +50,15 @@
 //! Full example please see: [Dysql sqlx example](https://github.com/evanzp0/dysql-project/tests)
 
 mod dy_sqlx;
-use dy_sqlx::expand;
-
 mod sql_expand;
 
+use dysql_core::{get_dysql_config, SqlDialect, get_sql_fragment, QueryType, STATIC_SQL_FRAGMENT_MAP};
 use proc_macro::TokenStream;
 use syn::{punctuated::Punctuated, parse_macro_input, Token};
 use std::{collections::HashMap, sync::RwLock};
 use quote::quote;
 
-use dysql::{QueryType, get_dysql_config, STATIC_SQL_FRAGMENT_MAP, get_sql_fragment};
+use dy_sqlx::expand;
 
 #[derive(Debug)]
 struct SqlFragment {
@@ -286,9 +285,9 @@ fn parse_return_tuple(input: syn::parse::ParseStream) -> syn::Result<syn::parse:
 
 fn get_default_dialect(span: &proc_macro2::Span) -> syn::Ident {
     match get_dysql_config().dialect {
-        dysql::SqlDialect::postgres => syn::Ident::new(&dysql::SqlDialect::postgres.to_string(), span.clone()),
-        dysql::SqlDialect::mysql => syn::Ident::new(&dysql::SqlDialect::mysql.to_string(), span.clone()),
-        dysql::SqlDialect::sqlite => syn::Ident::new(&dysql::SqlDialect::sqlite.to_string(), span.clone()),
+        SqlDialect::postgres => syn::Ident::new(&SqlDialect::postgres.to_string(), span.clone()),
+        SqlDialect::mysql => syn::Ident::new(&SqlDialect::mysql.to_string(), span.clone()),
+        SqlDialect::sqlite => syn::Ident::new(&SqlDialect::sqlite.to_string(), span.clone()),
     }
 }
 

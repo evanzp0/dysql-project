@@ -15,16 +15,17 @@ services:
           memory: '512M'
           cpus: '1'
     volumes:
-      - db:/var/lib/postgresql/data
+      - postgres_db:/var/lib/postgresql/data
   mysql:
     image: mysql:8
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: 111111
-      MYSQL_DATABASE: my_database
+      # MYSQL_DATABASE: my_database
     ports:
       - 3306:3306
     volumes:
-      - db:/var/lib/mysql/data
+      - mysql_db:/var/lib/mysql
 volumes:
-    db:
+    postgres_db:
+    mysql_db:

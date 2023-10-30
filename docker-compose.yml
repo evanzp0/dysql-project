@@ -24,5 +24,7 @@ services:
       MYSQL_DATABASE: my_database
     ports:
       - 3306:3306
+    volumes:
+      - db:/var/lib/mysql/data
 volumes:
     db:

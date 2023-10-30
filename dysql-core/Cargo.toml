@@ -2,6 +2,11 @@
 name = "dysql-core"
 version = "0.10.0"
 edition = "2021"
+description = "Dysql is a rust crate that do dynamic-sql query through proc-macro, it bases on sqlx crate"
+license = "Apache-2.0"
+repository = "https://github.com/evanzp0/dysql-project"
+documentation = "https://docs.rs/dysql-core"
+readme = "../README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

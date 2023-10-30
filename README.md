@@ -17,7 +17,7 @@ Full example please see: [Dysql sqlx example](https://github.com/evanzp0/dysql-p
 ### Cargo.toml:
 ```toml
 [dependencies]
-dysql = "0.9"
+dysql = "0.10"
 sqlx = { version = "0.6", features = [ "runtime-tokio-native-tls" , "postgres" ] }
 tokio = { version = "1.0", features = ["full"] }
 ramhorns-ext = { version = "0.17", features = ["chrono", "uuid"] }

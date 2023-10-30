@@ -16,7 +16,7 @@ pub(crate) trait SqlExpand {
         // get raw sql and all params as both string and ident type at compile time!
         let param_strings = match dto {
             Some(_) => extract_params(&sql, SqlDialect::from(dialect.to_owned()))
-                .map_err(|_| syn::Error::new(proc_macro2::Span::call_site(), format!("Parse sql error: {} ", sql)))?
+                .map_err(|e| syn::Error::new(proc_macro2::Span::call_site(), e.0))?
                 .1,
             None => vec![],
         };

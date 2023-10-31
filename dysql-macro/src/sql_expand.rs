@@ -5,6 +5,7 @@ use crate::SqlClosure;
 
 pub(crate) trait SqlExpand {
     /// get (param_strings, params_idents) at compile time
+    /// 在编译时获取 sql body 中的 :named_parameter 
     fn extra_params(&self, st: &crate::SqlClosure) -> syn::Result<(Vec<String>, Vec<proc_macro2::TokenStream>)> {
         let dto = &st.dto;
         let sql = &st.body;
@@ -42,10 +43,14 @@ pub(crate) trait SqlExpand {
         Ok((param_strings, param_idents))
     }
     
-    /// declare sql and bind params at runtime
+    /// 生成运行时的 sql 和 param_names 两个变量的声明语句
+    /// 
+    /// st: 在编译时生成的包含 sql 的结构体;\
+    /// sql: 如果有值，它表示分页查询时在 st.body 基础上添加的 count sql 和 order sql;
     fn gen_declare_rt(&self, st: &crate::SqlClosure, sql: Option<&str>) -> syn::Result<proc_macro2::TokenStream> {
         let dto = &st.dto;
         
+        // 如果不是分页查询，则使用 st.body
         let body = if let Some(bd) = sql {
             bd
         } else {
@@ -53,6 +58,8 @@ pub(crate) trait SqlExpand {
         };
 
         let dialect = &st.dialect.to_string();
+
+        // 根据 sql body 生成唯一 hash 标识
         let template_id = md5(body);
 
         let is_dto_ref = &st.is_dto_ref;
@@ -75,7 +82,9 @@ pub(crate) trait SqlExpand {
                 }
                 let (sql, param_names) = extract_rst.unwrap();
             ),
+            // 没有 dto 则 sql 参数绑定列表为空
             None => quote!(
+                // todo!, sql 也需要用 dysql::get_sql_template(#template_id) 获取
                 let sql = #body;
                 let param_names: Vec<String> = vec![];
             ),

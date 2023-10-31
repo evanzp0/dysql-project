@@ -1,7 +1,7 @@
 use dysql_core::SqlDialect;
 use quote::quote;
 
-use crate::{sql_expand::SqlExpand, gen_path};
+use crate::{sql_expand::SqlExpand, gen_type_path};
 
 pub struct Insert;
 
@@ -21,7 +21,7 @@ impl SqlExpand for Insert {
         };
 
         // gen return type fro postgres
-        let i64_path = Some(gen_path("i64"));
+        let i64_path = Some(gen_type_path("i64"));
         let ret_type = match &st.ret_type {
             Some(_) => &st.ret_type,
             None => &i64_path,

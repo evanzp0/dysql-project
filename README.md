@@ -11,7 +11,7 @@ dysql_macro!(| dto, conn_or_tran | [-> return_type | -> (return_type ,dialect)] 
 ```
 > Note: **Dialect can be blank**, and the default value is **postgres**, and dialect also supports  **mysql**, **sqlite**.
 
-## Example (sqlx)
+## Example
 Full example please see: [Dysql sqlx example](https://github.com/evanzp0/dysql-project/tests)
 
 ### Cargo.toml:

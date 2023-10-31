@@ -3,7 +3,7 @@
 //! It bases on [**sqlx**] crate (default feature), you can switch them by setting the features. 
 //! It uses [**Ramhorns-ext**] the high performance template engine implementation of [**Mustache**]
 //! 
-//! ## Example (Sqlx)
+//! ## Example
 //! 
 //! ### main.rs
 //! ```ignore
@@ -46,7 +46,7 @@
 //! }
 //! ```
 //! 
-//! ## Example (sqlx)
+//! ## Example
 //! Full example please see: [Dysql sqlx example](https://github.com/evanzp0/dysql-project/tests)
 
 mod dy_sqlx;
@@ -60,6 +60,8 @@ use quote::quote;
 
 use dy_sqlx::expand;
 
+/// 用于解析 sql!(sql_fragment_name, sql_fragment) 宏
+/// 该宏用于定义公共的 sql 语句部分
 #[derive(Debug)]
 struct SqlFragment {
     name: String,
@@ -76,6 +78,7 @@ impl syn::parse::Parse for SqlFragment {
     }
 } 
 
+/// 用于解析 dysql 所有过程宏的语句
 #[allow(dead_code)]
 #[derive(Debug)]
 struct SqlClosure {
@@ -226,6 +229,7 @@ impl syn::parse::Parse for SqlClosure {
     }
 }
 
+/// 解析 sql body
 fn parse_body(input: &syn::parse::ParseBuffer) -> Result<String, syn::Error> {
     let body_buf;
     syn::braced!(body_buf in input);
@@ -264,7 +268,8 @@ fn parse_body(input: &syn::parse::ParseBuffer) -> Result<String, syn::Error> {
     Ok(sql)
 }
 
-pub(crate) fn gen_path(s: &str) -> syn::Path {
+/// 根据 s 生成 syn::Path 对象，用于 dysql 中有返回值的过程宏
+pub(crate) fn gen_type_path(s: &str) -> syn::Path {
     let seg = syn::PathSegment {
         ident: syn::Ident::new(s, proc_macro2::Span::call_site()),
         arguments: syn::PathArguments::None,
@@ -276,6 +281,8 @@ pub(crate) fn gen_path(s: &str) -> syn::Path {
     path
 }
 
+/// 用来解析 dysql closure 语句中的 return tuple : 
+/// ( ret_type, dialect ) or ( ret_type, _ ) or ( _, dialect )
 fn parse_return_tuple(input: syn::parse::ParseStream) -> syn::Result<syn::parse::ParseBuffer> {
     let tuple_buf;
     syn::parenthesized!(tuple_buf in input);
@@ -283,6 +290,7 @@ fn parse_return_tuple(input: syn::parse::ParseStream) -> syn::Result<syn::parse:
     Ok(tuple_buf)
 }
 
+/// 获取默认的 SqlDialect
 fn get_default_dialect(span: &proc_macro2::Span) -> syn::Ident {
     match get_dysql_config().dialect {
         SqlDialect::postgres => syn::Ident::new(&SqlDialect::postgres.to_string(), span.clone()),
@@ -320,7 +328,10 @@ fn get_default_dialect(span: &proc_macro2::Span) -> syn::Ident {
 /// ```
 #[proc_macro]
 pub fn fetch_all(input: TokenStream) -> TokenStream {
+    // 将 input 解析成 SqlClosure
     let st = syn::parse_macro_input!(input as SqlClosure);
+
+    // fetch_all 必须要指定单个 item 的返回值类型
     if st.ret_type.is_none() { panic!("ret_type can't be null.") }
 
     match expand(&st, QueryType::FetchAll) {

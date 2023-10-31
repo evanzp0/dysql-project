@@ -19,7 +19,7 @@ impl PersistSql {
 impl Default for PersistSql {
     fn default() -> Self {
         let mut current_dir = env::current_dir().unwrap();
-        current_dir.push("sql");
+        current_dir.push(".sql");
 
         PersistSql::new(current_dir)
     }

@@ -1,4 +1,4 @@
-use dysql_core::{extract_params, SqlDialect, md5};
+use dysql_core::{extract_params, SqlDialect, hash_str};
 use quote::{ToTokens, quote};
 
 use crate::SqlClosure;
@@ -60,7 +60,7 @@ pub(crate) trait SqlExpand {
         let dialect = &st.dialect.to_string();
 
         // 根据 sql body 生成唯一 hash 标识
-        let template_id = md5(body);
+        let template_id = hash_str(body);
 
         let is_dto_ref = &st.is_dto_ref;
         let is_dto_ref_mut = &st.is_dto_ref_mut;
@@ -85,7 +85,11 @@ pub(crate) trait SqlExpand {
             // 没有 dto 则 sql 参数绑定列表为空
             None => quote!(
                 // todo!, sql 也需要用 dysql::get_sql_template(#template_id) 获取
-                let sql = #body;
+                let sql_tpl = match dysql::get_sql_template(#template_id) {
+                    Some(tpl) => tpl,
+                    None => dysql::put_sql_template(#template_id, #body).expect("Unexpected error when put_sql_template"),
+                };
+                let sql = sql_tpl.source();
                 let param_names: Vec<String> = vec![];
             ),
         };

@@ -52,8 +52,9 @@
 mod dy_sqlx;
 mod sql_expand;
 mod sql_fragment;
+mod utils;
 
-use dysql_core::{SqlDialect, QueryType};
+use dysql_core::SqlDialect;
 use proc_macro::TokenStream;
 use sql_fragment::{STATIC_SQL_FRAGMENT_MAP, SqlFragment};
 use syn::{punctuated::Punctuated, parse_macro_input, Token};
@@ -64,6 +65,16 @@ use std::env;
 use dy_sqlx::expand;
 
 use crate::sql_fragment::get_sql_fragment;
+
+#[derive(Debug)]
+pub(crate) enum QueryType {
+    FetchAll,
+    FetchOne,
+    FetchScalar,
+    Execute,
+    Insert,
+    Page,
+}
 
 /// 用于解析 dysql 所有过程宏的语句
 #[allow(dead_code)]

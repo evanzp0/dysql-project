@@ -1,7 +1,7 @@
-use dysql_core::{extract_params, SqlDialect, hash_str};
+use dysql_core::{extract_params, SqlDialect};
 use quote::{ToTokens, quote};
 
-use crate::SqlClosure;
+use crate::{SqlClosure, utils::hash_str};
 
 pub(crate) trait SqlExpand {
     /// get (param_strings, params_idents) at compile time

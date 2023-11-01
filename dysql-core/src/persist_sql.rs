@@ -1,18 +1,18 @@
 use std::{path::PathBuf, env};
 
 pub struct PersistSql {
-    pub path: PathBuf,
+    pub sql_folder: PathBuf,
 }
 
 impl PersistSql {
     pub fn new(path: PathBuf) -> Self {
         PersistSql {
-            path
+            sql_folder: path
         }
     }
 
     pub fn create_path(&self) -> Result<(), std::io::Error> {
-        std::fs::create_dir_all(self.path.as_path())
+        std::fs::create_dir_all(self.sql_folder.as_path())
     }
 }
 

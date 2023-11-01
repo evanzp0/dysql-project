@@ -5,8 +5,6 @@ mod execute;
 mod insert;
 mod page;
 
-use dysql_core::QueryType;
-
 pub use fetch_all::*;
 pub use fetch_one::*;
 pub use fetch_scalar::*;
@@ -14,7 +12,7 @@ pub use execute::*;
 pub use insert::*;
 pub use page::*;
 
-use crate::{SqlClosure, sql_expand::SqlExpand};
+use crate::{SqlClosure, sql_expand::SqlExpand, QueryType};
 
 pub (crate) fn expand(st: &SqlClosure, query_type: QueryType) -> syn::Result<proc_macro2::TokenStream> {
     match query_type {

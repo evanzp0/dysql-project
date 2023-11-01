@@ -7,13 +7,3 @@ pub fn hash_str(name: &str) -> u64 {
     name.hash(&mut hasher);
     hasher.finish()
 }
-
-#[derive(Debug)]
-pub enum QueryType {
-    FetchAll,
-    FetchOne,
-    FetchScalar,
-    Execute,
-    Insert,
-    Page,
-}

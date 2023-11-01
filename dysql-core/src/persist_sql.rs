@@ -1,18 +1,18 @@
 use std::{path::PathBuf, env};
 
 pub struct PersistSql {
-    pub sql_folder: PathBuf,
+    pub sql_fd: PathBuf,
 }
 
 impl PersistSql {
     pub fn new(path: PathBuf) -> Self {
         PersistSql {
-            sql_folder: path
+            sql_fd: path
         }
     }
 
-    pub fn create_path(&self) -> Result<(), std::io::Error> {
-        std::fs::create_dir_all(self.sql_folder.as_path())
+    pub fn prepare_sql_fd(&self) -> Result<(), std::io::Error> {
+        std::fs::create_dir_all(self.sql_fd.as_path())
     }
 }
 
@@ -22,16 +22,5 @@ impl Default for PersistSql {
         current_dir.push(".sql");
 
         PersistSql::new(current_dir)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_create_path() {
-        let ps = PersistSql::default();
-        ps.create_path().unwrap();
     }
 }

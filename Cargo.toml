@@ -1,3 +1,8 @@
+[package]
+name = "workspace"
+version = "0.0.0"
+edition = "2021"
+
 [workspace]
 members = [
     "dysql-tpl",
@@ -5,10 +10,10 @@ members = [
     "dysql-core",
     "dysql-macro",
     "dysql",
-    "tests",
 ]
 
 [patch.crates-io]
+dysql = { path = "./dysql" }
 dysql-tpl = { path = "./dysql-tpl" }
 dysql-tpl-derive = { path = "./dysql-tpl-derive" }
 dysql-core = { path = "./dysql-core" }
@@ -17,3 +22,18 @@ dysql-macro = { path = "./dysql-macro" }
 [profile.bench]
 lto = "fat"
 codegen-units = 1
+
+[dev-dependencies]
+# test_sql dependence
+dysql = { path = "./dysql"}
+sqlx = { version = "0.6", features = [ "runtime-tokio-native-tls" , "postgres", "mysql", "sqlite"] }
+tokio = { version = "1.0", features = ["full"] }
+
+# test_tpl dependence
+askama = "0.9"
+handlebars = "3.1.0-beta.2"
+serde = "1.0"
+serde_derive = "1.0"
+mustache = "0.9"
+tera = "1.2.0"
+ahash = "0.7"

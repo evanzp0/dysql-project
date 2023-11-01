@@ -1,7 +1,7 @@
-use dysql_core::{extract_params, SqlDialect};
+use dysql_core::{extract_params, SqlDialect, save_sql_template, hash_str};
 use quote::{ToTokens, quote};
 
-use crate::{SqlClosure, utils::hash_str};
+use crate::SqlClosure;
 
 pub(crate) trait SqlExpand {
     /// get (param_strings, params_idents) at compile time
@@ -66,6 +66,15 @@ pub(crate) trait SqlExpand {
         let is_dto_ref_mut = &st.is_dto_ref_mut;
         let dto_ref = if *is_dto_ref { quote!(&) }  else if *is_dto_ref_mut { quote!(&mut) } else { quote!() }; 
         
+        let source_file = if let Some(path) = st.source_file.to_str() {
+            path
+        } else {
+            Err(syn::Error::new(proc_macro2::Span::call_site(), format!("source_file path can not convert to string: {:?}", st.source_file)))?
+        };
+        
+        // 持久化 sql
+        save_sql_template(source_file, template_id, body).unwrap();
+
         let rst = match dto {
             Some(_) => quote!(
                 let sql_tpl = match dysql::get_sql_template(#template_id) {

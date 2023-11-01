@@ -1,3 +1,5 @@
+#![feature(proc_macro_span)]
+
 //! Do dynamic-sql query through proc-macro
 //! 
 //! It bases on [**sqlx**] crate (default feature), you can switch them by setting the features. 
@@ -52,13 +54,12 @@
 mod dy_sqlx;
 mod sql_expand;
 mod sql_fragment;
-mod utils;
 
 use dysql_core::SqlDialect;
 use proc_macro::TokenStream;
 use sql_fragment::{STATIC_SQL_FRAGMENT_MAP, SqlFragment};
 use syn::{punctuated::Punctuated, parse_macro_input, Token};
-use std::{collections::HashMap, sync::RwLock};
+use std::{collections::HashMap, sync::RwLock, path::PathBuf};
 use quote::quote;
 use std::env;
 
@@ -90,6 +91,7 @@ struct SqlClosure {
     ret_type: Option<syn::Path>, // return type
     dialect: syn::Ident,
     body: String,
+    source_file: PathBuf,
 }
 
 impl syn::parse::Parse for SqlClosure {
@@ -222,7 +224,10 @@ impl syn::parse::Parse for SqlClosure {
         let body: Vec<String> = body.split('\n').into_iter().map(|f| f.trim().to_owned()).collect();
         let body = body.join(" ").to_owned();
 
-        let sc = SqlClosure { dto, is_dto_ref, is_dto_ref_mut, cot, is_cot_ref, is_cot_ref_mut, sql_name, ret_type, dialect, body };
+        let span: proc_macro::Span = input.span().unwrap();
+        let source_file = span.source_file().path();
+
+        let sc = SqlClosure { dto, is_dto_ref, is_dto_ref_mut, cot, is_cot_ref, is_cot_ref_mut, sql_name, ret_type, dialect, body, source_file };
         // eprintln!("{:#?}", sc);
 
         Ok(sc)

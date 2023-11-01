@@ -1,0 +1,4 @@
+
+[general]
+# Directories to search for askama templates, relative to the crate root.
+dirs = ["tests/templates"]

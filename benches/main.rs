@@ -68,7 +68,7 @@ fn b_simple_askama(b: &mut Bencher) {
 fn c_simple_tera(b: &mut Bencher) {
     use tera::{Tera, Context};
 
-    let mut tera = Tera::new("templates/includes/*").unwrap();
+    let mut tera = Tera::new("tests/templates/includes/*").unwrap();
 
     tera.add_raw_template("t1", "<title>{{title}}</title><h1>{{ title }}</h1><div>{{body|safe}}</div>").unwrap();
 
@@ -86,7 +86,7 @@ fn c_simple_tera(b: &mut Bencher) {
 fn c_simple_tera_from_serialize(b: &mut Bencher) {
     use tera::{Tera, Context};
 
-    let mut tera = Tera::new("templates/includes/*").unwrap();
+    let mut tera = Tera::new("tests/templates/includes/*").unwrap();
 
     tera.add_raw_template("t1", "<title>{{title}}</title><h1>{{ title }}</h1><div>{{body|safe}}</div>").unwrap();
 
@@ -130,7 +130,7 @@ fn e_simple_handlebars(b: &mut Bencher) {
 fn pa_partials_ramhorns(b: &mut Bencher) {
     use dysql::Ramhorns;
 
-    let mut tpls: Ramhorns<ahash::RandomState> = Ramhorns::lazy("templates").unwrap();
+    let mut tpls: Ramhorns<ahash::RandomState> = Ramhorns::lazy("./tests/templates").unwrap();
     let tpl = tpls.from_file("basic.html").unwrap();
     let post = POST;
     b.bytes = RENDERED_BYTES;
@@ -164,7 +164,7 @@ fn pb_partials_askama(b: &mut Bencher) {
 
 #[bench]
 fn pc_partials_mustache(b: &mut Bencher) {
-    let tpl = mustache::compile_path("templates/bench.moustache").unwrap();
+    let tpl = mustache::compile_path("tests/templates/bench.moustache").unwrap();
 
     let post = POST;
     b.bytes = RENDERED_BYTES;
@@ -180,9 +180,9 @@ fn pd_partials_handlebars(b: &mut Bencher) {
 
     let mut handlebars = Handlebars::new();
 
-    handlebars.register_template_file("t1", "templates/basic.html").unwrap();
-    handlebars.register_template_file("head.rh", "templates/head.html").unwrap();
-    handlebars.register_template_file("footer.rh", "templates/footer.html").unwrap();
+    handlebars.register_template_file("t1", "tests/templates/basic.html").unwrap();
+    handlebars.register_template_file("head.rh", "tests/templates/head.html").unwrap();
+    handlebars.register_template_file("footer.rh", "tests/templates/footer.html").unwrap();
 
     let post = POST;
     b.bytes = RENDERED_BYTES;

@@ -1,1 +1,1 @@
-<div>{{>../Cargo.toml}}</div>
+<div>{{>../../Cargo.toml}}</div>

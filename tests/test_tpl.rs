@@ -717,7 +717,7 @@ fn derive_flatten() {
 
 #[test]
 fn simple_partials() {
-    let mut tpls: Ramhorns = Ramhorns::lazy("templates").unwrap();
+    let mut tpls: Ramhorns = Ramhorns::lazy("./tests/templates").unwrap();
     let tpl = tpls.from_file("layout.html").unwrap();
     let html = tpl.render(&"");
 
@@ -728,7 +728,7 @@ fn simple_partials() {
 fn simple_partials_folder() {
     use std::fs::read_to_string;
 
-    let tpls: Ramhorns = Ramhorns::from_folder("templates").unwrap();
+    let tpls: Ramhorns = Ramhorns::from_folder("./tests/templates").unwrap();
     let post = Post {
         title: "Hello, Ramhorns!",
         body: "This is a really simple test of the rendering!",
@@ -736,11 +736,11 @@ fn simple_partials_folder() {
 
     assert_eq!(
         tpls.get("basic.html").unwrap().render(&post),
-        read_to_string("templates/basic.result").unwrap().trim_end()
+        read_to_string("./tests/templates/basic.result").unwrap().trim_end()
     );
     assert_eq!(
         tpls.get("another.html").unwrap().render(&post),
-        read_to_string("templates/another.result")
+        read_to_string("./tests/templates/another.result")
             .unwrap()
             .trim_end()
     );
@@ -750,8 +750,8 @@ fn simple_partials_folder() {
 fn simple_partials_extend() {
     use std::fs::read_to_string;
 
-    let mut tpls: Ramhorns = Ramhorns::from_folder("templates").unwrap();
-    tpls.extend_from_folder("more_templates").unwrap();
+    let mut tpls: Ramhorns = Ramhorns::from_folder("./tests/templates").unwrap();
+    tpls.extend_from_folder("./tests/more_templates").unwrap();
     let post = Post {
         title: "Hello, Ramhorns!",
         body: "This is a really simple test of the rendering!",
@@ -759,7 +759,7 @@ fn simple_partials_extend() {
 
     assert_eq!(
         tpls.get("basic2.html").unwrap().render(&post),
-        read_to_string("more_templates/basic2.result").unwrap().trim_end()
+        read_to_string("./tests/more_templates/basic2.result").unwrap().trim_end()
     );
 }
 
@@ -767,7 +767,7 @@ fn simple_partials_extend() {
 fn illegal_partials() {
     use dysql::TemplateError;
 
-    let mut tpls: Ramhorns = Ramhorns::lazy("templates").unwrap();
+    let mut tpls: Ramhorns = Ramhorns::lazy("./tests/templates").unwrap();
 
     let tpl1 = Template::new("<div>{{>templates/layout.html}}</div>");
     let tpl2 = tpls.from_file("illegal.hehe");
@@ -777,8 +777,10 @@ fn illegal_partials() {
         panic!("Partials loaded while parsing from &str");
     }
 
+    println!("tpl2 = {:?}", tpl2);
+
     if let Err(TemplateError::IllegalPartial(name)) = tpl2 {
-        assert_eq!(name, "../Cargo.toml".into());
+        assert_eq!(name, "../../Cargo.toml".into());
     } else {
         panic!("Partials loaded out of the allowed directory");
     }

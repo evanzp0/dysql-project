@@ -51,15 +51,11 @@
 
 
 mod pagination;
-mod error;
-mod utils;
 mod sort_model;
 mod trim_sql;
 mod page_dto;
 
 pub use pagination::*;
-pub use error::*;
-pub use utils::*;
 pub use sort_model::*;
 pub use trim_sql::*;
 pub use page_dto::*;

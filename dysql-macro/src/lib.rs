@@ -59,6 +59,7 @@ use sql_fragment::{STATIC_SQL_FRAGMENT_MAP, SqlFragment};
 use syn::{punctuated::Punctuated, parse_macro_input, Token};
 use std::{collections::HashMap, sync::RwLock};
 use quote::quote;
+use std::env;
 
 use dy_sqlx::expand;
 
@@ -82,6 +83,8 @@ struct SqlClosure {
 
 impl syn::parse::Parse for SqlClosure {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
+        dotenv::dotenv().ok();
+
         // parse closure parameters
 
         let mut is_dto_ref = false;
@@ -276,19 +279,18 @@ fn parse_return_tuple(input: syn::parse::ParseStream) -> syn::Result<syn::parse:
     Ok(tuple_buf)
 }
 
-/// 获取默认的 SqlDialect
+/// 从环境变量 DEFAULT_DB_DIALECT 中获取默认的 SqlDialect
 fn get_default_dialect(span: &proc_macro2::Span) -> syn::Ident {
-    #[cfg(feature="postgres")]
-    return syn::Ident::new(&SqlDialect::postgres.to_string(), span.clone());
-    
-    #[cfg(feature="mysql")]
-    return syn::Ident::new(&SqlDialect::mysql.to_string(), span.clone());
+    let default_dialect = if let Ok(v) = env::var("DEFAULT_DB_DIALECT") {
+        SqlDialect::from(v)
+    } else {
+        SqlDialect::postgres
+    };
 
-    #[cfg(feature="sqlite")]
-    return syn::Ident::new(&SqlDialect::sqlite.to_string(), span.clone())
+    syn::Ident::new(&default_dialect.to_string(), span.clone())
 }
 
-///
+
 /// fetch all datas that filtered by dto
 /// 
 /// # Examples

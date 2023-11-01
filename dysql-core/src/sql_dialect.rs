@@ -1,29 +1,5 @@
 use std::fmt::{Display, Formatter};
 
-use once_cell::sync::OnceCell;
-
-pub static DYSQL_CONFIG: OnceCell<DySqlConfig> = OnceCell::new();
-
-pub struct DySqlConfig {
-    pub  dialect: SqlDialect
-}
-
-impl DySqlConfig {
-    pub fn new() -> Self {
-        Self {
-            dialect: SqlDialect::postgres
-        }
-    }
-}
-
-pub fn get_dysql_config() -> &'static DySqlConfig {
-    let cfg = DYSQL_CONFIG.get_or_init(|| {
-        DySqlConfig::new()
-    });
-
-    cfg
-}
-
 #[allow(non_camel_case_types)]
 #[derive(Debug)]
 pub enum SqlDialect {

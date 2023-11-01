@@ -51,32 +51,18 @@
 
 mod dy_sqlx;
 mod sql_expand;
+mod sql_fragment;
 
-use dysql_core::{get_dysql_config, SqlDialect, get_sql_fragment, QueryType, STATIC_SQL_FRAGMENT_MAP};
+use dysql_core::{SqlDialect, QueryType};
 use proc_macro::TokenStream;
+use sql_fragment::{STATIC_SQL_FRAGMENT_MAP, SqlFragment};
 use syn::{punctuated::Punctuated, parse_macro_input, Token};
 use std::{collections::HashMap, sync::RwLock};
 use quote::quote;
 
 use dy_sqlx::expand;
 
-/// 用于解析 sql!(sql_fragment_name, sql_fragment) 宏
-/// 该宏用于定义公共的 sql 语句部分
-#[derive(Debug)]
-struct SqlFragment {
-    name: String,
-    value: String,
-}
-
-impl syn::parse::Parse for SqlFragment {
-    fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
-        let name= input.parse::<syn::LitStr>()?.value();
-        input.parse::<syn::Token!(,)>()?;
-        let value= input.parse::<syn::LitStr>()?.value();
-
-        Ok(Self { name, value })
-    }
-} 
+use crate::sql_fragment::get_sql_fragment;
 
 /// 用于解析 dysql 所有过程宏的语句
 #[allow(dead_code)]
@@ -292,11 +278,14 @@ fn parse_return_tuple(input: syn::parse::ParseStream) -> syn::Result<syn::parse:
 
 /// 获取默认的 SqlDialect
 fn get_default_dialect(span: &proc_macro2::Span) -> syn::Ident {
-    match get_dysql_config().dialect {
-        SqlDialect::postgres => syn::Ident::new(&SqlDialect::postgres.to_string(), span.clone()),
-        SqlDialect::mysql => syn::Ident::new(&SqlDialect::mysql.to_string(), span.clone()),
-        SqlDialect::sqlite => syn::Ident::new(&SqlDialect::sqlite.to_string(), span.clone()),
-    }
+    #[cfg(feature="postgres")]
+    return syn::Ident::new(&SqlDialect::postgres.to_string(), span.clone());
+    
+    #[cfg(feature="mysql")]
+    return syn::Ident::new(&SqlDialect::mysql.to_string(), span.clone());
+
+    #[cfg(feature="sqlite")]
+    return syn::Ident::new(&SqlDialect::sqlite.to_string(), span.clone())
 }
 
 ///

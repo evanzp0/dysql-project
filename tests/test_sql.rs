@@ -78,14 +78,6 @@ async fn connect_sqlite_db() -> SqliteConnection {
     conn
 }
 
-use lazy_static::lazy_static;
-lazy_static! {
-    static ref SETUP: () = {
-        std::fs::remove_dir_all("../.sql").ok();
-        ()
-    };
-}
-
 #[tokio::test]
 async fn test_fetch_all() {
     let conn = connect_postgres_db().await;

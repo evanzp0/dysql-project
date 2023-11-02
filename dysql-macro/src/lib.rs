@@ -295,9 +295,9 @@ fn parse_return_tuple(input: syn::parse::ParseStream) -> syn::Result<syn::parse:
     Ok(tuple_buf)
 }
 
-/// 从环境变量 DEFAULT_DB_DIALECT 中获取默认的 SqlDialect
+/// 从环境变量 DYSQL_DEFAULT_DB_DIALECT 中获取默认的 SqlDialect
 fn get_default_dialect(span: &proc_macro2::Span) -> syn::Ident {
-    let default_dialect = if let Ok(v) = env::var("DEFAULT_DB_DIALECT") {
+    let default_dialect = if let Ok(v) = env::var("DYSQL_DEFAULT_DB_DIALECT") {
         SqlDialect::from(v)
     } else {
         SqlDialect::postgres

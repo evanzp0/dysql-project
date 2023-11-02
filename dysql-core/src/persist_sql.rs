@@ -24,12 +24,18 @@ impl<'a> PersistSql<'a> {
             templats: Default::default(),
         };
 
-        me.load();
+        match std::env::var("DYSQL_PESIST_SQL") {
+            Ok(val) if val == "TRUE" => {
+                // 加载持久化 sql
+                me.load();
+            },
+            _ => (),
+        }
 
         me
     }
     
-    pub fn load(&mut self) {
+    fn load(&mut self) {
         if !self.meta_path.exists() {
             File::create(&self.meta_path).unwrap();
         } else {

@@ -777,8 +777,6 @@ fn illegal_partials() {
         panic!("Partials loaded while parsing from &str");
     }
 
-    println!("tpl2 = {:?}", tpl2);
-
     if let Err(TemplateError::IllegalPartial(name)) = tpl2 {
         assert_eq!(name, "../../Cargo.toml".into());
     } else {

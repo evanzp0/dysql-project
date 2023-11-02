@@ -72,9 +72,14 @@ pub(crate) trait SqlExpand {
             Err(syn::Error::new(proc_macro2::Span::call_site(), format!("source_file path can not convert to string: {:?}", st.source_file)))?
         };
         
-        // 持久化 sql
-        save_sql_template(source_file, template_id, body).unwrap();
-
+        match std::env::var("DYSQL_PESIST_SQL") {
+            Ok(val) if val == "TRUE" => {
+                // 持久化 sql
+                save_sql_template(source_file, template_id, body).unwrap();
+            },
+            _ => (),
+        }
+        
         let rst = match dto {
             Some(_) => quote!(
                 let sql_tpl = match dysql::get_sql_template(#template_id) {

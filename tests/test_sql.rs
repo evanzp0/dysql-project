@@ -32,6 +32,7 @@ struct User {
 }
 
 async fn connect_postgres_db() -> Pool<Postgres> {
+    dotenv::dotenv().ok();
     let conn = PgPoolOptions::new()
         .max_connections(5)
         .connect("postgres://root:111111@127.0.0.1/my_database").await.unwrap();
@@ -77,6 +78,14 @@ async fn connect_sqlite_db() -> SqliteConnection {
     conn
 }
 
+use lazy_static::lazy_static;
+lazy_static! {
+    static ref SETUP: () = {
+        std::fs::remove_dir_all("../.sql").ok();
+        ()
+    };
+}
+
 #[tokio::test]
 async fn test_fetch_all() {
     let conn = connect_postgres_db().await;
@@ -99,7 +108,7 @@ async fn test_fetch_one() {
 
     let dto = UserDto{ id: Some(2), name: None, age: None, id_rng: None };
     let rst = fetch_one!(|&dto, &conn| -> User {
-        select_sql + "where 1 = 1 and id = :id order by id"
+        select_sql + "where id = :id order by id"
     }).unwrap();
     assert_eq!(User { id: 2, name: Some("zhanglan".to_owned()), age: Some(21) }, rst);
 }

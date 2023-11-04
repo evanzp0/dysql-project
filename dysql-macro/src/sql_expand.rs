@@ -78,7 +78,7 @@ pub(crate) trait SqlExpand {
                 let sql_name = st.sql_name
                     .clone()
                     .map(|val|                    
-                        if is_count {
+                        if is_page_count {
                             "count_".to_owned() + &val
                         } else {
                             val.to_owned()

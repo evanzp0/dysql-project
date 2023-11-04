@@ -51,7 +51,16 @@
 //! ## Example
 //! Full example please see: [Dysql sqlx example](https://github.com/evanzp0/dysql-project/tests)
 
+#[cfg(feature = "sqlx")]
 mod dy_sqlx;
+#[cfg(feature = "sqlx")]
+use dy_sqlx::expand;
+
+#[cfg(feature = "tokio-postgres")]
+mod dy_tokio_postgres;
+#[cfg(feature = "tokio-postgres")]
+use dy_tokio_postgres::expand;
+
 mod sql_expand;
 mod sql_fragment;
 
@@ -62,8 +71,6 @@ use syn::{punctuated::Punctuated, parse_macro_input, Token};
 use std::{collections::HashMap, sync::RwLock, path::PathBuf};
 use quote::quote;
 use std::env;
-
-use dy_sqlx::expand;
 
 use crate::sql_fragment::get_sql_fragment;
 

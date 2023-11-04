@@ -20,7 +20,7 @@ chrono = { version = "0.4", features = ["serde"], optional = true }
 uuid = { version = "1.5", features = ["serde"], optional = true }
 
 [dev-dependencies]
-pretty_assertions = "0.6.1"
+pretty_assertions = "1.4"
 
 [features]
 default = ["export_derive", "pulldown-cmark"]

@@ -107,7 +107,6 @@ pub(crate) trait SqlExpand {
             ),
             // 没有 dto 则 sql 参数绑定列表为空
             None => quote!(
-                // todo!, sql 也需要用 dysql::get_sql_template(#template_id) 获取
                 let sql_tpl = match dysql::get_sql_template(#template_id) {
                     Some(tpl) => tpl,
                     None => dysql::put_sql_template(#template_id, #body).expect("Unexpected error when put_sql_template"),

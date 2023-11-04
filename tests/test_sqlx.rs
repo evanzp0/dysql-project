@@ -1,3 +1,5 @@
+// #![cfg(feature = "sqlx")]
+
 use std::{str::FromStr, error::Error};
 
 use dysql::{PageDto, SortModel, fetch_all, insert, sql, fetch_one, fetch_scalar, execute, page, Content};
@@ -97,10 +99,11 @@ sql!("select_sql","select * from test_user ");
 #[tokio::test]
 async fn test_fetch_one() {
     let conn = connect_postgres_db().await;
+    // let dto = UserDto{ id: Some(2), name: None, age: None, id_rng: None };
+    let dto = dysql::Value::new(2_i64);
 
-    let dto = UserDto{ id: Some(2), name: None, age: None, id_rng: None };
     let rst = fetch_one!(|&dto, &conn| -> User {
-        select_sql + "where id = :id order by id"
+        select_sql + "where id = :value order by id"
     }).unwrap();
     assert_eq!(User { id: 2, name: Some("zhanglan".to_owned()), age: Some(21) }, rst);
 }
@@ -141,7 +144,7 @@ async fn test_insert() -> Result<(), Box<dyn Error>> {
     let conn = connect_postgres_db().await;
     let mut tran = conn.begin().await?;
 
-    let dto = UserDto{ id: Some(10), name: Some("lisi".to_owned()), age: Some(50), id_rng: None };
+    let dto = UserDto{ id: None, name: Some("lisi".to_owned()), age: Some(50), id_rng: None };
     let insert_id = insert!(|&dto, &mut tran| {
         r#"insert into test_user (name, age) values (:name, :age) returning id"#
     })?;
@@ -188,7 +191,7 @@ async fn test_insert_sqlite() -> Result<(), Box<dyn Error>> {
 async fn test_page() {
     let conn = connect_postgres_db().await;
 
-    let dto = UserDto{ id: None, name: None, age: Some(13), id_rng: None };
+    let dto = UserDto{ id: None, name: Some("a".to_owned()), age: Some(13), id_rng: None };
     let sort_model = vec![
         SortModel {field: "id".to_owned(), sort: "desc".to_owned()}
     ];
@@ -198,7 +201,7 @@ async fn test_page() {
         "select * from test_user 
         where 1 = 1
         {{#data}}
-            {{#name}}and name = :data.name{{/name}}
+            {{#name}}and name like '%' || :data.name || '%'{{/name}}
             {{#age}}and age > :data.age{{/age}}
         {{/data}}"
     }).unwrap();

@@ -1,4 +1,4 @@
-use std::{path::PathBuf, env, collections::HashMap, sync::Arc, fs::{OpenOptions, File, read_to_string}, io::{Write, Seek}, io::{Read, SeekFrom}, str::FromStr, ops::Index};
+use std::{path::PathBuf, env, collections::HashMap, sync::Arc, fs::{OpenOptions, File, read_to_string}, io::{Write, Seek}, io::{Read, SeekFrom}, str::FromStr};
 
 use dysql_tpl::Template;
 
@@ -32,6 +32,8 @@ impl<'a> PersistSql<'a> {
             _ => (),
         }
 
+        // println!("psql: {:?}", me);
+
         me
     }
     
@@ -53,7 +55,7 @@ impl<'a> PersistSql<'a> {
                     panic!("meta.dat file content error");
                 }
     
-                let meta_id : u64 = FromStr::from_str(content[0]).unwrap();
+                let meta_id : u64 = FromStr::from_str(content[0]).expect("meta_id must be type of u64");
                 let source_file: String = content[1].to_string();
                 self.meta_infos.insert(meta_id, source_file);
     
@@ -71,7 +73,7 @@ impl<'a> PersistSql<'a> {
                         } else {
                             let sql = line.trim();
 
-                            let template_id: u64 = FromStr::from_str(template_id).unwrap();
+                            let template_id: u64 = FromStr::from_str(template_id).expect("template_id must be type of u64");
                             let template = Arc::new(Template::new(sql.to_owned()).unwrap());
 
                             self.insert_template(template_id, template);

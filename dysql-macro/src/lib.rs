@@ -94,6 +94,7 @@ struct SqlClosure {
     cot: syn::Ident, // database connection or transaction
     is_cot_ref: bool,
     is_cot_ref_mut: bool,
+    // is_deref_tran: bool,
     sql_name: Option<String>,
     ret_type: Option<syn::Path>, // return type
     dialect: syn::Ident,
@@ -109,6 +110,8 @@ impl syn::parse::Parse for SqlClosure {
 
         let mut is_dto_ref = false;
         let mut is_dto_ref_mut = false;
+        // let mut is_deref_tran = false;
+
         //// parse dto
         input.parse::<syn::Token!(|)>()?;
 
@@ -147,7 +150,16 @@ impl syn::parse::Parse for SqlClosure {
                     Ok(_) => {
                         is_cot_ref = false;
                         is_cot_ref_mut = true;
-                        input.parse()?
+                        input.parse()? // 等同于 parse::<syn::Ident>()
+                        
+                        // match input.parse::<syn::Token!(*)>() {
+                        //     Ok(_) => { 
+                        //         is_deref_tran = true;
+                        //         input.parse()? 
+                        //     },
+                        //     Err(_) => input.parse()?, 
+                        // }
+
                     },
                     Err(_) => input.parse()?,
                 }

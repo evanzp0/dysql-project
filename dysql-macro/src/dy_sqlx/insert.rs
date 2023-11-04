@@ -20,6 +20,12 @@ impl SqlExpand for Insert {
             quote!()
         };
 
+        let cot = if st.is_cot_ref_mut {
+            quote!(*#cot)
+        } else {
+            quote!(#cot)
+        };
+        
         // gen return type fro postgres
         let i64_path = Some(gen_type_path("i64"));
         let ret_type = match &st.ret_type {

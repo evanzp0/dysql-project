@@ -18,6 +18,12 @@ impl SqlExpand for Execute {
             quote!()
         };
 
+        let cot = if st.is_cot_ref_mut {
+            quote!(*#cot)
+        } else {
+            quote!(#cot)
+        };
+
         let (param_strings, param_idents) = self.extra_params(st)?;
 
         // declare sql and bind params at runtime

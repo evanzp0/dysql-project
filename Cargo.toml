@@ -30,7 +30,7 @@ dotenv = "0.15"
 dysql = { path = "./dysql", default-features = false}
 tokio = { version = "1.0", features = ["full"] }
 
-sqlx = { version = "0.6", features = [ "runtime-tokio-native-tls" , "postgres",  "mysql", "sqlite", "chrono", "uuid" ] }
+sqlx = { version = "0.7", features = [ "runtime-tokio-native-tls" , "postgres",  "mysql", "sqlite", "chrono", "uuid" ] }
 
 tokio-postgres = { version = "0.7", features = ["with-chrono-0_4"] }
 tokio-pg-mapper = "0.2"

@@ -1,4 +1,4 @@
-use std::{path::PathBuf, env, collections::HashMap, sync::Arc, fs::{OpenOptions, File, read_to_string}, io::{Write, Seek}, io::{Read, SeekFrom}, str::FromStr};
+use std::{path::PathBuf, env, collections::HashMap, sync::Arc, fs::{OpenOptions, File, read_to_string}, io::{Write, Seek}, io::{Read, SeekFrom}, str::FromStr, ops::Index};
 
 use dysql_tpl::Template;
 
@@ -66,7 +66,8 @@ impl<'a> PersistSql<'a> {
                     for (line_no, line) in read_to_string(&template_file).unwrap().lines().enumerate() {
                         if line_no % 2 == 0 {
                             let line = line.trim();
-                            template_id = &line[0..line.len() - 1];
+                            let offset = line.find(':').unwrap_or(line.len());
+                            template_id = &line[0..offset];
                         } else {
                             let sql = line.trim();
 

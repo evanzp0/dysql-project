@@ -22,7 +22,7 @@ impl SqlExpand for FetchAll {
         let (param_strings, param_idents) = self.extra_params(st)?;
 
         // declare sql & param_names, and bind params value at runtime
-        let declare_rt = self.gen_declare_rt(st, None)?;
+        let declare_rt = self.gen_declare_rt(st, None, false)?;
 
         let ret = match dto {
             Some(_) => quote!(

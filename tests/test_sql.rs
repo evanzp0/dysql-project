@@ -260,7 +260,7 @@ async fn test_trim_sql() {
     let mut pg_dto = PageDto::new_with_sort(3, 10, dto, sort_model);
     let pg_dto = &mut pg_dto;
     
-    let rst = page!(|pg_dto, &conn| -> User {
+    let rst = page!(|pg_dto, &conn, "page_test_user"| -> User {
         "select * from test_user 
         where
         {{#data}}

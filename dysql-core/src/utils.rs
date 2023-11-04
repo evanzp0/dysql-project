@@ -51,7 +51,7 @@ pub fn put_sql_template(template_id: u64, sql: &'static str) -> DySqlResult<Arc<
     Ok(template)
 }
 
-pub fn save_sql_template(source_file: &str, template_id: u64, sql: &str) -> DySqlResult<()> {
+pub fn save_sql_template(source_file: &str, template_id: u64, sql: &str, sql_name: Option<String>) -> DySqlResult<()> {
     let source_file = if let Ok(path) = home::cargo_home() {
         // 如果处理是 repository 的文件，则源文件路径去除 cargo_home
         let cargo_home = path.to_str().expect("cargo_home path cannot to string");
@@ -74,7 +74,7 @@ pub fn save_sql_template(source_file: &str, template_id: u64, sql: &str) -> DySq
     get_sql_cache()
         .write()
         .unwrap()
-        .save_sql_template(meta_id, source_file, template_id, template);
+        .save_sql_template(meta_id, source_file, template_id, template, sql_name);
 
     Ok(())
 }

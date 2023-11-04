@@ -29,7 +29,7 @@ impl SqlExpand for Page {
 
         // declare sql and bind params at runtime
         let count_sql = format!("SELECT count(*) FROM ({}) as _tmp", &st.body);
-        let declare_rt = self.gen_declare_rt(st, Some(&count_sql))?;
+        let declare_rt = self.gen_declare_rt(st, Some(&count_sql), true)?;
 
         let rst_count = match dto {
             Some(_) => quote!(
@@ -80,7 +80,7 @@ impl SqlExpand for Page {
         page_sql.push_str(
             " {{#is_sort}} ORDER BY {{#sort_model}} {{field}} {{sort}}, {{/sort_model}} ![B_DEL(,)] {{/is_sort}} LIMIT {{page_size}} OFFSET {{start}} "
         );
-        let declare_rt = self.gen_declare_rt(st, Some(&page_sql))?;
+        let declare_rt = self.gen_declare_rt(st, Some(&page_sql), false)?;
 
         let rst_page = match dto {
             Some(_) => quote!(

@@ -19,7 +19,7 @@ $cargo test
 $docker-compose down
 ```
 
-### trick: quick re-generate persist sql files in .sql folder before testing
+### trick: quick re-generate persist sql files in .dysql folder before testing
 ```
 $cargo clean -p dysql-core && cargo test
 ```

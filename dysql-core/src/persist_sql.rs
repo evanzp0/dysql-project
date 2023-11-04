@@ -89,7 +89,14 @@ impl<'a> PersistSql<'a> {
         self.templats.insert(template_id, template)
     }
 
-    pub fn save_sql_template(&mut self, meta_id: u64, source_file: String, template_id: u64, template: Arc<Template<'a>>) {
+    pub fn save_sql_template(
+        &mut self, 
+        meta_id: u64, 
+        source_file: String, 
+        template_id: u64, 
+        template: Arc<Template<'a>>,
+        sql_name: Option<String>
+    ) {
         let rst = self.meta_infos.insert(meta_id, source_file.clone());
 
         if let None = rst {
@@ -103,7 +110,7 @@ impl<'a> PersistSql<'a> {
             let mut template_file = self.sql_fd.clone();
             template_file.push(meta_id.to_string() + ".dat");
             
-            let content = template_id.to_string() + ":\n  " + &template_source + "\n";
+            let content = template_id.to_string() + ": " + &sql_name.unwrap_or_default() + "\n  " + &template_source + "\n";
             Self::append(&template_file, content);
         }
     }
@@ -151,7 +158,7 @@ impl<'a> PersistSql<'a> {
 impl Default for PersistSql<'_> {
     fn default() -> Self {
         let mut current_dir = env::current_dir().unwrap();
-        current_dir.push(".sql");
+        current_dir.push(".dysql");
 
         PersistSql::new(current_dir)
     }

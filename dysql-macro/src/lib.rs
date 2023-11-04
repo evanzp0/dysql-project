@@ -160,7 +160,7 @@ impl syn::parse::Parse for SqlClosure {
                     Ok(s) => Some(s.value()),
                     Err(_) => None,
                 };
-                input.parse::<syn::Token!(|)>()?;
+                input.parse::<syn::Token!(|)>().map_err(|e| syn::Error::new(e.span(), "need '|' or \"sql_name\" here "))?;
             },
         }
 

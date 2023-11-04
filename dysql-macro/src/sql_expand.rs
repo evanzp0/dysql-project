@@ -47,7 +47,7 @@ pub(crate) trait SqlExpand {
     /// 
     /// st: 在编译时生成的包含 sql 的结构体;\
     /// sql: 如果有值，它表示分页查询时在 st.body 基础上添加的 count sql 和 order sql;
-    fn gen_declare_rt(&self, st: &crate::SqlClosure, sql: Option<&str>) -> syn::Result<proc_macro2::TokenStream> {
+    fn gen_declare_rt(&self, st: &crate::SqlClosure, sql: Option<&str>, is_page_count: bool) -> syn::Result<proc_macro2::TokenStream> {
         let dto = &st.dto;
         
         // 如果不是分页查询，则使用 st.body
@@ -75,7 +75,16 @@ pub(crate) trait SqlExpand {
         match std::env::var("DYSQL_PESIST_SQL") {
             Ok(val) if val == "TRUE" => {
                 // 持久化 sql
-                save_sql_template(source_file, template_id, body).unwrap();
+                let sql_name = st.sql_name
+                    .clone()
+                    .map(|val|                    
+                        if is_count {
+                            "count_".to_owned() + &val
+                        } else {
+                            val.to_owned()
+                        }
+                    );
+                save_sql_template(source_file, template_id, body, sql_name).unwrap();
             },
             _ => (),
         }

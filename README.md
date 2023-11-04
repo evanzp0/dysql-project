@@ -11,6 +11,9 @@ dysql_macro!(| dto, conn_or_tran | [-> return_type | -> (return_type ,dialect)] 
 ```
 > Note: **Dialect can be blank**, and the default value is **postgres**, and dialect also supports  **mysql**, **sqlite**.
 
+## TODO
+working_dir 迭代查找 .dysql 处理
+
 ## Example
 Full example please see: [Dysql sqlx example](https://github.com/evanzp0/dysql-project/tests)
 

@@ -3,14 +3,14 @@ use std::{path::PathBuf, env, collections::HashMap, sync::Arc, fs::{OpenOptions,
 use dysql_tpl::Template;
 
 #[derive(Debug)]
-pub struct PersistSql<'a> {
+pub struct PersistSql {
     pub sql_fd: PathBuf,
     pub meta_path: PathBuf,
     pub meta_infos: HashMap<u64, String>,
-    pub templats: HashMap<u64, Arc<Template<'a>>>,
+    pub templats: HashMap<u64, Arc<Template>>,
 }
 
-impl<'a> PersistSql<'a> {
+impl<'a> PersistSql {
     pub fn new(sql_fd: PathBuf) -> Self {
         std::fs::create_dir_all(sql_fd.as_path()).unwrap();
 
@@ -25,7 +25,7 @@ impl<'a> PersistSql<'a> {
         };
 
         match std::env::var("DYSQL_PESIST_SQL") {
-            Ok(val) if val == "TRUE" => {
+            Ok(val) if val.to_ascii_uppercase() == "TRUE" => {
                 // 加载持久化 sql
                 me.load();
             },
@@ -74,7 +74,7 @@ impl<'a> PersistSql<'a> {
                             let sql = line.trim();
 
                             let template_id: u64 = FromStr::from_str(template_id).expect("template_id must be type of u64");
-                            let template = Arc::new(Template::new(sql.to_owned()).unwrap());
+                            let template = Arc::new(Template::new(sql).unwrap());
 
                             self.insert_template(template_id, template);
                         }
@@ -84,11 +84,11 @@ impl<'a> PersistSql<'a> {
         }
     }
 
-    pub fn get_template(&self, template_id: u64) -> Option<Arc<Template<'a>>>  {
+    pub fn get_template(&self, template_id: u64) -> Option<Arc<Template>>  {
         self.templats.get(&template_id).map(|tpl| tpl.clone())
     }
 
-    pub fn insert_template(&mut self, template_id: u64, template: Arc<Template<'a>>) -> Option<Arc<Template<'a>>> {
+    pub fn insert_template(&mut self, template_id: u64, template: Arc<Template>) -> Option<Arc<Template>> {
         self.templats.insert(template_id, template)
     }
 
@@ -97,7 +97,7 @@ impl<'a> PersistSql<'a> {
         meta_id: u64, 
         source_file: String, 
         template_id: u64, 
-        template: Arc<Template<'a>>,
+        template: Arc<Template>,
         sql_name: Option<String>
     ) {
         let rst = self.meta_infos.insert(meta_id, source_file.clone());
@@ -158,7 +158,7 @@ impl<'a> PersistSql<'a> {
     }
 }
 
-impl Default for PersistSql<'_> {
+impl Default for PersistSql {
     fn default() -> Self {
         let mut current_dir = env::current_dir().unwrap();
         current_dir.push(".dysql");

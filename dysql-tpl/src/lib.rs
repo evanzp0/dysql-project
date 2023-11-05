@@ -68,7 +68,6 @@ use std::collections::HashMap;
 use std::hash::BuildHasher;
 use std::path::{Path, PathBuf};
 
-use beef::Cow;
 use std::io::ErrorKind;
 
 mod content;
@@ -91,7 +90,7 @@ pub use dysql_tpl_derive::Content;
 /// For faster or DOS-resistant hashes, it is recommended to use
 /// [aHash](https://docs.rs/ahash/latest/ahash/) `RandomState` as hasher.
 pub struct Ramhorns<H = fnv::FnvBuildHasher> {
-    partials: HashMap<Cow<'static, str>, Template<'static>, H>,
+    partials: HashMap<String, Template, H>,
     dir: PathBuf,
 }
 
@@ -167,7 +166,7 @@ impl<H: BuildHasher + Default> Ramhorns<H> {
                     .unwrap_or(&path)
                     .to_string_lossy();
                 if !self.partials.contains_key(name.as_ref()) {
-                    self.load_internal(&path, Cow::owned(name.to_string()))?;
+                    self.load_internal(&path, &name)?;
                 }
             }
         }
@@ -190,10 +189,7 @@ impl<H: BuildHasher + Default> Ramhorns<H> {
     }
 
     /// Get the template with the given name, if it exists.
-    pub fn get<S>(&self, name: &S) -> Option<&Template<'static>>
-    where
-        for<'a> Cow<'a, str>: std::borrow::Borrow<S>,
-        S: std::hash::Hash + AsRef<Path> + Eq + ?Sized,
+    pub fn get(&self, name: &str) -> Option<&Template>
     {
         self.partials.get(name)
     }
@@ -202,17 +198,17 @@ impl<H: BuildHasher + Default> Ramhorns<H> {
     /// it will be loaded from file and parsed first.
     ///
     /// Use this method in tandem with [`lazy`](#method.lazy).
-    pub fn from_file(&mut self, name: &str) -> Result<&Template<'static>, TemplateError> {
+    pub fn from_file(&mut self, name: &str) -> Result<&Template, TemplateError> {
         let path = self.dir.join(name);
         if !self.partials.contains_key(name) {
-            self.load_internal(&path, Cow::owned(name.to_string()))?;
+            self.load_internal(&path, name)?;
         }
         Ok(&self.partials[name])
     }
 
     // Unsafe to expose as it loads the template from arbitrary path.
     #[inline]
-    fn load_internal(&mut self, path: &Path, name: Cow<'static, str>) -> Result<(), TemplateError> {
+    fn load_internal(&mut self, path: &Path, name: &str) -> Result<(), TemplateError> {
         let file = match std::fs::read_to_string(&path) {
             Ok(file) => Ok(file),
             Err(e) if e.kind() == ErrorKind::NotFound => {
@@ -220,24 +216,24 @@ impl<H: BuildHasher + Default> Ramhorns<H> {
             }
             Err(e) => Err(TemplateError::Io(e)),
         }?;
-        let template = Template::load(file, self)?;
-        self.partials.insert(name, template);
+        let template = Template::load(&file, self)?;
+        self.partials.insert(name.to_owned(), template);
         Ok(())
     }
 }
 
-pub(crate) trait Partials<'tpl> {
-    fn get_partial(&mut self, name: &'tpl str) -> Result<&Template<'tpl>, TemplateError>;
+pub(crate) trait Partials {
+    fn get_partial(&mut self, name: &str) -> Result<&Template, TemplateError>;
 }
 
-impl<H: BuildHasher + Default> Partials<'static> for Ramhorns<H> {
-    fn get_partial(&mut self, name: &'static str) -> Result<&Template<'static>, TemplateError> {
+impl<H: BuildHasher + Default> Partials for Ramhorns<H> {
+    fn get_partial(&mut self, name: &str) -> Result<&Template, TemplateError> {
         if !self.partials.contains_key(name) {
             let path = self.dir.join(name).canonicalize()?;
             if !path.starts_with(&self.dir) {
                 return Err(TemplateError::IllegalPartial(name.into()));
             }
-            self.load_internal(&path, Cow::borrowed(name))?;
+            self.load_internal(&path, name)?;
         }
         Ok(&self.partials[name])
     }

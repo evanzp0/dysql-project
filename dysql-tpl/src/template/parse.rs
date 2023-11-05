@@ -9,12 +9,14 @@
 
 use arrayvec::ArrayVec;
 use logos::Logos;
+use serde::{Serialize, Deserialize};
 
 use super::{hash_name, Block, TemplateError, Template};
 use crate::Partials;
 
 #[derive(Debug, PartialEq, Clone, Copy, Default)]
 pub struct ParseError;
+
 
 // r"[^{]+": 跳过非 { 的字符，跳过 \{ 转移的字符
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Logos)]
@@ -24,6 +26,7 @@ pub struct ParseError;
     extras = Braces,
     error = ParseError,
 )]
+#[derive(Serialize, Deserialize)]
 pub enum Tag {
     /// `{{escaped}}` tag
     #[token("{{")]
@@ -101,11 +104,11 @@ impl Default for Braces {
     }
 }
 
-impl<'tpl> Template<'tpl> {
+impl Template {
     pub(crate) fn parse(
         &mut self,
-        source: &'tpl str,
-        partials: &mut impl Partials<'tpl>,
+        source: &str,
+        partials: &mut impl Partials,
     ) -> Result<usize, TemplateError> {
         let mut last = 0;
         let mut lex = Tag::lexer(source);
@@ -211,7 +214,7 @@ impl<'tpl> Template<'tpl> {
                         head.children = (tail_idx - head_idx) as u32;
 
                         if head.hash != hash {
-                            return Err(TemplateError::UnclosedSection(head.name.into()));
+                            return Err(TemplateError::UnclosedSection(head.name.clone()));
                         }
                         Ok(())
                     };

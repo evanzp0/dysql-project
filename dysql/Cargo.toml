@@ -15,7 +15,7 @@ name = "dysql"
 dysql-tpl = { version = "0.17", features = ["chrono", "uuid"] }
 dysql-core = "1"
 dysql-macro = { version = "1", default-features = false }
-serde = { version = "1.0", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
 
 [features]
 default = ["sqlx"]

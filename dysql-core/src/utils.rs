@@ -12,7 +12,7 @@ use crate::{DySqlError, ErrorInner, Kind, DySqlResult, PersistSql};
 pub static SQL_CACHE: OnceCell<RwLock<PersistSql>> = OnceCell::new();
 
 #[allow(dead_code)]
-pub fn get_sql_cache() -> &'static RwLock<PersistSql<'static>> {
+pub fn get_sql_cache() -> &'static RwLock<PersistSql> {
     let cache = SQL_CACHE.get_or_init(|| {
         let p_sql = PersistSql::default();
         RwLock::new(p_sql)
@@ -21,7 +21,7 @@ pub fn get_sql_cache() -> &'static RwLock<PersistSql<'static>> {
     cache
 }
 
-pub fn get_sql_template(template_id: u64) -> Option<Arc<Template<'static>>> {
+pub fn get_sql_template(template_id: u64) -> Option<Arc<Template>> {
     let rst = get_sql_cache()
         .read()
         .unwrap()
@@ -36,10 +36,12 @@ pub fn get_sql_template(template_id: u64) -> Option<Arc<Template<'static>>> {
     rst
 }
 
-pub fn put_sql_template(template_id: u64, sql: &'static str) -> DySqlResult<Arc<Template<'static>>> {
-    let template = Template::new(sql).map_err(|e| {
-        DySqlError(ErrorInner::new(Kind::TemplateParseError, Some(Box::new(e)), None))
-    })?;
+pub fn put_sql_template(template_id: u64, serd_template: &[u8]) -> DySqlResult<Arc<Template>> {
+    let template = Template::deserialize(serd_template);
+
+    // let template = Template::new(sql).map_err(|e| {
+    //     DySqlError(ErrorInner::new(Kind::TemplateParseError, Some(Box::new(e)), None))
+    // })?;
 
     let template = Arc::new(template);
 
@@ -64,7 +66,7 @@ pub fn save_sql_template(source_file: &str, template_id: u64, sql: &str, sql_nam
         source_file.to_owned()
     };
 
-    let template = Template::new(sql.to_owned()).map_err(|e| {
+    let template = Template::new(sql).map_err(|e| {
         DySqlError(ErrorInner::new(Kind::TemplateParseError, Some(Box::new(e)), None))
     })?;
 

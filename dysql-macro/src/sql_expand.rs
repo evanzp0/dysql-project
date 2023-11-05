@@ -1,4 +1,5 @@
 use dysql_core::{extract_params, SqlDialect, save_sql_template, hash_str};
+use dysql_tpl::Template;
 use quote::{ToTokens, quote};
 
 use crate::SqlClosure;
@@ -12,7 +13,7 @@ pub(crate) trait SqlExpand {
         let dialect = &st.dialect.to_string();
 
         // check the template syntax is ok
-        dysql_tpl::Template::new(sql.clone()).unwrap(); 
+        dysql_tpl::Template::new(sql).unwrap(); 
     
         // get raw sql and all params as both string and ident type at compile time!
         let param_strings = match dto {
@@ -46,12 +47,12 @@ pub(crate) trait SqlExpand {
     /// 生成运行时的 sql 和 param_names 两个变量的声明语句
     /// 
     /// st: 在编译时生成的包含 sql 的结构体;\
-    /// sql: 如果有值，它表示分页查询时在 st.body 基础上添加的 count sql 和 order sql;
-    fn gen_declare_rt(&self, st: &crate::SqlClosure, sql: Option<&str>, is_page_count: bool) -> syn::Result<proc_macro2::TokenStream> {
+    /// page_sql: 如果有值，它表示分页查询时在 st.body 基础上添加的 count sql 和 order sql;
+    fn gen_declare_rt(&self, st: &crate::SqlClosure, page_sql: Option<&str>, is_page_count: bool) -> syn::Result<proc_macro2::TokenStream> {
         let dto = &st.dto;
         
         // 如果不是分页查询，则使用 st.body
-        let body = if let Some(bd) = sql {
+        let body = if let Some(bd) = page_sql {
             bd
         } else {
             &st.body
@@ -73,7 +74,7 @@ pub(crate) trait SqlExpand {
         };
         
         match std::env::var("DYSQL_PESIST_SQL") {
-            Ok(val) if val == "TRUE" => {
+            Ok(val) if val.to_ascii_uppercase() == "TRUE" => {
                 // 持久化 sql
                 let sql_name = st.sql_name
                     .clone()
@@ -89,11 +90,17 @@ pub(crate) trait SqlExpand {
             _ => (),
         }
         
+        let template = Template::new(body).expect("error: generate template from sql failed");
+        let serd_template = template.serialize();
+
         let rst = match dto {
             Some(_) => quote!(
                 let sql_tpl = match dysql::get_sql_template(#template_id) {
                     Some(tpl) => tpl,
-                    None => dysql::put_sql_template(#template_id, #body).expect("Unexpected error when put_sql_template"),
+                    None => {
+                        let serd_template =  [#(#serd_template,)*];
+                        dysql::put_sql_template(#template_id, &serd_template).expect("Unexpected error when put_sql_template")
+                    },
                 };
         
                 let sql_rendered = sql_tpl.render(#dto_ref #dto);
@@ -109,7 +116,10 @@ pub(crate) trait SqlExpand {
             None => quote!(
                 let sql_tpl = match dysql::get_sql_template(#template_id) {
                     Some(tpl) => tpl,
-                    None => dysql::put_sql_template(#template_id, #body).expect("Unexpected error when put_sql_template"),
+                    None => {
+                        let serd_template =  [#(#serd_template,)*];
+                        dysql::put_sql_template(#template_id, &serd_template).expect("Unexpected error when put_sql_template")
+                    },
                 };
                 let sql = sql_tpl.source();
                 let param_names: Vec<String> = vec![];

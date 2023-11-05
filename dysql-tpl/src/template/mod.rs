@@ -12,8 +12,8 @@ use std::hash::{Hash, Hasher};
 use std::io;
 use std::path::Path;
 
-use beef::Cow;
 use fnv::FnvHasher;
+use serde::{Serialize, Deserialize};
 
 use crate::encoding::EscapingIOEncoder;
 use crate::Partials;
@@ -26,40 +26,37 @@ pub use section::Section;
 pub use parse::Tag;
 
 #[derive(Debug)]
+#[derive(Serialize, Deserialize)]
 /// A preprocessed form of the plain text template, ready to be rendered
 /// with data contained in types implementing the `Content` trait.
-pub struct Template<'tpl> {
+pub struct Template {
     /// Parsed blocks!
-    blocks: Vec<Block<'tpl>>,
+    blocks: Vec<Block>,
 
     /// Total byte length of all the blocks, used to estimate preallocations.
     capacity_hint: usize,
 
     /// Source from which this template was parsed.
-    source: Cow<'tpl, str>,
+    source: String,
 }
 
-impl<'tpl> Template<'tpl> {
+impl Template {
     /// Create a new `Template` out of the source.
     ///
     /// + If `source` is a `&str`, this `Template` will borrow it with appropriate lifetime.
     /// + If `source` is a `String`, this `Template` will take it's ownership (The `'tpl` lifetime will be `'static`).
-    pub fn new<S>(source: S) -> Result<Self, TemplateError>
-    where
-        S: Into<Cow<'tpl, str>>,
+    pub fn new(source: &str) -> Result<Self, TemplateError>
     {
         Template::load(source, &mut NoPartials)
     }
 
-    pub(crate) fn load<S>(source: S, partials: &mut impl Partials<'tpl>) -> Result<Self, TemplateError>
-    where
-        S: Into<Cow<'tpl, str>>,
+    pub(crate) fn load(source: &str, partials: &mut impl Partials) -> Result<Self, TemplateError>
     {
-        let source = source.into();
+        let source = source.to_owned();
 
         // This is allows `Block`s inside this `Template` to be references of the `source` field.
         // This is safe as long as the `source` field is never mutated or dropped.
-        let unsafe_source: &'tpl str = unsafe { &*(&*source as *const str) };
+        let unsafe_source: &str = unsafe { &*(&*source as *const str) };
 
         let mut tpl = Template {
             blocks: Vec::with_capacity(16),
@@ -129,12 +126,23 @@ impl<'tpl> Template<'tpl> {
     pub fn source(&self) -> &str {
         &self.source
     }
+
+    /// Serialize template to Vec<u8>
+    pub fn serialize(&self) -> Vec<u8> {
+        bincode::serialize(&self).expect("error: serialize template failed")
+    }
+
+    /// Deserialize template from Vec<u8>
+    pub fn deserialize(bin_content: &[u8]) -> Self {
+        bincode::deserialize(bin_content).expect("error: deserialize template failed")
+    }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) struct Block<'tpl> {
-    html: &'tpl str,
-    name: &'tpl str,
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize)]
+pub(crate) struct Block {
+    html: String,
+    name: String,
     hash: u64,
     tag: Tag,
     children: u32,
@@ -147,12 +155,12 @@ pub(crate) fn hash_name(name: &str) -> u64 {
     hasher.finish()
 }
 
-impl<'tpl> Block<'tpl> {
+impl Block {
     #[inline]
-    fn new(html: &'tpl str, name: &'tpl str, tag: Tag) -> Self {
+    fn new(html: &str, name: &str, tag: Tag) -> Self {
         Block {
-            html,
-            name,
+            html: html.to_owned(),
+            name: name.to_owned(),
             hash: hash_name(name),
             tag,
             children: 0,
@@ -161,10 +169,10 @@ impl<'tpl> Block<'tpl> {
 
     // Skips hashing; can be used when tag is Partial, Comment or Tail
     #[inline]
-    fn nameless(html: &'tpl str, tag: Tag) -> Self {
+    fn nameless(html: &str, tag: Tag) -> Self {
         Block {
-            html,
-            name: "",
+            html: html.to_owned(),
+            name: "".to_owned(),
             hash: 0,
             tag,
             children: 0,
@@ -174,8 +182,8 @@ impl<'tpl> Block<'tpl> {
 
 struct NoPartials;
 
-impl<'tpl> Partials<'tpl> for NoPartials {
-    fn get_partial(&mut self, _name: &'tpl str) -> Result<&Template<'tpl>, TemplateError> {
+impl Partials for NoPartials {
+    fn get_partial(&mut self, _name: &str) -> Result<&Template, TemplateError> {
         Err(TemplateError::PartialsDisabled)
     }
 }
@@ -185,7 +193,7 @@ mod test {
     use super::*;
     use pretty_assertions::assert_eq;
 
-    impl Block<'_> {
+    impl Block {
         fn children(self, children: u32) -> Self {
             Block { children, ..self }
         }
@@ -193,7 +201,7 @@ mod test {
 
     #[test]
     fn template_from_string_is_static() {
-        let tpl: Template<'static> = Template::new(String::from("Ramhorns")).unwrap();
+        let tpl: Template = Template::new(&String::from("Ramhorns")).unwrap();
 
         assert_eq!(tpl.source(), "Ramhorns");
     }
@@ -203,8 +211,8 @@ mod test {
         assert_eq!(
             Block::new("", "test", Tag::Escaped),
             Block {
-                html: "",
-                name: "test",
+                html: "".to_owned(),
+                name: "test".to_owned(),
                 hash: 2271575940368597870,
                 tag: Tag::Escaped,
                 children: 0,

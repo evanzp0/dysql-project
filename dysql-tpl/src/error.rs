@@ -20,11 +20,11 @@ pub enum TemplateError {
 
     /// Parser was expecting a tag closing a section `{{/foo}}`,
     /// but never found it or found a different one.
-    UnclosedSection(Box<str>),
+    UnclosedSection(String),
 
     /// Similar to above, but happens if `{{/foo}}` happens while
     /// no section was open
-    UnopenedSection(Box<str>),
+    UnopenedSection(String),
 
     /// Parser was expecting to find the closing braces of a tag `}}`, but never found it.
     UnclosedTag,
@@ -33,10 +33,10 @@ pub enum TemplateError {
     PartialsDisabled,
 
     /// Attempted to load a partial outside of the templates folder
-    IllegalPartial(Box<str>),
+    IllegalPartial(String),
 
     /// The template file with the given name was not found
-    NotFound(Box<str>),
+    NotFound(String),
 }
 
 impl error::Error for TemplateError {}

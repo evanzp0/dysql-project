@@ -17,7 +17,7 @@ use std::ops::Range;
 /// `{{#section}} ... {{/section}}` tags.
 #[derive(Clone, Copy)]
 pub struct Section<'section, Contents: ContentSequence> {
-    blocks: &'section [Block<'section>],
+    blocks: &'section [Block],
     contents: Contents,
 }
 
@@ -27,7 +27,7 @@ type Next<C, X> = (<C as Combine>::I, <C as Combine>::J, <C as Combine>::K, X);
 
 impl<'section> Section<'section, ()> {
     #[inline]
-    pub(crate) fn new(blocks: &'section [Block<'section>]) -> Self {
+    pub(crate) fn new(blocks: &'section [Block]) -> Self {
         let rst = Self {
             blocks,
             contents: (),
@@ -87,7 +87,7 @@ where
 
         while let Some(block) = self.blocks.get(index) { // 消耗本次 render 所需的一层 block
             index += 1;
-            encoder.write_unescaped(block.html)?;
+            encoder.write_unescaped(&block.html)?;
 
             match block.tag {
                 Tag::Escaped => {
@@ -96,7 +96,7 @@ where
                             content.render_escaped(encoder)?; 
                         }
                     } else {
-                        self.contents.render_field_escaped(block.hash, block.name, encoder)?;
+                        self.contents.render_field_escaped(block.hash, &block.name, encoder)?;
                     }
                 }
                 Tag::Unescaped => {
@@ -105,14 +105,14 @@ where
                             content.render_unescaped(encoder)?; 
                         }
                     } else {
-                        self.contents.render_field_unescaped(block.hash, block.name, encoder)?;
+                        self.contents.render_field_unescaped(block.hash, &block.name, encoder)?;
                     }
                     
                 }
                 Tag::Section => {
                     self.contents.render_field_section(
                         block.hash, // block0.hash，block0.child = 2
-                        block.name,  // block0.name
+                        &block.name,  // block0.name
                         self.slice(index..index + block.children as usize), // 消去本次 render_field_section 后剩下的 子blocks[1，2]， block3 不是 block0 的子 block
                         encoder,
                     )?;
@@ -121,7 +121,7 @@ where
                 Tag::Inverse => {
                     self.contents.render_field_inverse(
                         block.hash,
-                        block.name,
+                        &block.name,
                         self.slice(index..index + block.children as usize),
                         encoder,
                     )?;
@@ -130,7 +130,7 @@ where
                 Tag::NotNone => {
                     let rst = self.contents.render_field_notnone_section(
                         block.hash,
-                        block.name,
+                        &block.name,
                         self.slice(index..index + block.children as usize),
                         encoder,
                     )?;

@@ -778,7 +778,7 @@ fn illegal_partials() {
     }
 
     if let Err(TemplateError::IllegalPartial(name)) = tpl2 {
-        assert_eq!(name, "../../Cargo.toml".into());
+        assert_eq!(name, "../../Cargo.toml");
     } else {
         panic!("Partials loaded out of the allowed directory");
     }

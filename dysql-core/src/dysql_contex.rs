@@ -2,12 +2,15 @@ use std::{path::PathBuf, env, collections::HashMap, sync::Arc, fs::{OpenOptions,
 
 use dysql_tpl::Template;
 
+use crate::{SqlxVer, get_sqlx_ver};
+
 #[derive(Debug)]
 pub struct DysqlContext {
     pub sql_fd: PathBuf,
     pub meta_path: PathBuf,
     pub meta_infos: HashMap<u64, String>,
     pub templats: HashMap<u64, Arc<Template>>,
+    pub sqlx_ver: SqlxVer,
 }
 
 impl<'a> DysqlContext {
@@ -17,11 +20,17 @@ impl<'a> DysqlContext {
         let mut meta_path = sql_fd.clone();
         meta_path.push("meta.dat");
 
+        let sqlx_ver = get_sqlx_ver().expect("error: can not get sql version");
+        if let SqlxVer::NotSupport(ver) = sqlx_ver {
+            panic!("dysql not support the sqlx version: {}", ver);
+        }
+
         let mut me = DysqlContext {
             sql_fd,
             meta_path: meta_path,
             meta_infos: Default::default(),
             templats: Default::default(),
+            sqlx_ver,
         };
 
         match std::env::var("DYSQL_PESIST_SQL") {
@@ -32,7 +41,7 @@ impl<'a> DysqlContext {
             _ => (),
         }
 
-        // println!("psql: {:?}", me);
+        // println!("psql: {:?}", me.sqlx_ver);
 
         me
     }
@@ -162,7 +171,7 @@ impl<'a> DysqlContext {
         file.write(content.as_bytes()).expect(&format!("write file error: {:?}", path));
     }
 
-    pub fn default(_is_save: bool) -> Self {
+    pub fn default() -> Self {
     
         let mut current_dir = if let Ok(_) = std::env::var("CARGO") {
             // 是在 cargo 下运行

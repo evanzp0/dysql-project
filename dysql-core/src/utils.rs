@@ -7,14 +7,14 @@ use fnv::FnvHasher;
 use once_cell::sync::OnceCell;
 use dysql_tpl::Template;
 
-use crate::{DySqlError, ErrorInner, Kind, DySqlResult, DysqlContext};
+use crate::{DySqlError, ErrorInner, Kind, DySqlResult, DysqlContext, SqlxVer};
 
 pub static SQL_CACHE: OnceCell<RwLock<DysqlContext>> = OnceCell::new();
 
 #[allow(dead_code)]
-pub fn get_sql_cache(is_save: bool) -> &'static RwLock<DysqlContext> {
+pub fn get_sql_cache() -> &'static RwLock<DysqlContext> {
     let cache = SQL_CACHE.get_or_init(|| {
-        let p_sql = DysqlContext::default(is_save);
+        let p_sql = DysqlContext::default();
         RwLock::new(p_sql)
     });
 
@@ -22,7 +22,7 @@ pub fn get_sql_cache(is_save: bool) -> &'static RwLock<DysqlContext> {
 }
 
 pub fn get_sql_template(template_id: u64) -> Option<Arc<Template>> {
-    let rst = get_sql_cache(false)
+    let rst = get_sql_cache()
         .read()
         .unwrap()
         .get_template(template_id);
@@ -45,7 +45,7 @@ pub fn put_sql_template(template_id: u64, serd_template: &[u8]) -> DySqlResult<A
 
     let template = Arc::new(template);
 
-    get_sql_cache(false)
+    get_sql_cache()
         .write()
         .unwrap()
         .insert_template(template_id, template.clone());
@@ -73,7 +73,7 @@ pub fn save_sql_template(source_file: &str, template_id: u64, sql: &str, sql_nam
     let template = Arc::new(template);
 
     let meta_id = hash_str(&source_file);
-    get_sql_cache(true)
+    get_sql_cache()
         .write()
         .unwrap()
         .save_sql_template(meta_id, source_file, template_id, template, sql_name);
@@ -81,6 +81,13 @@ pub fn save_sql_template(source_file: &str, template_id: u64, sql: &str, sql_nam
     Ok(())
 }
 
+pub fn get_sqlx_version() -> SqlxVer {
+    get_sql_cache()
+        .read()
+        .unwrap()
+        .sqlx_ver
+        .clone()
+}
 
 pub fn hash_str(name: &str) -> u64 {
     let mut hasher = FnvHasher::default();

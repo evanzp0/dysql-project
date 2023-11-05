@@ -1,3 +1,4 @@
+use dysql_core::get_sqlx_version;
 use quote::quote;
 
 use crate::sql_expand::SqlExpand;
@@ -19,7 +20,10 @@ impl SqlExpand for Execute {
         };
 
         let cot = if st.is_cot_ref_mut {
-            quote!(*#cot)
+            match get_sqlx_version() {
+                dysql_core::SqlxVer::V0_7 => quote!(*#cot),
+                _ => quote!(#cot),
+            }
         } else {
             quote!(#cot)
         };

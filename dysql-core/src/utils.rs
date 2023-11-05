@@ -7,14 +7,14 @@ use fnv::FnvHasher;
 use once_cell::sync::OnceCell;
 use dysql_tpl::Template;
 
-use crate::{DySqlError, ErrorInner, Kind, DySqlResult, PersistSql};
+use crate::{DySqlError, ErrorInner, Kind, DySqlResult, DysqlContext};
 
-pub static SQL_CACHE: OnceCell<RwLock<PersistSql>> = OnceCell::new();
+pub static SQL_CACHE: OnceCell<RwLock<DysqlContext>> = OnceCell::new();
 
 #[allow(dead_code)]
-pub fn get_sql_cache(is_save: bool) -> &'static RwLock<PersistSql> {
+pub fn get_sql_cache(is_save: bool) -> &'static RwLock<DysqlContext> {
     let cache = SQL_CACHE.get_or_init(|| {
-        let p_sql = PersistSql::default(is_save);
+        let p_sql = DysqlContext::default(is_save);
         RwLock::new(p_sql)
     });
 
@@ -27,11 +27,11 @@ pub fn get_sql_template(template_id: u64) -> Option<Arc<Template>> {
         .unwrap()
         .get_template(template_id);
     
-    if let Some(_) = rst {
-        println!("hit: {}", template_id);
-    } else {
-        println!("not hit: {}", template_id);
-    }
+    // if let Some(_) = rst {
+    //     println!("hit: {}", template_id);
+    // } else {
+    //     println!("not hit: {}", template_id);
+    // }
 
     rst
 }

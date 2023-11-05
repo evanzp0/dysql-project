@@ -3,21 +3,21 @@ use std::{path::PathBuf, env, collections::HashMap, sync::Arc, fs::{OpenOptions,
 use dysql_tpl::Template;
 
 #[derive(Debug)]
-pub struct PersistSql {
+pub struct DysqlContext {
     pub sql_fd: PathBuf,
     pub meta_path: PathBuf,
     pub meta_infos: HashMap<u64, String>,
     pub templats: HashMap<u64, Arc<Template>>,
 }
 
-impl<'a> PersistSql {
+impl<'a> DysqlContext {
     pub fn new(sql_fd: PathBuf) -> Self {
         std::fs::create_dir_all(sql_fd.as_path()).unwrap();
 
         let mut meta_path = sql_fd.clone();
         meta_path.push("meta.dat");
 
-        let mut me = PersistSql {
+        let mut me = DysqlContext {
             sql_fd,
             meta_path: meta_path,
             meta_infos: Default::default(),
@@ -100,6 +100,11 @@ impl<'a> PersistSql {
         template: Arc<Template>,
         sql_name: Option<String>
     ) {
+        let template_source = template.source().to_owned();
+        if template_source.trim().is_empty() {
+            panic!("source file path is empty in meta.id");
+        }
+
         let rst = self.meta_infos.insert(meta_id, source_file.clone());
 
         if let None = rst {
@@ -107,7 +112,7 @@ impl<'a> PersistSql {
             Self::append(&self.meta_path, content)
         }
 
-        let template_source = template.source().to_owned();
+        
         let rst = self.templats.insert(template_id, template);
         if let None = rst {
             let mut template_file = self.sql_fd.clone();
@@ -158,36 +163,20 @@ impl<'a> PersistSql {
     }
 
     pub fn default(_is_save: bool) -> Self {
+    
+        let mut current_dir = if let Ok(_) = std::env::var("CARGO") {
+            // 是在 cargo 下运行
+            env::current_dir().unwrap()
+        } else {
+            // 非 cargo 运行
+            let mut tmp_dir = env::current_exe().unwrap();
+            tmp_dir.pop();
+            tmp_dir
+        };
 
-        // let dysql_fd = ".dysql";
-        // let mut current_dir = env::current_dir().unwrap();
-        // let root = PathBuf::from("/");
-        // let execute_path = std::env::current_exe().expect("Can't get the execution path");
-        // let mut execute_path = execute_path.parent().unwrap().to_path_buf();
-    
-        // if is_save {
-        //     current_dir.push(dysql_fd);
-        // } else {
-        //     while !execute_path.eq(&root) && !execute_path.eq(&current_dir) {
-        //         execute_path.push(dysql_fd);
-    
-        //         if execute_path.exists() {
-        //             break;
-        //         } else {
-        //             execute_path.pop();
-        //             execute_path.pop();
-        //         }
-        //     }
-    
-        //     if execute_path.eq(&root) ||  execute_path.eq(&current_dir) {
-        //         execute_path.push(dysql_fd);
-        //     }
-        // }
-        
-        // PersistSql::new(execute_path)
-
-        let mut current_dir = env::current_dir().unwrap();
         current_dir.push(".dysql");
-        PersistSql::new(current_dir)
+        // println!("current_dir: {:?}", current_dir);
+        
+        DysqlContext::new(current_dir)
     }
 }

@@ -12,9 +12,9 @@ use crate::{DySqlError, ErrorInner, Kind, DySqlResult, PersistSql};
 pub static SQL_CACHE: OnceCell<RwLock<PersistSql>> = OnceCell::new();
 
 #[allow(dead_code)]
-pub fn get_sql_cache() -> &'static RwLock<PersistSql> {
+pub fn get_sql_cache(is_save: bool) -> &'static RwLock<PersistSql> {
     let cache = SQL_CACHE.get_or_init(|| {
-        let p_sql = PersistSql::default();
+        let p_sql = PersistSql::default(is_save);
         RwLock::new(p_sql)
     });
 
@@ -22,16 +22,16 @@ pub fn get_sql_cache() -> &'static RwLock<PersistSql> {
 }
 
 pub fn get_sql_template(template_id: u64) -> Option<Arc<Template>> {
-    let rst = get_sql_cache()
+    let rst = get_sql_cache(false)
         .read()
         .unwrap()
         .get_template(template_id);
     
-    // if let Some(_) = rst {
-    //     println!("hit: {}", template_id);
-    // } else {
-    //     println!("not hit: {}", template_id);
-    // }
+    if let Some(_) = rst {
+        println!("hit: {}", template_id);
+    } else {
+        println!("not hit: {}", template_id);
+    }
 
     rst
 }
@@ -45,7 +45,7 @@ pub fn put_sql_template(template_id: u64, serd_template: &[u8]) -> DySqlResult<A
 
     let template = Arc::new(template);
 
-    get_sql_cache()
+    get_sql_cache(false)
         .write()
         .unwrap()
         .insert_template(template_id, template.clone());
@@ -73,7 +73,7 @@ pub fn save_sql_template(source_file: &str, template_id: u64, sql: &str, sql_nam
     let template = Arc::new(template);
 
     let meta_id = hash_str(&source_file);
-    get_sql_cache()
+    get_sql_cache(true)
         .write()
         .unwrap()
         .save_sql_template(meta_id, source_file, template_id, template, sql_name);

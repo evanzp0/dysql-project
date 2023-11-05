@@ -14,27 +14,23 @@ members = [
 ]
 
 [patch.crates-io]
-dysql = { path = "./dysql" }
-dysql-tpl = { path = "./dysql-tpl" }
-dysql-tpl-derive = { path = "./dysql-tpl-derive" }
-dysql-core = { path = "./dysql-core" }
-dysql-macro = { path = "./dysql-macro" }
+# dysql = { path = "./dysql" }
+# dysql-tpl = { path = "./dysql-tpl" }
+# dysql-tpl-derive = { path = "./dysql-tpl-derive" }
+# dysql-core = { path = "./dysql-core" }
+# dysql-macro = { path = "./dysql-macro" }
 
 [profile.bench]
 lto = "fat"
 codegen-units = 1
 
+
 [dev-dependencies]
 # test_sql dependence
+dysql = { path = "./dysql" }
 dotenv = "0.15"
-dysql = { path = "./dysql", default-features = false}
 tokio = { version = "1.0", features = ["full"] }
-
 sqlx = { version = "0.7", features = [ "runtime-tokio-native-tls" , "postgres",  "mysql", "sqlite", "chrono", "uuid" ] }
-
-tokio-postgres = { version = "0.7", features = ["with-chrono-0_4"] }
-tokio-pg-mapper = "0.2"
-tokio-pg-mapper-derive = "0.2"
 
 # test_tpl dependence
 askama = "0.12"
@@ -45,21 +41,5 @@ mustache = "0.9"
 tera = "1.2.0"
 ahash = "0.8"
 
-[features]
-default = ["sqlx"]
-sqlx = ["dysql/sqlx"]
-tokio-postgres = ["dysql/tokio-postgres"]
-
-[[test]]
-name = "test_sqlx"
-path = "tests/test_sqlx.rs"
-required-features = ["sqlx"]
-
-[[test]]
-name = "test_tokio_postgres"
-path = "tests/test_tokio_postgres.rs"
-required-features = ["tokio-postgres"]
-
 [package.metadata.scripts]
-test_sqlx = "cargo clean -p dysql-core && cargo test --features=sqlx"
-test_tokio_postgres = "cargo clean -p dysql-core && cargo test --features=tokio-postgres"
+test_sqlx = "cargo clean -p dysql-core && cargo test"

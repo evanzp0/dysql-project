@@ -156,13 +156,38 @@ impl<'a> PersistSql {
 
         file.write(content.as_bytes()).expect(&format!("write file error: {:?}", path));
     }
-}
 
-impl Default for PersistSql {
-    fn default() -> Self {
+    pub fn default(_is_save: bool) -> Self {
+
+        // let dysql_fd = ".dysql";
+        // let mut current_dir = env::current_dir().unwrap();
+        // let root = PathBuf::from("/");
+        // let execute_path = std::env::current_exe().expect("Can't get the execution path");
+        // let mut execute_path = execute_path.parent().unwrap().to_path_buf();
+    
+        // if is_save {
+        //     current_dir.push(dysql_fd);
+        // } else {
+        //     while !execute_path.eq(&root) && !execute_path.eq(&current_dir) {
+        //         execute_path.push(dysql_fd);
+    
+        //         if execute_path.exists() {
+        //             break;
+        //         } else {
+        //             execute_path.pop();
+        //             execute_path.pop();
+        //         }
+        //     }
+    
+        //     if execute_path.eq(&root) ||  execute_path.eq(&current_dir) {
+        //         execute_path.push(dysql_fd);
+        //     }
+        // }
+        
+        // PersistSql::new(execute_path)
+
         let mut current_dir = env::current_dir().unwrap();
         current_dir.push(".dysql");
-
         PersistSql::new(current_dir)
     }
 }

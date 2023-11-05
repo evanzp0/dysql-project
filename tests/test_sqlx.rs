@@ -33,8 +33,20 @@ struct User {
     age: Option<i32>,
 }
 
+// fn load_env() {
+//     let mut tmp = std::env::current_exe().unwrap().to_path_buf();
+//     tmp.pop();
+//     tmp.push(".env");
+//     dotenv::from_path(tmp).ok();
+
+//     let mut tmp = std::env::current_dir().unwrap().to_path_buf();
+//     tmp.push(".env");
+//     dotenv::from_path(tmp).ok();
+// }
+
 async fn connect_postgres_db() -> Pool<Postgres> {
     dotenv::dotenv().ok();
+
     let conn = PgPoolOptions::new()
         .max_connections(5)
         .connect("postgres://root:111111@127.0.0.1/my_database").await.unwrap();

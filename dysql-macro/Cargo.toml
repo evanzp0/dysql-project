@@ -12,8 +12,8 @@ readme = "../README.md"
 proc-macro = true
 
 [dependencies]
-dysql-core = "1"
-dysql-tpl = { version = "0.17", features = ["chrono", "uuid"] }
+dysql-core = { path = "../dysql-core" }
+dysql-tpl = { path = "../dysql-tpl", features = ["chrono", "uuid"] }
 syn = { version="2.0", features=["extra-traits", "visit-mut"] }
 proc-macro2 = { version="1.0", features = ["span-locations"] }
 quote = { version="1.0" }
@@ -21,7 +21,7 @@ once_cell = "1.13"
 dotenv = "0.15"
 
 [features]
-default = ["sqlx"]
+default = []
 sqlx = []
 tokio-postgres = []
 

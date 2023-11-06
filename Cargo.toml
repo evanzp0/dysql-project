@@ -11,6 +11,7 @@ members = [
     "dysql-core",
     "dysql-macro",
     "dysql",
+    "example",
 ]
 
 [patch.crates-io]

@@ -1,33 +1,17 @@
-use dysql_core::get_sqlx_version;
 use quote::quote;
 
 use crate::sql_expand::SqlExpand;
 
-pub struct Execute;
+pub struct FetchOne;
 
-impl SqlExpand for Execute {
+impl SqlExpand for FetchOne {
 
-    fn expand(&self, st: &crate::SqlClosure) -> syn::Result<proc_macro2::TokenStream> {
+    fn expand(&self, st: &crate::DySqlFragmentContext) -> syn::Result<proc_macro2::TokenStream> {
         let dto = &st.dto;
         let cot = &st.cot;
+        let ret_type = &st.ret_type;
     
-        let cot_ref = if st.is_cot_ref_mut {
-            quote!(&mut )
-        } else if st.is_cot_ref {
-            quote!(&)
-        } else {
-            quote!()
-        };
-
-        let cot = if st.is_cot_ref_mut {
-            match get_sqlx_version() {
-                dysql_core::SqlxVer::V0_7 => quote!(*#cot),
-                _ => quote!(#cot),
-            }
-        } else {
-            quote!(#cot)
-        };
-
+        let cot = super::gen_cot_quote(st, cot);
         let (param_strings, param_idents) = self.extra_params(st)?;
 
         // declare sql and bind params at runtime
@@ -35,7 +19,7 @@ impl SqlExpand for Execute {
 
         let ret = match dto {
             Some(_) => quote!(
-                let mut query = sqlx::query(&sql);
+                let mut query = sqlx::query_as::<_, #ret_type>(&sql);
                 for i in 0..param_names.len() {
                     #(
                         if param_names[i] == #param_strings {
@@ -44,23 +28,21 @@ impl SqlExpand for Execute {
                     )*
                 }
         
-                let rst = query.execute(#cot_ref #cot).await;
+                let rst = query.fetch_one(#cot).await;
                 if let Err(e) = rst {
                     break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)), None)))
                 }
                 let rst = rst.expect("Unexpected error");
-                let af_rows = rst.rows_affected();
-                Ok(af_rows)
+                Ok(rst)
             ),
             None => quote!(
-                let mut query = sqlx::query(&sql);
-                let rst = query.execute(#cot_ref #cot).await;
+                let mut query = sqlx::query_as::<_, #ret_type>(&sql);
+                let rst = query.fetch_one(#cot).await;
                 if let Err(e) = rst {
                     break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)), None)))
                 }
                 let rst = rst.expect("Unexpected error");
-                let af_rows = rst.rows_affected();
-                Ok(af_rows)
+                Ok(rst)
             ),
         };
     

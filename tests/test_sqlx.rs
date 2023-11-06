@@ -33,17 +33,6 @@ struct User {
     age: Option<i32>,
 }
 
-// fn load_env() {
-//     let mut tmp = std::env::current_exe().unwrap().to_path_buf();
-//     tmp.pop();
-//     tmp.push(".env");
-//     dotenv::from_path(tmp).ok();
-
-//     let mut tmp = std::env::current_dir().unwrap().to_path_buf();
-//     tmp.push(".env");
-//     dotenv::from_path(tmp).ok();
-// }
-
 async fn connect_postgres_db() -> Pool<Postgres> {
     dotenv::dotenv().ok();
 
@@ -97,7 +86,7 @@ async fn test_fetch_all() {
     let conn = connect_postgres_db().await;
 
     let dto = UserDto{ id: None, name: None, age: Some(13) , id_rng: None };
-    let rst = fetch_all!(|&dto, &conn| -> User {
+    let rst = fetch_all!(|&conn, &dto| -> User {
         r#"SELECT * FROM test_user 
         WHERE 1 = 1
           {{#name}}AND name = :name{{/name}}
@@ -114,7 +103,32 @@ async fn test_fetch_one() {
     // let dto = UserDto{ id: Some(2), name: None, age: None, id_rng: None };
     let dto = dysql::Value::new(2_i64);
 
-    let rst = fetch_one!(|&dto, &conn| -> User {
+    let rst = fetch_one!(|&conn, &dto| -> User {
+        select_sql + "where id = :value order by id"
+    }).unwrap();
+    assert_eq!(User { id: 2, name: Some("zhanglan".to_owned()), age: Some(21) }, rst);
+}
+
+#[tokio::test]
+async fn test_fetch_one_mysql() {
+    let conn = connect_mysql_db().await;
+    let dto = dysql::Value::new(2_i64);
+
+    let rst = fetch_one!(|&conn, &dto| -> (User, sqlite) {
+        select_sql + "where id = :value order by id"
+    }).unwrap();
+    assert_eq!(User { id: 2, name: Some("zhanglan".to_owned()), age: Some(21) }, rst);
+}
+
+#[tokio::test]
+async fn test_fetch_one_sqlite() {
+    let mut conn = connect_sqlite_db().await;
+    let mut tran = conn.begin().await.unwrap();
+    
+    let dto = dysql::Value::new(2_i64);
+
+    // 注意 sqlite 目前在 dysql 中只能支持传入 transaction，不支持 connection
+    let rst = fetch_one!(|&mut tran, &dto| -> (User, sqlite) {
         select_sql + "where id = :value order by id"
     }).unwrap();
     assert_eq!(User { id: 2, name: Some("zhanglan".to_owned()), age: Some(21) }, rst);
@@ -124,7 +138,7 @@ async fn test_fetch_one() {
 async fn test_fetch_scalar() -> dysql::DySqlResult<()>{
     let conn = connect_postgres_db().await;
 
-    let rst = fetch_scalar!(|_, &conn| -> i64 {
+    let rst = fetch_scalar!(|&conn| -> i64 {
         r#"select count (*) from test_user"#
     })?;
 
@@ -140,7 +154,7 @@ async fn test_execute() -> Result<(), Box<dyn Error>> {
     let mut tran = conn.begin().await?;
 
     let dto = UserDto{ id: Some(3), name: None, age: None, id_rng: None };
-    let affected_rows_num = execute!(|&dto, &mut tran| {
+    let affected_rows_num = execute!(|&mut tran, &dto| {
         r#"delete from test_user where id = :id"#
     })?;
 
@@ -157,7 +171,7 @@ async fn test_insert() -> Result<(), Box<dyn Error>> {
     let mut tran = conn.begin().await?;
 
     let dto = UserDto{ id: None, name: Some("lisi".to_owned()), age: Some(50), id_rng: None };
-    let insert_id = insert!(|&dto, &mut tran| {
+    let insert_id = insert!(|&mut tran, &dto| {
         r#"insert into test_user (name, age) values (:name, :age) returning id"#
     })?;
 
@@ -172,7 +186,7 @@ async fn test_insert_mysql() -> Result<(), Box<dyn Error>> {
     let mut tran = conn.begin().await?;
 
     let dto = UserDto{ id: Some(10), name: Some("lisi".to_owned()), age: Some(50), id_rng: None };
-    let insert_id = insert!(|&dto, &mut tran| -> (_, mysql) {
+    let insert_id = insert!(|&mut tran, &dto| -> (_, mysql) {
         r#"insert into test_user (name, age) values ('aa', 1)"#
     })?;
 
@@ -189,7 +203,7 @@ async fn test_insert_sqlite() -> Result<(), Box<dyn Error>> {
 
     let dto = UserDto{ id: Some(10), name: Some("lisi".to_owned()), age: Some(50), id_rng: None };
 
-    let insert_id = insert!(|&dto, &mut tran| -> (_, sqlite) {
+    let insert_id = insert!(|&mut tran, &dto| -> (_, sqlite) {
         r#"insert into test_user (name, age) values ('aa', 1)"#
     })?;
 
@@ -209,7 +223,7 @@ async fn test_page() {
     ];
     let mut pg_dto = PageDto::new_with_sort(3, 10, dto, sort_model);
     
-    let rst = page!(|&mut pg_dto, &conn| -> User {
+    let rst = page!(|&conn, &mut pg_dto| -> User {
         "select * from test_user 
         where 1 = 1
         {{#data}}
@@ -231,7 +245,7 @@ async fn test_page_mysql() {
     ];
     let mut pg_dto = PageDto::new_with_sort(3, 10, dto, sort_model);
     
-    let rst = page!(|&mut pg_dto, &conn| -> (User, mysql) {
+    let rst = page!(|&conn, &mut pg_dto| -> (User, mysql) {
         "select * from test_user 
         where 1 = 1
         {{#data}}
@@ -246,6 +260,7 @@ async fn test_page_mysql() {
 #[tokio::test]
 async fn test_page_sqlite() {
     let mut conn = connect_sqlite_db().await;
+    let mut tran = conn.begin().await.unwrap();
 
     let dto = UserDto{ id: None, name: None, age: Some(13), id_rng: None };
     let sort_model = vec![
@@ -253,7 +268,7 @@ async fn test_page_sqlite() {
     ];
     let mut pg_dto = PageDto::new_with_sort(3, 10, dto, sort_model);
     
-    let rst = page!(|&mut pg_dto, &mut conn| -> (User, sqlite) {
+    let rst = page!(|&mut tran, &mut pg_dto| -> (User, sqlite) {
         "select * from test_user 
         where 1 = 1
         {{#data}}
@@ -275,7 +290,7 @@ async fn test_trim_sql() {
     let mut pg_dto = PageDto::new_with_sort(3, 10, dto, sort_model);
     let pg_dto = &mut pg_dto;
     
-    let rst = page!(|pg_dto, &conn, "page_test_user"| -> User {
+    let rst = page!(|&conn, pg_dto, "page_test_user"| -> User {
         "select * from test_user 
         where
         {{#data}}

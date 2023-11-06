@@ -6,19 +6,12 @@ pub struct FetchScalar;
 
 impl SqlExpand for FetchScalar {
 
-    fn expand(&self, st: &crate::SqlClosure) -> syn::Result<proc_macro2::TokenStream> {
+    fn expand(&self, st: &crate::DySqlFragmentContext) -> syn::Result<proc_macro2::TokenStream> {
         let dto = &st.dto;
         let cot = &st.cot;
         let ret_type = &st.ret_type;
     
-        let cot_ref = if st.is_cot_ref_mut {
-            quote!(&mut )
-        } else if st.is_cot_ref {
-            quote!(&)
-        } else {
-            quote!()
-        };
-
+        let cot = super::gen_cot_quote(st, cot);
         let (param_strings, param_idents) = self.extra_params(st)?;
 
         // declare sql and bind params at runtime
@@ -35,7 +28,7 @@ impl SqlExpand for FetchScalar {
                     )*
                 }
         
-                let rst = query.fetch_one(#cot_ref #cot).await;
+                let rst = query.fetch_one(#cot).await;
                 if let Err(e) = rst {
                     break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)), None)))
                 }
@@ -44,7 +37,7 @@ impl SqlExpand for FetchScalar {
             ),
             None => quote!(
                 let mut query = sqlx::query_scalar::<_, #ret_type>(&sql);
-                let rst = query.fetch_one(#cot_ref #cot).await;
+                let rst = query.fetch_one(#cot).await;
                 if let Err(e) = rst {
                     break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)), None)))
                 }

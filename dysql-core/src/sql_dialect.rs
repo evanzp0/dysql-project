@@ -1,7 +1,7 @@
 use std::fmt::{Display, Formatter};
 
 #[allow(non_camel_case_types)]
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum SqlDialect {
     postgres,
     mysql,

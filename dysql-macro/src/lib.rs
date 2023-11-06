@@ -51,21 +51,20 @@
 //! ## Example
 //! Full example please see: [Dysql sqlx example](https://github.com/evanzp0/dysql-project/tests)
 
-mod dy_sqlx;
-use dy_sqlx::expand;
-
+mod sqlx_fragment;
+mod sql_macro_fragment;
 mod sql_expand;
-mod sql_fragment;
 
 use dysql_core::SqlDialect;
 use proc_macro::TokenStream;
-use sql_fragment::{STATIC_SQL_FRAGMENT_MAP, SqlFragment};
+use sql_macro_fragment::{STATIC_SQL_FRAGMENT_MAP, SqlMacroFragment};
 use syn::{punctuated::Punctuated, parse_macro_input, Token};
 use std::{collections::HashMap, sync::RwLock, path::PathBuf};
 use quote::quote;
 use std::env;
 
-use crate::sql_fragment::get_sql_fragment;
+use sqlx_fragment::expand;
+use sql_macro_fragment::get_sql_fragment;
 
 #[derive(Debug)]
 pub(crate) enum QueryType {
@@ -77,17 +76,21 @@ pub(crate) enum QueryType {
     Page,
 }
 
+#[derive(Debug, PartialEq, Eq)]
+pub(crate) enum RefType  {
+    ReadOnly,
+    Mutable,
+    None,
+}
+
 /// 用于解析 dysql 所有过程宏的语句
 #[allow(dead_code)]
 #[derive(Debug)]
-struct SqlClosure {
+struct DySqlFragmentContext {
     dto: Option<syn::Ident>,
-    is_dto_ref: bool,
-    is_dto_ref_mut: bool,
+    dto_ref_type: RefType,
     cot: syn::Ident, // database connection or transaction
-    is_cot_ref: bool,
-    is_cot_ref_mut: bool,
-    // is_deref_tran: bool,
+    cot_ref_type: RefType,
     sql_name: Option<String>,
     ret_type: Option<syn::Path>, // return type
     dialect: syn::Ident,
@@ -95,64 +98,25 @@ struct SqlClosure {
     source_file: PathBuf,
 }
 
-impl syn::parse::Parse for SqlClosure {
+impl syn::parse::Parse for DySqlFragmentContext {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
         dotenv::dotenv().ok();
 
-        // parse closure parameters
-
-        let mut is_dto_ref = false;
-        let mut is_dto_ref_mut = false;
-        // let mut is_deref_tran = false;
-
-        //// parse dto
+        // parse closure parameters ---------------------
         input.parse::<syn::Token!(|)>()?;
 
-        let dto = match input.parse::<syn::Ident>() {
-            Ok(i) => Some(i),
-            Err(e) => match input.parse::<syn::Token!(_)>() {
-                Ok(_) => None,
-                Err(_) => {
-                    match input.parse::<syn::Token!(&)>() {
-                        Ok(_) => {
-                            is_dto_ref = true;
-                            match input.parse::<syn::Token!(mut)>() {
-                                Ok(_) => {
-                                    is_dto_ref = false;
-                                    is_dto_ref_mut = true;
-                                    Some(input.parse::<syn::Ident>()?)
-                                },
-                                Err(_) => Some(input.parse::<syn::Ident>()?),
-                            }
-                        },
-                        Err(_) => return Err(e),
-                    }
-                },
-            },
-        };
+        // parse cot
+        let mut cot_ref_type = RefType::None;
 
-        //// parse cot
-        let mut is_cot_ref = false;
-        let mut is_cot_ref_mut = false;
-        input.parse::<syn::Token!(,)>()?;
-        //////parse ref mut
+        // parse ref mut
         let cot: syn::Ident = match input.parse::<syn::Token!(&)>() {
             Ok(_) => {
-                is_cot_ref = true;
+                cot_ref_type = RefType::ReadOnly;
                 match input.parse::<syn::Token!(mut)>() {
                     Ok(_) => {
-                        is_cot_ref = false;
-                        is_cot_ref_mut = true;
-                        input.parse()? // 等同于 parse::<syn::Ident>()
-                        
-                        // match input.parse::<syn::Token!(*)>() {
-                        //     Ok(_) => { 
-                        //         is_deref_tran = true;
-                        //         input.parse()? 
-                        //     },
-                        //     Err(_) => input.parse()?, 
-                        // }
-
+                        cot_ref_type = RefType::Mutable;
+                        // 等同于 parse::<syn::Ident>()
+                        input.parse()? 
                     },
                     Err(_) => input.parse()?,
                 }
@@ -162,17 +126,51 @@ impl syn::parse::Parse for SqlClosure {
             },
         };
 
-        // parse sql_name
+        let mut dto = None;
+        let mut dto_ref_type = RefType::None;
         let mut sql_name = None;
+
+        // test if reached the end of `|`
         match input.parse::<syn::Token!(|)>() {
             Ok(_) => (),
             Err(_) => {
+                // parse dto
                 input.parse::<syn::Token!(,)>()?;
-                sql_name = match input.parse::<syn::LitStr>() {
-                    Ok(s) => Some(s.value()),
-                    Err(_) => None,
+
+                dto = match input.parse::<syn::Ident>() {
+                    Ok(i) => Some(i),
+                    Err(e) => match input.parse::<syn::Token!(_)>() {
+                        Ok(_) => None,
+                        Err(_) => {
+                            match input.parse::<syn::Token!(&)>() {
+                                Ok(_) => {
+                                    dto_ref_type = RefType::ReadOnly;
+                                    match input.parse::<syn::Token!(mut)>() {
+                                        Ok(_) => {
+                                            dto_ref_type = RefType::Mutable;
+                                            Some(input.parse::<syn::Ident>()?)
+                                        },
+                                        Err(_) => Some(input.parse::<syn::Ident>()?),
+                                    }
+                                },
+                                Err(_) => return Err(e),
+                            }
+                        },
+                    },
                 };
-                input.parse::<syn::Token!(|)>().map_err(|e| syn::Error::new(e.span(), "need '|' or \"sql_name\" here "))?;
+
+                // parse sql_name
+                match input.parse::<syn::Token!(|)>() {
+                    Ok(_) => (),
+                    Err(_) => {
+                        input.parse::<syn::Token!(,)>()?;
+                        sql_name = match input.parse::<syn::LitStr>() {
+                            Ok(s) => Some(s.value()),
+                            Err(_) => None,
+                        };
+                        input.parse::<syn::Token!(|)>().map_err(|e| syn::Error::new(e.span(), "need '|' or \"sql_name\" here "))?;
+                    },
+                }
             },
         }
 
@@ -239,7 +237,7 @@ impl syn::parse::Parse for SqlClosure {
         let span: proc_macro::Span = input.span().unwrap();
         let source_file = span.source_file().path();
 
-        let sc = SqlClosure { dto, is_dto_ref, is_dto_ref_mut, cot, is_cot_ref, is_cot_ref_mut, sql_name, ret_type, dialect, body, source_file };
+        let sc = DySqlFragmentContext { dto, dto_ref_type, cot, cot_ref_type, sql_name, ret_type, dialect, body, source_file };
         // eprintln!("{:#?}", sc);
 
         Ok(sc)
@@ -348,7 +346,7 @@ fn get_default_dialect(span: &proc_macro2::Span) -> syn::Ident {
 #[proc_macro]
 pub fn fetch_all(input: TokenStream) -> TokenStream {
     // 将 input 解析成 SqlClosure
-    let st = syn::parse_macro_input!(input as SqlClosure);
+    let st = syn::parse_macro_input!(input as DySqlFragmentContext);
 
     // fetch_all 必须要指定单个 item 的返回值类型
     if st.ret_type.is_none() { panic!("ret_type can't be null.") }
@@ -380,7 +378,7 @@ pub fn fetch_all(input: TokenStream) -> TokenStream {
 /// ```
 #[proc_macro]
 pub fn fetch_one(input: TokenStream) -> TokenStream {
-    let st = syn::parse_macro_input!(input as SqlClosure);
+    let st = syn::parse_macro_input!(input as DySqlFragmentContext);
     if st.ret_type.is_none() { panic!("ret_type can't be null.") }
 
     match expand(&st, QueryType::FetchOne) {
@@ -406,7 +404,7 @@ pub fn fetch_one(input: TokenStream) -> TokenStream {
 /// ```
 #[proc_macro]
 pub fn fetch_scalar(input: TokenStream) -> TokenStream {
-    let st = syn::parse_macro_input!(input as SqlClosure);
+    let st = syn::parse_macro_input!(input as DySqlFragmentContext);
     if st.ret_type.is_none() { panic!("ret_type can't be null.") }
 
     match expand(&st, QueryType::FetchScalar) {
@@ -435,7 +433,7 @@ pub fn fetch_scalar(input: TokenStream) -> TokenStream {
 /// ```
 #[proc_macro]
 pub fn execute(input: TokenStream) -> TokenStream {
-    let st = syn::parse_macro_input!(input as SqlClosure);
+    let st = syn::parse_macro_input!(input as DySqlFragmentContext);
 
     match expand(&st, QueryType::Execute) {
         Ok(ret) => ret.into(),
@@ -465,7 +463,7 @@ pub fn execute(input: TokenStream) -> TokenStream {
 /// ```
 #[proc_macro]
 pub fn insert(input: TokenStream) -> TokenStream {
-    let st = syn::parse_macro_input!(input as SqlClosure);
+    let st = syn::parse_macro_input!(input as DySqlFragmentContext);
 
     match expand(&st, QueryType::Insert) {
         Ok(ret) => ret.into(),
@@ -491,7 +489,7 @@ pub fn insert(input: TokenStream) -> TokenStream {
 /// ```
 #[proc_macro]
 pub fn sql(input: TokenStream) -> TokenStream {
-    let st = parse_macro_input!(input as SqlFragment);
+    let st = parse_macro_input!(input as SqlMacroFragment);
     let cache = STATIC_SQL_FRAGMENT_MAP.get_or_init(|| {
         RwLock::new(HashMap::new())
     });
@@ -527,7 +525,7 @@ pub fn sql(input: TokenStream) -> TokenStream {
 /// /// ```
 #[proc_macro]
 pub fn page(input: TokenStream) -> TokenStream {
-    let st = syn::parse_macro_input!(input as SqlClosure);
+    let st = syn::parse_macro_input!(input as DySqlFragmentContext);
     if st.ret_type.is_none() { panic!("ret_type can't be null.") }
 
     match expand(&st, QueryType::Page) {

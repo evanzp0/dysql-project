@@ -42,7 +42,7 @@ impl DepsVersion {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum SqlxVer {
     V0_7,
     V0_6,

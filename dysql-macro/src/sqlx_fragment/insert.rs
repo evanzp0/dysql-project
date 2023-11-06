@@ -7,25 +7,11 @@ pub struct Insert;
 
 impl SqlExpand for Insert {
 
-    fn expand(&self, st: &crate::SqlClosure) -> syn::Result<proc_macro2::TokenStream> {
+    fn expand(&self, st: &crate::DySqlFragmentContext) -> syn::Result<proc_macro2::TokenStream> {
         let dto = &st.dto;
         let cot = &st.cot;
         let dialect: SqlDialect = st.dialect.to_string().into();
     
-        let cot_ref = if st.is_cot_ref_mut {
-            quote!(&mut )
-        } else if st.is_cot_ref {
-            quote!(&)
-        } else {
-            quote!()
-        };
-
-        let cot = if st.is_cot_ref_mut {
-            quote!(*#cot)
-        } else {
-            quote!(#cot)
-        };
-        
         // gen return type fro postgres
         let i64_path = Some(gen_type_path("i64"));
         let ret_type = match &st.ret_type {
@@ -33,6 +19,7 @@ impl SqlExpand for Insert {
             None => &i64_path,
         };
 
+        let cot = super::gen_cot_quote(st, cot);
         let (param_strings, param_idents) = self.extra_params(st)?;
 
         // declare sql and bind params at runtime
@@ -51,7 +38,7 @@ impl SqlExpand for Insert {
                             )*
                         }
                 
-                        let insert_id = query.fetch_one(#cot_ref #cot).await;
+                        let insert_id = query.fetch_one(#cot).await;
                         if let Err(e) = insert_id {
                             break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)), None)))
                         }
@@ -68,9 +55,9 @@ impl SqlExpand for Insert {
                             )*
                         }
             
-                        let _rst = query.execute(&mut #cot).await;
+                        let _rst = query.execute(#cot).await;
                         let insert_id = sqlx::query_as::<_, (u64,)>("SELECT LAST_INSERT_ID();")
-                            .fetch_one(#cot_ref #cot)
+                            .fetch_one(#cot)
                             .await;
                         if let Err(e) = insert_id {
                             break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)), None)))
@@ -88,9 +75,9 @@ impl SqlExpand for Insert {
                             )*
                         }
             
-                        let _rst = query.execute(&mut #cot).await;
+                        let _rst = query.execute(#cot).await;
                         let insert_id = sqlx::query_as::<_, (i32,)>("SELECT last_insert_rowid();")
-                            .fetch_one(#cot_ref #cot)
+                            .fetch_one(#cot)
                             .await;
                         if let Err(e) = insert_id {
                             break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)), None)))
@@ -103,7 +90,7 @@ impl SqlExpand for Insert {
             None => match dialect {
                 SqlDialect::postgres => quote!(
                     let mut query = sqlx::query_scalar::<_, #ret_type>(&sql);
-                    let insert_id = query.fetch_one(#cot_ref #cot).await;
+                    let insert_id = query.fetch_one(#cot).await;
                     if let Err(e) = insert_id {
                         break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)), None)))
                     }
@@ -112,9 +99,9 @@ impl SqlExpand for Insert {
                 ),
                 SqlDialect::mysql => quote!(
                     let mut query = sqlx::query(&sql);
-                    let _rst = query.execute(&mut #cot).await;
+                    let _rst = query.execute(#cot).await;
                     let insert_id = sqlx::query_as::<_, (u64,)>("SELECT LAST_INSERT_ID();")
-                        .fetch_one(#cot_ref #cot)
+                        .fetch_one(#cot)
                         .await;
                     if let Err(e) = insert_id {
                         break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)), None)))
@@ -124,9 +111,9 @@ impl SqlExpand for Insert {
                 ),
                 SqlDialect::sqlite => quote!(
                     let mut query = sqlx::query(&sql);
-                    let _rst = query.execute(&mut #cot).await;
+                    let _rst = query.execute(#cot).await;
                     let insert_id = sqlx::query_as::<_, (i32,)>("SELECT last_insert_rowid();")
-                        .fetch_one(#cot_ref #cot)
+                        .fetch_one(#cot)
                         .await;
                     if let Err(e) = insert_id {
                         break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)), None)))

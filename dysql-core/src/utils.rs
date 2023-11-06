@@ -27,11 +27,11 @@ pub fn get_sql_template(template_id: u64) -> Option<Arc<Template>> {
         .unwrap()
         .get_template(template_id);
     
-    // if let Some(_) = rst {
-    //     println!("hit: {}", template_id);
-    // } else {
-    //     println!("not hit: {}", template_id);
-    // }
+    if let Some(_) = rst {
+        println!("hit: {}", template_id);
+    } else {
+        println!("not hit: {}", template_id);
+    }
 
     rst
 }

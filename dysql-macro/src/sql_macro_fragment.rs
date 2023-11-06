@@ -21,12 +21,12 @@ pub(crate) fn get_sql_fragment(name: &str)-> Option<String> {
 /// 用于解析 sql!(sql_fragment_name, sql_fragment) 宏
 /// 该宏用于定义公共的 sql 语句部分
 #[derive(Debug)]
-pub(crate) struct SqlFragment {
+pub(crate) struct SqlMacroFragment {
     pub(crate) name: String,
     pub(crate) value: String,
 }
 
-impl syn::parse::Parse for SqlFragment {
+impl syn::parse::Parse for SqlMacroFragment {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
         let name= input.parse::<syn::LitStr>()?.value();
         input.parse::<syn::Token!(,)>()?;

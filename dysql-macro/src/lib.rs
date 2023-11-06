@@ -91,6 +91,7 @@ struct DySqlFragmentContext {
     dto_ref_type: RefType,
     cot: syn::Ident, // database connection or transaction
     cot_ref_type: RefType,
+    is_def_cot: bool,
     sql_name: Option<String>,
     ret_type: Option<syn::Path>, // return type
     dialect: syn::Ident,
@@ -107,15 +108,21 @@ impl syn::parse::Parse for DySqlFragmentContext {
 
         // parse cot
         let mut cot_ref_type = RefType::None;
+        let mut is_def_cot = false;
 
         // parse ref mut
         let cot: syn::Ident = match input.parse::<syn::Token!(&)>() {
             Ok(_) => {
                 cot_ref_type = RefType::ReadOnly;
                 match input.parse::<syn::Token!(mut)>() {
+                    Ok(_) => { cot_ref_type = RefType::Mutable },
+                    Err(_) => (),
+                }
+
+                match input.parse::<syn::Token!(*)>() {
                     Ok(_) => {
-                        cot_ref_type = RefType::Mutable;
                         // 等同于 parse::<syn::Ident>()
+                        is_def_cot = true;
                         input.parse()? 
                     },
                     Err(_) => input.parse()?,
@@ -237,7 +244,7 @@ impl syn::parse::Parse for DySqlFragmentContext {
         let span: proc_macro::Span = input.span().unwrap();
         let source_file = span.source_file().path();
 
-        let sc = DySqlFragmentContext { dto, dto_ref_type, cot, cot_ref_type, sql_name, ret_type, dialect, body, source_file };
+        let sc = DySqlFragmentContext { dto, dto_ref_type, cot, cot_ref_type, is_def_cot, sql_name, ret_type, dialect, body, source_file };
         // eprintln!("{:#?}", sc);
 
         Ok(sc)

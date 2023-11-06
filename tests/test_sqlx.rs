@@ -114,7 +114,7 @@ async fn test_fetch_one_mysql() {
     let conn = connect_mysql_db().await;
     let dto = dysql::Value::new(2_i64);
 
-    let rst = fetch_one!(|&conn, &dto| -> (User, sqlite) {
+    let rst = fetch_one!(|&conn, &dto| -> (User, mysql) {
         select_sql + "where id = :value order by id"
     }).unwrap();
     assert_eq!(User { id: 2, name: Some("zhanglan".to_owned()), age: Some(21) }, rst);
@@ -123,12 +123,11 @@ async fn test_fetch_one_mysql() {
 #[tokio::test]
 async fn test_fetch_one_sqlite() {
     let mut conn = connect_sqlite_db().await;
-    let mut tran = conn.begin().await.unwrap();
+    // let mut tran = conn.begin().await.unwrap();
     
     let dto = dysql::Value::new(2_i64);
 
-    // 注意 sqlite 目前在 dysql 中只能支持传入 transaction，不支持 connection
-    let rst = fetch_one!(|&mut tran, &dto| -> (User, sqlite) {
+    let rst = fetch_one!(|&mut conn, &dto| -> (User, sqlite) {
         select_sql + "where id = :value order by id"
     }).unwrap();
     assert_eq!(User { id: 2, name: Some("zhanglan".to_owned()), age: Some(21) }, rst);
@@ -154,7 +153,7 @@ async fn test_execute() -> Result<(), Box<dyn Error>> {
     let mut tran = conn.begin().await?;
 
     let dto = UserDto{ id: Some(3), name: None, age: None, id_rng: None };
-    let affected_rows_num = execute!(|&mut tran, &dto| {
+    let affected_rows_num = execute!(|&mut *tran, &dto| {
         r#"delete from test_user where id = :id"#
     })?;
 
@@ -171,7 +170,7 @@ async fn test_insert() -> Result<(), Box<dyn Error>> {
     let mut tran = conn.begin().await?;
 
     let dto = UserDto{ id: None, name: Some("lisi".to_owned()), age: Some(50), id_rng: None };
-    let insert_id = insert!(|&mut tran, &dto| {
+    let insert_id = insert!(|&mut *tran, &dto| {
         r#"insert into test_user (name, age) values (:name, :age) returning id"#
     })?;
 
@@ -186,7 +185,7 @@ async fn test_insert_mysql() -> Result<(), Box<dyn Error>> {
     let mut tran = conn.begin().await?;
 
     let dto = UserDto{ id: Some(10), name: Some("lisi".to_owned()), age: Some(50), id_rng: None };
-    let insert_id = insert!(|&mut tran, &dto| -> (_, mysql) {
+    let insert_id = insert!(|&mut *tran, &dto| -> (_, mysql) {
         r#"insert into test_user (name, age) values ('aa', 1)"#
     })?;
 
@@ -203,7 +202,7 @@ async fn test_insert_sqlite() -> Result<(), Box<dyn Error>> {
 
     let dto = UserDto{ id: Some(10), name: Some("lisi".to_owned()), age: Some(50), id_rng: None };
 
-    let insert_id = insert!(|&mut tran, &dto| -> (_, sqlite) {
+    let insert_id = insert!(|&mut *tran, &dto| -> (_, sqlite) {
         r#"insert into test_user (name, age) values ('aa', 1)"#
     })?;
 
@@ -268,7 +267,7 @@ async fn test_page_sqlite() {
     ];
     let mut pg_dto = PageDto::new_with_sort(3, 10, dto, sort_model);
     
-    let rst = page!(|&mut tran, &mut pg_dto| -> (User, sqlite) {
+    let rst = page!(|&mut *tran, &mut pg_dto| -> (User, sqlite) {
         "select * from test_user 
         where 1 = 1
         {{#data}}

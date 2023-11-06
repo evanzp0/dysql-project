@@ -11,7 +11,6 @@ members = [
     "dysql-core",
     "dysql-macro",
     "dysql",
-    "example",
 ]
 
 [patch.crates-io]
@@ -24,7 +23,6 @@ members = [
 [profile.bench]
 lto = "fat"
 codegen-units = 1
-
 
 [dev-dependencies]
 # test_sql dependence

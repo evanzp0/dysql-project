@@ -7,7 +7,7 @@ use crate::{sql_expand::SqlExpand, DySqlFragmentContext, QueryType, RefType};
 use super::{FetchAll, FetchOne, FetchScalar, Execute, Insert, Page};
 
 /// 根据 query_type 转发处理 dysql fragrament
-pub fn expand(
+pub(crate) fn expand(
     st: &DySqlFragmentContext,
     query_type: QueryType,
 ) -> syn::Result<proc_macro2::TokenStream> {
@@ -22,7 +22,7 @@ pub fn expand(
 }
 
 /// 根据 sqlx 不同版本对于事务的引用，生成 connection or tran 及其引用的 TokenStream
-pub fn gen_cot_quote(
+pub(crate) fn gen_cot_quote(
     st: &DySqlFragmentContext,
     cot_ident: &proc_macro2::Ident,
 ) -> proc_macro2::TokenStream {
@@ -59,7 +59,7 @@ pub fn gen_cot_quote(
 }
 
 /// 生成 dto 及其引用的 TokenStream
-pub fn gen_dto_quote(
+pub(crate) fn gen_dto_quote(
     st: &DySqlFragmentContext,
     dto_ident: &proc_macro2::Ident,
 ) -> proc_macro2::TokenStream {

@@ -12,4 +12,5 @@ pub use fetch_one::*;
 pub use fetch_scalar::*;
 pub use insert::*;
 pub use page::*;
+#[allow(unused)]
 pub use utils::*;

@@ -86,7 +86,7 @@ pub(crate) enum RefType  {
 /// 用于解析 dysql 所有过程宏的语句
 #[allow(dead_code)]
 #[derive(Debug)]
-struct DySqlFragmentContext {
+pub(crate) struct DySqlFragmentContext {
     dto: Option<syn::Ident>,
     dto_ref_type: RefType,
     cot: syn::Ident, // database connection or transaction

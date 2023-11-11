@@ -2,9 +2,9 @@ use quote::quote;
 
 use crate::sql_expand::SqlExpand;
 
-pub struct FetchScalar;
+pub struct FetchOne;
 
-impl SqlExpand for FetchScalar {
+impl SqlExpand for FetchOne {
 
     fn expand(&self, st: &crate::DySqlFragmentContext) -> syn::Result<proc_macro2::TokenStream> {
         let dto = &st.dto;
@@ -15,11 +15,11 @@ impl SqlExpand for FetchScalar {
         let (param_strings, param_idents) = self.extra_params(st)?;
 
         // declare sql and bind params at runtime
-        let declare_rt = self.gen_declare_rt(st, None, false)?;
+        let declare_rt = self.gen_named_sql_declare(st, None, false)?;
 
         let ret = match dto {
             Some(_) => quote!(
-                let mut query = sqlx::query_scalar::<_, #ret_type>(&sql);
+                let mut query = sqlx::query_as::<_, #ret_type>(&sql);
                 for i in 0..param_names.len() {
                     #(
                         if param_names[i] == #param_strings {
@@ -36,7 +36,7 @@ impl SqlExpand for FetchScalar {
                 Ok(rst)
             ),
             None => quote!(
-                let mut query = sqlx::query_scalar::<_, #ret_type>(&sql);
+                let mut query = sqlx::query_as::<_, #ret_type>(&sql);
                 let rst = query.fetch_one(#cot).await;
                 if let Err(e) = rst {
                     break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)), None)))

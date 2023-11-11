@@ -26,10 +26,6 @@ codegen-units = 1
 
 [dev-dependencies]
 # test_sql dependence
-dysql = { path = "./dysql" }
-dotenv = "0.15"
-tokio = { version = "1.0", features = ["full"] }
-sqlx = { version = "0.7", features = [ "runtime-tokio-native-tls" , "postgres",  "mysql", "sqlite", "chrono", "uuid" ] }
 
 # test_tpl dependence
 askama = "0.12"
@@ -42,3 +38,9 @@ ahash = "0.8"
 
 [package.metadata.scripts]
 test_sqlx = "cargo clean -p dysql-core && cargo test"
+
+[dependencies]
+dotenv = "0.15"
+tokio = { version = "1.0", features = ["full"] }
+dysql = { path = "./dysql" }
+sqlx = { version = "0.7", features = [ "runtime-tokio-native-tls" , "postgres",  "mysql", "sqlite", "chrono", "uuid" ] }

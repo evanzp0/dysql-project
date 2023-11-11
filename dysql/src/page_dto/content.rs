@@ -1,7 +1,7 @@
 #![allow(unused)]
 use crate::PageDto;
 
-impl<T> crate::Content for PageDto<T>
+impl<T: Clone> crate::Content for PageDto<T>
 where
     T: crate::Content,
 {

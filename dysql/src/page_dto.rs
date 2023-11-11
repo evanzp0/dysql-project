@@ -45,7 +45,7 @@ impl<T> PageDto<T>
         }
     }
 
-    pub fn init(&mut self, total: u64) {
+    pub fn init(mut self, total: u64) -> Self {
         let total_page = self.total_page(total);
         if total_page <= self.page_no {
             if total_page > 0 {
@@ -64,10 +64,7 @@ impl<T> PageDto<T>
         self.total = Some(total);
         self.page_no = page_no;
 
-        self.init_sort();
-    }
-
-    pub fn init_sort(&mut self) -> &mut Self {
+        // init sort
         if let Some(sm) = &self.sort_model {
             if sm.len() > 0 {
                 self.is_sort = Some(true);

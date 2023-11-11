@@ -82,7 +82,7 @@ pub fn extract_params(o_sql: &str, sql_dial: SqlDialect) -> ParseSqlResult<(Stri
 ///
 /// get the index for specified chars in the string slice from begin pos
 /// 
-pub fn char_index(s: &str, begin: usize, search_chars:Vec<char>) -> (bool, usize) {
+fn char_index(s: &str, begin: usize, search_chars:Vec<char>) -> (bool, usize) {
     let end = s.len();
     for i in begin..end {
         let c = &s[i..i+1];

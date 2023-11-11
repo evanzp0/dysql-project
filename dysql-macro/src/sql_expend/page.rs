@@ -18,7 +18,7 @@ impl SqlExpand for Page {
 
         // declare sql and bind params at runtime
         let count_sql = format!("SELECT count(*) FROM ({}) as _tmp", &st.body);
-        let declare_rt = self.gen_declare_rt(st, Some(&count_sql), true)?;
+        let declare_rt = self.gen_named_sql_declare(st, Some(&count_sql), true)?;
 
         let rst_count = match dto_ident {
             Some(dto_ident) => {
@@ -42,10 +42,7 @@ impl SqlExpand for Page {
                     }
                     let count = rst.expect("Unexpected error");
     
-                    {
-                        let _tmp_pg_dto: &mut PageDto<_> = #dto;
-                        _tmp_pg_dto.init(count as u64);
-                    }
+                    #dto = #dto.init(count as u64);
                 )
             },
             None => return Err(syn::Error::new(proc_macro2::Span::call_site(), "missing PageDto object in page query")),
@@ -58,7 +55,7 @@ impl SqlExpand for Page {
         page_sql.push_str(
             " {{#is_sort}} ORDER BY {{#sort_model}} {{field}} {{sort}}, {{/sort_model}} ![B_DEL(,)] {{/is_sort}} LIMIT {{page_size}} OFFSET {{start}} "
         );
-        let declare_rt = self.gen_declare_rt(st, Some(&page_sql), false)?;
+        let declare_rt = self.gen_named_sql_declare(st, Some(&page_sql), false)?;
 
         let rst_page = match dto_ident {
             Some(dto_ident) => quote!(

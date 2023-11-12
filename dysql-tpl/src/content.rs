@@ -9,7 +9,7 @@
 
 use crate::encoding::Encoder;
 use crate::template::{Section, Template};
-use crate::traits::{ContentSequence};
+use crate::traits::ContentSequence;
 
 use arrayvec::ArrayVec;
 use std::borrow::{Borrow, Cow, ToOwned};

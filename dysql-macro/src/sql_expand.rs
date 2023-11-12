@@ -2,11 +2,11 @@ use dysql_core::{save_sql_template, hash_str};
 use dysql_tpl::Template;
 use quote::quote;
 
-use crate::DySqlFragment;
+use crate::DyClosure;
 
 pub(crate) trait SqlExpand {
     /// expend 对应 query 的 sql
-    fn expand(&self, st: &DySqlFragment) -> syn::Result<proc_macro2::TokenStream>{
+    fn expand(&self, st: &DyClosure) -> syn::Result<proc_macro2::TokenStream>{
         let dto_ident = &st.dto;
 
         // declare named_sql at runtime
@@ -39,7 +39,7 @@ pub(crate) trait SqlExpand {
     /// 
     /// st: 在编译时生成的包含 sql 的结构体;\
     /// sql 可能会是 page 和 page 相关的两个sql，它表示分页查询时的 count sql 和 order sql;
-    fn gen_named_sql_declare(&self, st: &crate::DySqlFragment, sql: &str, is_page_count: bool) -> syn::Result<proc_macro2::TokenStream> {
+    fn gen_named_sql_declare(&self, st: &crate::DyClosure, sql: &str, is_page_count: bool) -> syn::Result<proc_macro2::TokenStream> {
         let dto_ident = &st.dto;
 
         // 根据 sql body 生成唯一 hash 标识

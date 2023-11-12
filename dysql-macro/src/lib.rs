@@ -3,22 +3,22 @@
 //! Dysql 是一个轻量级的编译时生成 SQL 模板的库，它在运行时根据传入的 DTO 自动生成动态的 SQL 并设置数据参数，
 //! 在底层 Dysql 使用 sqlx, tokio-postgres, rbac 等框架执行最终的 SQL。
 
-mod sql_macro_fragment;
+mod sql_fragment;
 mod sql_expand;
 
 use proc_macro::TokenStream;
 use sql_expand::{FetchAll, SqlExpand};
-use sql_macro_fragment::{STATIC_SQL_FRAGMENT_MAP, SqlMacroFragment};
+use sql_fragment::{STATIC_SQL_FRAGMENT_MAP, SqlFragment};
 use syn::{punctuated::Punctuated, parse_macro_input, Token};
 use std::{collections::HashMap, sync::RwLock, path::PathBuf};
 use quote::quote;
 
-use sql_macro_fragment::get_sql_fragment;
+use sql_fragment::get_sql_fragment;
 
 /// 用于解析 dysql 所有过程宏的语句
 #[allow(dead_code)]
 #[derive(Debug)]
-pub(crate) struct DySqlFragment {
+pub(crate) struct DyClosure {
     dto: Option<syn::Ident>,
     sql_name: Option<String>,
     ret_type: Option<syn::Path>, // return type
@@ -26,7 +26,7 @@ pub(crate) struct DySqlFragment {
     source_file: PathBuf,
 }
 
-impl syn::parse::Parse for DySqlFragment {
+impl syn::parse::Parse for DyClosure {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
         // 加载 .env 文件中的环境变量，读取自动持久化 sql 文件的参数
         dotenv::dotenv().ok();
@@ -88,7 +88,7 @@ impl syn::parse::Parse for DySqlFragment {
         let span: proc_macro::Span = input.span().unwrap();
         let source_file = span.source_file().path();
 
-        let dsf = DySqlFragment { dto, sql_name, ret_type, body, source_file };
+        let dsf = DyClosure { dto, sql_name, ret_type, body, source_file };
         // eprintln!("{:#?}", dsf);
 
         Ok(dsf)
@@ -178,7 +178,7 @@ pub(crate) fn gen_type_path(s: &str) -> syn::Path {
 #[proc_macro]
 pub fn fetch_all(input: TokenStream) -> TokenStream {
     // 将 input 解析成 SqlClosure
-    let st = syn::parse_macro_input!(input as DySqlFragment);
+    let st = syn::parse_macro_input!(input as DyClosure);
 
     // fetch_all 必须要指定单个 item 的返回值类型
     if st.ret_type.is_none() { panic!("ret_type can't be null.") }
@@ -321,7 +321,7 @@ pub fn fetch_all(input: TokenStream) -> TokenStream {
 /// ```
 #[proc_macro]
 pub fn sql(input: TokenStream) -> TokenStream {
-    let st = parse_macro_input!(input as SqlMacroFragment);
+    let st = parse_macro_input!(input as SqlFragment);
     let cache = STATIC_SQL_FRAGMENT_MAP.get_or_init(|| {
         RwLock::new(HashMap::new())
     });

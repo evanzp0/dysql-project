@@ -1,5 +1,7 @@
 use dysql_tpl::Content;
 
+use crate::InstanceOf;
+
 pub enum QueryCmd {
     Execute(String),
     FetchAll(String),
@@ -25,9 +27,14 @@ where
         }
     }
 
-    pub fn exec(&mut self)
+    pub fn execute<N>(&mut self, cot: &N)
+    where 
+        N: 'static + Sized,
     {
         // self.dto.take()
+        cot.instance_of::<i32>();
+
+
         todo!()
     }
 

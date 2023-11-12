@@ -1,4 +1,5 @@
 use dysql_tpl::Content;
+use sqlx::Postgres;
 
 use crate::InstanceOf;
 
@@ -27,12 +28,37 @@ where
         }
     }
 
-    pub fn execute<N>(&mut self, cot: &N)
+    pub fn execute<C>(&mut self, cot: &C)
+    where 
+        C: 'static + Sized,
+    {
+        // self.dto.take()
+        // self.instance_of_mut::<bool>();
+        
+        let rst = cot.instance_of::<sqlx::Pool<Postgres>>();
+        println!("sqlx::Pool<Postgres> = {}", rst);
+
+
+        // todo!()
+    }
+
+    pub async fn fetch_one<C, U>(&mut self, cot: &C)
+    where 
+        C: 'static + Sized,
+    {
+        let rst = cot.instance_of::<sqlx::Pool<Postgres>>();
+        // println!("sqlx::Pool<Postgres> = {}", rst);
+
+        // let query = sqlx::query::<Postgres>("select 1").fetch_one(& *cot).await;
+
+        // todo!()
+    }
+
+    pub fn execute_mut<N>(&mut self, cot: &mut N)
     where 
         N: 'static + Sized,
     {
-        // self.dto.take()
-        cot.instance_of::<i32>();
+        self.instance_of_mut::<bool>();
 
 
         todo!()

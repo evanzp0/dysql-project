@@ -104,6 +104,10 @@ where
     fn instance_of<U: ?Sized + Any>(&self) -> bool {
         TypeId::of::<Self>() == TypeId::of::<U>()
     }
+
+    fn instance_of_mut<U: ?Sized + Any>(&mut self) -> bool {
+        TypeId::of::<Self>() == TypeId::of::<U>()
+    }
 }
 
 impl<T: ?Sized + Any> InstanceOf for T {}

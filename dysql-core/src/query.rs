@@ -1,7 +1,9 @@
+use std::fmt::Debug;
+
 use dysql_tpl::Content;
 use sqlx::Postgres;
 
-use crate::InstanceOf;
+use crate::{InstanceOf, DySqlError};
 
 pub enum QueryCmd {
     Execute(String),
@@ -42,18 +44,19 @@ where
         // todo!()
     }
 
-    pub async fn fetch_one<'c, E, U>(&mut self, cot: E)
+    pub async fn fetch_one<'c, E, U>(&mut self, cot: E) -> Result<U, DySqlError>
     where 
         E: sqlx::Executor<'c, Database = Postgres>,
         for<'r> U: sqlx::FromRow<'r, sqlx_postgres::PgRow>,
-        U: Send + Sized + Unpin,
+        U: Send + Sized + Unpin + Debug,
     {
         // let rst = cot.instance_of::<sqlx::Pool<Postgres>>();
         // println!("sqlx::Pool<Postgres> = {}", rst);
 
-        let query = sqlx::query_as::<Postgres, U>("select 1").fetch_one(cot).await;
+        let rst = sqlx::query_as::<Postgres, U>("select * from test_user where id = 1").fetch_one(cot).await.unwrap();
+        println!("rst = {:?}", rst);
 
-        // todo!()
+        Ok(rst)
     }
 
     pub fn execute_mut<N>(&mut self, cot: &mut N)

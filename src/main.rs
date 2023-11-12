@@ -36,7 +36,8 @@ async fn main() {
         query
     };
 
-    rst.execute(&conn);
+    let user: User = rst.fetch_one(&conn).await.unwrap();
+    println!("{:?}", user)
 
 }
 

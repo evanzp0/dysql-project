@@ -6,7 +6,34 @@ use crate::DySqlFragment;
 
 pub(crate) trait SqlExpand {
     /// expend 对应 query 的 sql
-    fn expand(&self, st: &DySqlFragment) -> syn::Result<proc_macro2::TokenStream>;
+    fn expand(&self, st: &DySqlFragment) -> syn::Result<proc_macro2::TokenStream>{
+        let dto_ident = &st.dto;
+
+        // declare named_sql at runtime
+        let named_sql_declare = self.gen_named_sql_declare(st, &st.body, false)?;
+
+        let query_declare = if let Some(dto) = dto_ident {
+            quote!(
+                let query = dysql::Query::new(
+                    dysql::QueryCmd::FetchAll(named_sql), 
+                    Some(#dto)
+                );
+            )
+        } else {
+            quote!(
+                let query = dysql::Query::new(query_type, None);
+            )
+        };
+
+        let ret = quote!('rst_block: {
+            #named_sql_declare  // let named_sql = ....;
+            #query_declare      // let query = dysql::Query::new....;
+
+            query
+        });
+
+        Ok(ret)
+    }
 
     /// 生成运行时的 named_sql
     /// 
@@ -73,3 +100,21 @@ pub(crate) trait SqlExpand {
         Ok(rst)
     }
 }
+
+
+macro_rules! impl_sqlspand_types {
+    ($( $name:ident),*) => {
+        $(
+            impl SqlExpand for $name {}
+        )*
+    }
+}
+
+pub struct FetchAll;
+pub struct Execute;
+pub struct FetchOne;
+
+pub struct FetchScalar;
+pub struct Insert;
+
+impl_sqlspand_types!(FetchAll, Execute, FetchOne, FetchScalar, Insert);

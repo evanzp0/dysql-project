@@ -3,18 +3,16 @@
 //! Dysql 是一个轻量级的编译时生成 SQL 模板的库，它在运行时根据传入的 DTO 自动生成动态的 SQL 并设置数据参数，
 //! 在底层 Dysql 使用 sqlx, tokio-postgres, rbac 等框架执行最终的 SQL。
 
-mod sql_expend;
 mod sql_macro_fragment;
 mod sql_expand;
 
 use proc_macro::TokenStream;
-use sql_expand::SqlExpand;
+use sql_expand::{FetchAll, SqlExpand};
 use sql_macro_fragment::{STATIC_SQL_FRAGMENT_MAP, SqlMacroFragment};
 use syn::{punctuated::Punctuated, parse_macro_input, Token};
 use std::{collections::HashMap, sync::RwLock, path::PathBuf};
 use quote::quote;
 
-use sql_expend::FetchAll;
 use sql_macro_fragment::get_sql_fragment;
 
 /// 用于解析 dysql 所有过程宏的语句

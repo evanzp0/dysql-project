@@ -6,6 +6,7 @@ mod utils;
 mod deps_version;
 mod query;
 mod exec_adaptor;
+mod trim_sql;
 
 pub use extract_sql::*;
 pub use sql_dialect::*;
@@ -15,3 +16,4 @@ pub use utils::*;
 pub use deps_version::*;
 pub use query::*;
 pub use exec_adaptor::*;
+pub use trim_sql::*;

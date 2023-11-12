@@ -42,14 +42,16 @@ where
         // todo!()
     }
 
-    pub async fn fetch_one<C, U>(&mut self, cot: &C)
+    pub async fn fetch_one<'c, E, U>(&mut self, cot: E)
     where 
-        C: 'static + Sized,
+        E: sqlx::Executor<'c, Database = Postgres>,
+        for<'r> U: sqlx::FromRow<'r, sqlx_postgres::PgRow>,
+        U: Send + Sized + Unpin,
     {
-        let rst = cot.instance_of::<sqlx::Pool<Postgres>>();
+        // let rst = cot.instance_of::<sqlx::Pool<Postgres>>();
         // println!("sqlx::Pool<Postgres> = {}", rst);
 
-        // let query = sqlx::query::<Postgres>("select 1").fetch_one(& *cot).await;
+        let query = sqlx::query_as::<Postgres, U>("select 1").fetch_one(cot).await;
 
         // todo!()
     }

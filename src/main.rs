@@ -17,7 +17,7 @@ async fn main() {
     //     ORDER BY id"#
     // }).execute(&conn);
 
-    let mut rst = {
+    let rst = {
         let sql_tpl = match dysql::get_sql_template(3245002281272997655u64) {
             Some(tpl) => tpl,
             None => {
@@ -29,14 +29,14 @@ async fn main() {
         };
         let named_sql: String = sql_tpl.render(&dto);
         let named_sql = dysql::SqlNodeLinkList::new(&named_sql).trim().to_string();
-        let query = dysql::Query::new(
+        let mut query = dysql::Query::new(
             dysql::QueryCmd::FetchAll(named_sql),
             Some(dto),
         );
-        query
+        query.fetch_one(&conn).await.unwrap()
     };
 
-    let user: User = rst.fetch_one(&conn).await.unwrap();
+    let user: User = rst;
     println!("{:?}", user)
 
 }

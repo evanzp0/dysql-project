@@ -47,7 +47,7 @@ where
     pub async fn fetch_one<'c, E, U>(&mut self, cot: E) -> Result<U, DySqlError>
     where 
         E: sqlx::Executor<'c, Database = Postgres>,
-        for<'r> U: sqlx::FromRow<'r, sqlx_postgres::PgRow>,
+        for<'r> U: sqlx::FromRow<'r, <Postgres as sqlx::Database>::Row>,
         U: Send + Sized + Unpin + Debug,
     {
         // let rst = cot.instance_of::<sqlx::Pool<Postgres>>();

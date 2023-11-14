@@ -1,4 +1,4 @@
-use dysql::Content;
+use dysql::{Content, ExecutorAdatper};
 use sqlx::{FromRow, Postgres, Pool, postgres::PgPoolOptions};
 
 #[tokio::main]
@@ -17,28 +17,31 @@ async fn main() {
     //     ORDER BY id"#
     // }).execute(&conn);
 
-    let rst = {
-        let sql_tpl = match dysql::get_sql_template(3245002281272997655u64) {
-            Some(tpl) => tpl,
-            None => {
-                let serd_template = [
-                ];
-                dysql::put_sql_template(3245002281272997655u64, &serd_template)
-                    .expect("Unexpected error when put_sql_template")
-            }
-        };
-        let named_sql: String = sql_tpl.render(&dto);
-        let named_sql = dysql::SqlNodeLinkList::new(&named_sql).trim().to_string();
-        let mut query = dysql::Query::new(
-            dysql::QueryCmd::FetchAll(named_sql),
-            Some(dto),
-        );
-        query.fetch_one(&conn).await.unwrap()
-    };
+    // let rst = {
+    //     let sql_tpl = match dysql::get_sql_template(3245002281272997655u64) {
+    //         Some(tpl) => tpl,
+    //         None => {
+    //             let serd_template = [
+    //             ];
+    //             dysql::put_sql_template(3245002281272997655u64, &serd_template)
+    //                 .expect("Unexpected error when put_sql_template")
+    //         }
+    //     };
+    //     let named_sql: String = sql_tpl.render(&dto);
+    //     let named_sql = dysql::SqlNodeLinkList::new(&named_sql).trim().to_string();
+    //     let mut query = dysql::Query::new(
+    //         dysql::QueryCmd::FetchAll(named_sql),
+    //         Some(dto),
+    //     );
+    //     query.fetch_one(&conn).await.unwrap()
+    // };
 
-    let user: User = rst;
-    println!("{:?}", user)
+    // let user: User = rst;
+    // println!("{:?}", user)
 
+    conn.get_dialect();
+    let tran = conn.begin().await.unwrap();
+    println!("{:?}", tran.get_dialect())
 }
 
 #[derive(Content, Clone)]

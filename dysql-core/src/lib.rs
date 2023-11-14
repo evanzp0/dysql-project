@@ -1,10 +1,11 @@
+#![feature(return_position_impl_trait_in_trait)]
 mod extract_sql;
 mod sql_dialect;
 mod error;
 mod dysql_context;
 mod utils;
 mod deps_version;
-mod exec_adapter;
+mod adapter;
 mod trim_sql;
 
 pub use extract_sql::*;
@@ -13,5 +14,5 @@ pub use error::*;
 pub use dysql_context::*;
 pub use utils::*;
 pub use deps_version::*;
-pub use exec_adapter::*;
+pub use adapter::*;
 pub use trim_sql::*;

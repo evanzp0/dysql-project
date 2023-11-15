@@ -4,32 +4,34 @@ use quote::quote;
 
 use crate::DyClosure;
 
-pub(crate) trait SqlExpand {
-    /// expend 对应 query 的 sql
-    fn expand(&self, st: &DyClosure) -> syn::Result<proc_macro2::TokenStream>{
+pub(crate) struct SqlExpand;
+
+impl SqlExpand {
+
+    /// expend fetch_one
+    pub fn fetch_one(&self, st: &DyClosure) -> syn::Result<proc_macro2::TokenStream>{
         let dto_ident = &st.dto;
+        let executor_ident = &st.executor;
+        let executor_token = st.gen_executor_token();
+        let ret_type = &st.ret_type;
 
         // declare named_sql at runtime
         let named_sql_declare = self.gen_named_sql_declare(st, &st.body, false)?;
 
         let query_declare = if let Some(dto) = dto_ident {
             quote!(
-                let query = dysql::Query::new(
-                    dysql::QueryCmd::FetchAll(named_sql), 
-                    Some(#dto)
-                );
+                let query = #executor_ident.create_query(&named_sql, Some(#dto));
             )
         } else {
             quote!(
-                let query = dysql::Query::new(query_type, None);
+                let query = #executor_ident.create_query(&named_sql, None);
             )
         };
 
         let ret = quote!('rst_block: {
             #named_sql_declare  // let named_sql = ....;
-            #query_declare      // let query = dysql::Query::new....;
-
-            query
+            #query_declare      // let query = executor.create_query(....);
+            query.fetch_one::<_, #ret_type>(#executor_token).await
         });
 
         Ok(ret)
@@ -102,19 +104,19 @@ pub(crate) trait SqlExpand {
 }
 
 
-macro_rules! impl_sqlspand_types {
-    ($( $name:ident),*) => {
-        $(
-            impl SqlExpand for $name {}
-        )*
-    }
-}
+// macro_rules! impl_sqlspand_types {
+//     ($( $name:ident),*) => {
+//         $(
+//             impl SqlExpand for $name {}
+//         )*
+//     }
+// }
 
-pub struct FetchAll;
-pub struct Execute;
-pub struct FetchOne;
+// pub struct FetchAll;
+// pub struct Execute;
+// pub struct FetchOne;
 
-pub struct FetchScalar;
-pub struct Insert;
+// pub struct FetchScalar;
+// pub struct Insert;
 
-impl_sqlspand_types!(FetchAll, Execute, FetchOne, FetchScalar, Insert);
+// impl_sqlspand_types!(FetchAll, Execute, FetchOne, FetchScalar, Insert);

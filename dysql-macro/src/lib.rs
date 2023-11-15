@@ -7,7 +7,7 @@ mod sql_fragment;
 mod sql_expand;
 
 use proc_macro::TokenStream;
-use sql_expand::{FetchAll, SqlExpand};
+use sql_expand::SqlExpand;
 use sql_fragment::{STATIC_SQL_FRAGMENT_MAP, SqlFragment};
 use syn::{punctuated::Punctuated, parse_macro_input, Token};
 use std::{collections::HashMap, sync::RwLock, path::PathBuf};
@@ -19,11 +19,40 @@ use sql_fragment::get_sql_fragment;
 #[allow(dead_code)]
 #[derive(Debug)]
 pub(crate) struct DyClosure {
+    dto_ref_kind: RefKind,
+    is_executor_deref: bool,
+    executor: syn::Ident,
     dto: Option<syn::Ident>,
     sql_name: Option<String>,
     ret_type: Option<syn::Path>, // return type
     body: String,
     source_file: PathBuf,
+}
+
+#[derive(Debug)]
+enum RefKind {
+    Immutable,
+    Mutable,
+    None
+}
+
+impl DyClosure {
+    pub(crate) fn gen_executor_token(&self) -> proc_macro2::TokenStream {
+        let mut rst = match self.dto_ref_kind {
+            RefKind::Immutable => quote!(&),
+            RefKind::Mutable => quote!(&mut),
+            RefKind::None => quote!(),
+        };
+
+        if self.is_executor_deref {
+            rst.extend(quote!(*))
+        }
+
+        let executor = &self.executor;
+        rst.extend(quote!(#executor));
+
+        rst.into()
+    }
 }
 
 impl syn::parse::Parse for DyClosure {
@@ -34,39 +63,73 @@ impl syn::parse::Parse for DyClosure {
         // 测试是否 | 开始
         input.parse::<syn::Token!(|)>()?;
 
-        // 解析 dto
-        let dto: Option<syn::Ident>;
-        match input.parse::<syn::Token!(_)>() {
-            Ok(_) => dto = None,
-            Err(_) => match input.parse::<syn::Ident>() {
-                Err(e) => return Err(e),
-                Ok(d) => dto = Some(d),
-            },
+        // 解析 executor 的引用(可能为 &mut, &)
+        let dto_ref_kind: RefKind;
+        match input.parse::<syn::Token!(&)>() {
+            Err(_) => dto_ref_kind = RefKind::None,
+            Ok(_) => match input.parse::<syn::Token!(mut)>() {
+                Err(_) => dto_ref_kind = RefKind::Immutable,
+                Ok(_) => dto_ref_kind = RefKind::Mutable,
+            }
         }
 
-        // 测试是否 | 结束
+        // 解析 executor (可能为 *executor, executor)
+        let is_executor_deref: bool;
+        let executor: syn::Ident;
+        match input.parse::<syn::Token!(*)>() {
+            Ok(_) => is_executor_deref = true,
+            Err(_) => is_executor_deref = false,
+        }
+        match input.parse::<syn::Ident>() {
+            Err(e) => return Err(e),
+            Ok(ex) => executor = ex,
+        }
+
+        // 测试是否 | 结束, 并解析 ',dto '(dto 可能为 _, dto)
         let sql_name: Option<String>;
+        let dto: Option<syn::Ident>;
         match input.parse::<syn::Token!(|)>() {
-            // | 结束
-            Ok(_) => sql_name = None,
-            // 解析是否为接下来是否为 " , sql_name |"
+            Ok(_) => {
+                sql_name = None;
+                dto = None;
+            },
             Err(_) => match input.parse::<syn::Token!(,)>() {
-                Err(e) => return Err(e),
-                // 解析 sql_name
+                Err(e) =>  return Err(e),
                 Ok(_) => {
+                    // 解析 dto
                     match input.parse::<syn::Token!(_)>() {
-                        Ok(_) => { sql_name = None },
-                        Err(_) => match input.parse::<syn::LitStr>() {
-                            Ok(s) => sql_name = Some(s.value()),
-                            Err(_) => return Err(syn::Error::new(proc_macro2::Span::call_site(), "need specify the sql_name")),
+                        Ok(_) => dto = None,
+                        Err(_) => match input.parse::<syn::Ident>() {
+                            Err(e) => return Err(e),
+                            Ok(d) => dto = Some(d),
                         }
                     }
-                    // | 结束
-                    input.parse::<syn::Token!(|)>()?; 
+
+                    // 测试是否 | 结束，并解析 , 'sql_name |'
+                    match input.parse::<syn::Token!(|)>() {
+                        // | 结束
+                        Ok(_) => sql_name = None,
+                        // 解析是否为接下来是否为 " , sql_name |"
+                        Err(_) => match input.parse::<syn::Token!(,)>() {
+                            Err(e) => return Err(e),
+                            // 解析 sql_name
+                            Ok(_) => {
+                                match input.parse::<syn::Token!(_)>() {
+                                    Ok(_) => { sql_name = None },
+                                    Err(_) => match input.parse::<syn::LitStr>() {
+                                        Ok(s) => sql_name = Some(s.value()),
+                                        Err(_) => return Err(syn::Error::new(proc_macro2::Span::call_site(), "need specify the sql_name")),
+                                    }
+                                }
+                                // | 结束
+                                input.parse::<syn::Token!(|)>()?; 
+                            }
+                        }
+                    }
                 }
             }
         }
-        
+
         // 解析 -> 符号
         let ret_type:Option<syn::Path>;
         match input.parse::<syn::Token!(->)>() {
@@ -88,7 +151,7 @@ impl syn::parse::Parse for DyClosure {
         let span: proc_macro::Span = input.span().unwrap();
         let source_file = span.source_file().path();
 
-        let dsf = DyClosure { dto, sql_name, ret_type, body, source_file };
+        let dsf = DyClosure { dto_ref_kind, is_executor_deref, executor, dto, sql_name, ret_type, body, source_file };
         // eprintln!("{:#?}", dsf);
 
         Ok(dsf)
@@ -175,19 +238,19 @@ pub(crate) fn gen_type_path(s: &str) -> syn::Path {
 ///     rst
 /// );
 /// ```
-#[proc_macro]
-pub fn fetch_all(input: TokenStream) -> TokenStream {
-    // 将 input 解析成 SqlClosure
-    let st = syn::parse_macro_input!(input as DyClosure);
+// #[proc_macro]
+// pub fn fetch_all(input: TokenStream) -> TokenStream {
+//     // 将 input 解析成 SqlClosure
+//     let st = syn::parse_macro_input!(input as DyClosure);
 
-    // fetch_all 必须要指定单个 item 的返回值类型
-    if st.ret_type.is_none() { panic!("ret_type can't be null.") }
+//     // fetch_all 必须要指定单个 item 的返回值类型
+//     if st.ret_type.is_none() { panic!("ret_type can't be null.") }
 
-    match FetchAll.expand(&st) {
-        Ok(ret) => ret.into(),
-        Err(e) => e.into_compile_error().into(),
-    }
-}
+//     match FetchAll.expand(&st) {
+//         Ok(ret) => ret.into(),
+//         Err(e) => e.into_compile_error().into(),
+//     }
+// }
 
 ///
 /// fetch one data that filtered by dto
@@ -208,16 +271,19 @@ pub fn fetch_all(input: TokenStream) -> TokenStream {
 /// 
 /// assert_eq!(User { id: 2, name: Some("zhanglan".to_owned()), age: Some(21) }, rst);
 /// ```
-// #[proc_macro]
-// pub fn fetch_one(input: TokenStream) -> TokenStream {
-//     let st = syn::parse_macro_input!(input as DySqlFragmentContext);
-//     if st.ret_type.is_none() { panic!("ret_type can't be null.") }
+#[proc_macro]
+pub fn fetch_one(input: TokenStream) -> TokenStream {
+    // 将 input 解析成 SqlClosure
+    let st = syn::parse_macro_input!(input as DyClosure);
 
-//     match FetchOne.expand(&st) {
-//         Ok(ret) => ret.into(),
-//         Err(e) => e.into_compile_error().into(),
-//     }
-// }
+    // fetch_one 必须要指定单个 item 的返回值类型
+    if st.ret_type.is_none() { panic!("ret_type can't be null.") }
+
+    match SqlExpand.fetch_one(&st) {
+        Ok(ret) => ret.into(),
+        Err(e) => e.into_compile_error().into(),
+    }
+}
 
 ///
 /// Fetch a scalar value from query

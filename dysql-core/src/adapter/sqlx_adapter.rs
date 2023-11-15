@@ -27,6 +27,7 @@ where
         <DB as HasArguments<'q>>::Arguments: IntoArguments<'q, DB>
     {
         let query = sqlx::query_as::<DB, U>(self.sql);
+        // todo : query.bind(), 需要在Content里取值
         let rst = query.fetch_one(executor).await;
 
         rst.map_err(|e| DySqlError(ErrorInner::new(Kind::QueryError, Some(Box::new(e)), None)))

@@ -88,7 +88,7 @@ async fn test_fetch_all() {
     let conn = connect_postgres_db().await;
 
     let dto = UserDto{ id: None, name: None, age: Some(13) , id_rng: None };
-    let rst = fetch_all!(|dto| -> User {
+    let rst = fetch_all!(|&conn, dto| -> User {
         r#"SELECT * FROM test_user 
         WHERE 1 = 1
           {{#name}}AND name = :name{{/name}}

@@ -1,4 +1,4 @@
-use dysql::{Content, fetch_one, SqlxExecutorAdatper};
+use dysql::{Content, fetch_one, Value};
 use sqlx::{FromRow, Postgres, Pool, postgres::PgPoolOptions};
 
 #[tokio::main]
@@ -6,14 +6,25 @@ async fn main() {
     let conn = connect_postgres_db().await;
     let mut tran = conn.begin().await.unwrap();
 
-    let dto = UserDto{ id: None, name: None, age: Some(13) , id_rng: None };
+    let dto = UserDto{ id: Some(1), name: None, age: Some(13) , id_rng: None };
 
 
-    let rst = fetch_one!(|&mut *tran, dto| -> User {
-        r#"SELECT * FROM test_user 
-        WHERE id = 1
-        ORDER BY id"#
-    });
+    // let rst = fetch_one!(|&mut *tran, dto| -> User {
+    //     r#"SELECT * FROM test_user 
+    //     WHERE id = 1
+    //     ORDER BY id"#
+    // });
+
+    let val = get_id(&dto);
+    let query = sqlx::query_as::<Postgres, User>("select * from test_user where id = $1");
+    let query = match &val {
+        ValueKind::I64(v) => query.bind(v),
+    };
+
+    let rst = query
+        .fetch_one(&conn)
+        .await
+        .unwrap();
 
     println!("{:?}", rst);
 
@@ -52,6 +63,14 @@ async fn main() {
     // let user: User = rst;
     // println!("{:?}", user)
 
+}
+
+enum ValueKind {
+    I64(i64)
+}
+
+fn get_id(dto: &UserDto) -> ValueKind {
+    ValueKind::I64(dto.id.unwrap())
 }
 
 #[derive(Content, Clone)]

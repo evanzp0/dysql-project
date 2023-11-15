@@ -1,9 +1,9 @@
-use dysql::{Content, SqlxExecutorAdatper, SqlxQuery, SqlxTranAdatper};
+use dysql::{Content, SqlxExecutorAdatper, SqlxTranAdatper};
 use sqlx::{FromRow, Postgres, Pool, postgres::PgPoolOptions};
 
 #[tokio::main]
 async fn main() {
-    let mut conn = connect_postgres_db().await;
+    let conn = connect_postgres_db().await;
     let mut tran = conn.begin().await.unwrap();
 
     let dto = UserDto{ id: None, name: None, age: Some(13) , id_rng: None };
@@ -29,14 +29,15 @@ async fn main() {
             }
         };
         let named_sql: String = sql_tpl.render(&dto);
-        let named_sql = dysql::SqlNodeLinkList::new(&named_sql).trim().to_string();
-        // let mut query = dysql::Query::new(
-        //     dysql::QueryCmd::FetchAll(named_sql),
-        //     Some(dto),
-        // );
-        // query.fetch_one(&conn).await.unwrap()
-        let query = tran.create_query(named_sql, Some(dto));
-        let rst: User = query.fetch_one(&mut tran).await;
+        let _named_sql = dysql::SqlNodeLinkList::new(&named_sql).trim().to_string();
+
+        let named_sql = "select * from test_user where id = 1";
+        // let query = conn.create_query(&named_sql, Some(dto));
+        // let rst: User = query.fetch_one(&conn).await.unwrap();
+        let query = tran.create_query(&named_sql, Some(dto));
+        let rst: User = query.fetch_one(&mut *tran).await.unwrap();
+        
+        
         println!("{:?}", rst);
     };
 

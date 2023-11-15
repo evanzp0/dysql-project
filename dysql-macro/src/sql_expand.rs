@@ -29,6 +29,7 @@ impl SqlExpand {
         };
 
         let ret = quote!('rst_block: {
+            use dysql::SqlxExecutorAdatper;
             #named_sql_declare  // let named_sql = ....;
             #query_declare      // let query = executor.create_query(....);
             query.fetch_one::<_, #ret_type>(#executor_token).await

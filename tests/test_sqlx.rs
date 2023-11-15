@@ -1,8 +1,7 @@
 // #![cfg(feature = "sqlx")]
 
 use std::str::FromStr;
-
-use dysql::{fetch_all, Content};
+use dysql::{Content, sql, fetch_one};
 //  PageDto, SortModel, insert, sql, fetch_one, fetch_scalar, execute, page, 
 
 use sqlx::{
@@ -83,33 +82,33 @@ async fn connect_sqlite_db() -> SqliteConnection {
     conn
 }
 
-#[tokio::test]
-async fn test_fetch_all() {
-    let conn = connect_postgres_db().await;
-
-    let dto = UserDto{ id: None, name: None, age: Some(13) , id_rng: None };
-    let rst = fetch_all!(|&conn, dto| -> User {
-        r#"SELECT * FROM test_user 
-        WHERE 1 = 1
-          {{#name}}AND name = :name{{/name}}
-          {{#age}}AND age > :age{{/age}}
-        ORDER BY id"#
-    });
-    // assert_eq!(7, rst.len());
-}
-
-// sql!("select_sql","select * from test_user ");
 // #[tokio::test]
-// async fn test_fetch_one() {
+// async fn test_fetch_all() {
 //     let conn = connect_postgres_db().await;
-//     // let dto = UserDto{ id: Some(2), name: None, age: None, id_rng: None };
-//     let dto = dysql::Value::new(2_i64);
 
-//     let rst = fetch_one!(|&conn, dto| -> User {
-//         select_sql + "where id = :value order by id"
-//     }).unwrap();
-//     assert_eq!(User { id: 2, name: Some("zhanglan".to_owned()), age: Some(21) }, rst);
+//     let dto = UserDto{ id: None, name: None, age: Some(13) , id_rng: None };
+//     let rst = fetch_all!(|&conn, dto| -> User {
+//         r#"SELECT * FROM test_user 
+//         WHERE 1 = 1
+//           {{#name}}AND name = :name{{/name}}
+//           {{#age}}AND age > :age{{/age}}
+//         ORDER BY id"#
+//     });
+//     // assert_eq!(7, rst.len());
 // }
+
+sql!("select_sql","select * from test_user ");
+#[tokio::test]
+async fn test_fetch_one() {
+    let conn = connect_postgres_db().await;
+    // let dto = UserDto{ id: Some(2), name: None, age: None, id_rng: None };
+    let dto = dysql::Value::new(2_i64);
+
+    let rst = fetch_one!(|&conn, dto| -> User {
+        select_sql + "where id = :value order by id"
+    }).unwrap();
+    assert_eq!(User { id: 2, name: Some("zhanglan".to_owned()), age: Some(21) }, rst);
+}
 
 // #[tokio::test]
 // async fn test_fetch_one_mysql() {

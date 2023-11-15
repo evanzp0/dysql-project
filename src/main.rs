@@ -32,10 +32,10 @@ async fn main() {
         let _named_sql = dysql::SqlNodeLinkList::new(&named_sql).trim().to_string();
 
         let named_sql = "select * from test_user where id = 1";
-        // let query = conn.create_query(&named_sql, Some(dto));
-        // let rst: User = query.fetch_one(&conn).await.unwrap();
-        let query = tran.create_query(&named_sql, Some(dto));
-        let rst: User = query.fetch_one(&mut *tran).await.unwrap();
+        let query = conn.create_query(&named_sql, Some(dto));
+        let rst: User = query.fetch_one(&conn).await.unwrap();
+        // let query = tran.create_query(&named_sql, Some(dto));
+        // let rst: User = query.fetch_one(&mut *tran).await.unwrap();
         
         
         println!("{:?}", rst);

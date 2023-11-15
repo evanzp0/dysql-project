@@ -1,4 +1,4 @@
-use dysql::{Content, SqlxExecutorAdatper, SqlxTranAdatper};
+use dysql::{Content, SqlxExecutorAdatper};
 use sqlx::{FromRow, Postgres, Pool, postgres::PgPoolOptions};
 
 #[tokio::main]

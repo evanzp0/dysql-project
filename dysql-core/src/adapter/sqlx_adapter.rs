@@ -5,7 +5,7 @@ use std::marker::PhantomData;
 use dysql_tpl::Content;
 use sqlx::{Executor, FromRow, Database, IntoArguments, database::HasArguments};
 
-use crate::{DySqlError, ErrorInner, Kind};
+use crate::{DySqlError, ErrorInner, Kind, SqlDialect};
 
 pub struct SqlxQuery <'q, D, DB> 
 where 
@@ -41,12 +41,5 @@ where
     DB: Database,
 {
     fn create_query(&self, sql: &'q str, dto: Option<D>) -> SqlxQuery<'q, D, DB>;
-}
-
-pub trait SqlxTranAdatper<'q, D, DB>
-where 
-    D: Content + 'static + Send + Sync,
-    DB: Database,
-{
-    fn create_query(&self, sql: &'q str, dto: Option<D>) -> SqlxQuery<'q, D, DB>;
+    fn get_dialect(&self) -> SqlDialect;
 }

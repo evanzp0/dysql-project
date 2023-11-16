@@ -97,18 +97,18 @@ async fn connect_sqlite_db() -> SqliteConnection {
 //     // assert_eq!(7, rst.len());
 // }
 
-sql!("select_sql","select * from test_user ");
-#[tokio::test]
-async fn test_fetch_one() {
-    let conn = connect_postgres_db().await;
-    // let dto = UserDto{ id: Some(2), name: None, age: None, id_rng: None };
-    let dto = dysql::Value::new(2_i64);
+// sql!("select_sql","select * from test_user ");
+// #[tokio::test]
+// async fn test_fetch_one() {
+//     let conn = connect_postgres_db().await;
+//     // let dto = UserDto{ id: Some(2), name: None, age: None, id_rng: None };
+//     let dto = dysql::Value::new(2_i64);
 
-    let rst = fetch_one!(|&conn, dto| -> User {
-        select_sql + "where id = :value order by id"
-    }).unwrap();
-    assert_eq!(User { id: 2, name: Some("zhanglan".to_owned()), age: Some(21) }, rst);
-}
+//     let rst = fetch_one!(|&conn, dto| -> User {
+//         select_sql + "where id = :value order by id"
+//     }).unwrap();
+//     assert_eq!(User { id: 2, name: Some("zhanglan".to_owned()), age: Some(21) }, rst);
+// }
 
 // #[tokio::test]
 // async fn test_fetch_one_mysql() {

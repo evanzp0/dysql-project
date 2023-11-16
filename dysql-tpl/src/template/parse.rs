@@ -53,9 +53,9 @@ pub enum Tag {
     #[token("{{!")]
     Comment,
 
-    /// `{{>partial}}` tag
-    #[token("{{>")]
-    Partial,
+    // /// `{{>partial}}` tag
+    // #[token("{{>")]
+    // Partial,
 
     /// `{{?not_none}}` tag
     #[token("{{?")]
@@ -73,7 +73,7 @@ impl From<ParseError> for TemplateError {
 
 #[derive(Logos)]
 #[logos(
-    skip r"[ ]+",
+    skip r"[. ]+",
     extras = Braces,
 )]
 #[derive(Debug)]
@@ -86,7 +86,7 @@ enum Closing {
     #[token("}}}")]
     Match,
 
-    #[regex(r"[^ \}]+")]
+    #[regex(r"[^. \}]+")]
     Ident,
 }
 
@@ -246,17 +246,17 @@ impl Template {
                     //     }
                     // }
                 }
-                Tag::Partial => {
-                    match closing.next() {
-                        Some(Ok(Closing::Match)) => {}
-                        _ => return Err(TemplateError::UnclosedTag),
-                    }
+                // Tag::Partial => {
+                //     match closing.next() {
+                //         Some(Ok(Closing::Match)) => {}
+                //         _ => return Err(TemplateError::UnclosedTag),
+                //     }
 
-                    self.blocks.push(Block::nameless(html, tag));
-                    let partial = partials.get_partial(name)?;
-                    self.blocks.extend_from_slice(&partial.blocks);
-                    self.capacity_hint += partial.capacity_hint;
-                }
+                //     self.blocks.push(Block::nameless(html, tag));
+                //     let partial = partials.get_partial(name)?;
+                //     self.blocks.extend_from_slice(&partial.blocks);
+                //     self.capacity_hint += partial.capacity_hint;
+                // }
                 _ => {
                     loop {
                         match closing.next() {

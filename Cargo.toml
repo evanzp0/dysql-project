@@ -6,7 +6,7 @@ build = "./build.rs"
 
 [[bin]]
 name = "main"
-path = "src/main_bak2.rs"
+path = "src/main_bak.rs"
 
 [workspace]
 members = [

@@ -9,8 +9,8 @@
 
 use super::{Block, Tag};
 use crate::encoding::Encoder;
-use crate::Content;
-use crate::traits::{Combine, ContentSequence};
+use crate::{Content, Next};
+use crate::traits::ContentSequence;
 use std::ops::Range;
 
 /// A section of a `Template` that can be rendered individually, usually delimited by
@@ -20,10 +20,6 @@ pub struct Section<'section, Contents: ContentSequence> {
     blocks: &'section [Block],
     contents: Contents,
 }
-
-/// Necessary so that the warning of very complex type created when compiling
-/// with `cargo clippy` doesn't propagate to downstream crates
-type Next<C, X> = (<C as Combine>::I, <C as Combine>::J, <C as Combine>::K, X);
 
 impl<'section> Section<'section, ()> {
     #[inline]

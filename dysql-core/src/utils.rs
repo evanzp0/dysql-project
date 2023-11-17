@@ -111,3 +111,11 @@ where
 }
 
 impl<T: ?Sized + Any> InstanceOf for T {}
+
+/// 包装出一个用于 SQL 参数绑定的闭包
+pub fn wrap_binder_fn<V, Binder, F>(f: F) -> impl FnOnce(V, Binder) -> Binder
+where 
+    F: FnOnce(V, Binder) -> Binder,
+{
+    f
+}

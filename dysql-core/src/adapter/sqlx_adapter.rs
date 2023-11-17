@@ -10,7 +10,9 @@ where
     D: Content + 'static + Send + Sync,
     DB: Database,
 {
+    /// 不含模版信息的且替换掉命名参数的 sql
     pub sql: &'q str,
+    pub param_names: Vec<&'q str>,
     pub dto: Option<D>,
     pub(crate) temp_db: PhantomData<DB>,
 }
@@ -34,21 +36,25 @@ where
     }
 }
 
-pub trait SqlxExecutorAdatper<'q, D, DB> 
+pub trait SqlxExecutorAdatper<'q, DB> 
 where 
-    D: Content + 'static + Send + Sync,
     DB: Database,
 {
-    fn create_query(&self, sql: &'q str, dto: Option<D>) -> SqlxQuery<'q, D, DB>
+    fn create_query<D> (&self, sql: &'q str, param_names: Vec<&'q str>, dto: Option<D>) -> SqlxQuery<'q, D, DB>
+    where 
+        D: Content + 'static + Send + Sync,
+        DB: Database
     {
         SqlxQuery {
             sql,
+            param_names,
             dto,
             temp_db: PhantomData,
         }
     }
 
-    fn get_dialect(&self) -> SqlDialect {
+    fn get_dialect(&self) -> SqlDialect 
+    {
         // todo! 以下分支需要用条件宏进行编译
         if TypeId::of::<DB>() == TypeId::of::<sqlx::Postgres>() {
             return SqlDialect::postgres
@@ -67,19 +73,26 @@ where
 }
 
 macro_rules! impl_sqlx_executor_adapter_types {
-    ($( $name:ty ),*) => {
-        $(
-            impl<'q, D, DB> SqlxExecutorAdatper<'q, D, DB> for $name
-            where 
-                D: Content + 'static + Send + Sync,
-                DB: Database
-            {}
-        )*
+    (
+        $(::$executor:ident)+
+        <
+            $($q:lifetime,)?
+            $database:path
+        >
+    ) => {
+        impl<'q> SqlxExecutorAdatper<'q, $database> for $(::$executor)*<$($q,)* $database> {}
     }
 }
 
-impl_sqlx_executor_adapter_types!(sqlx::Transaction<'q, DB>);
 // todo! 以下实现需要用tiaojian宏进行编译
-impl_sqlx_executor_adapter_types!(sqlx::Pool<sqlx::Postgres>, sqlx::PgConnection);
-impl_sqlx_executor_adapter_types!(sqlx::Pool<sqlx::MySql>, sqlx::MySqlConnection);
-impl_sqlx_executor_adapter_types!(sqlx::Pool<sqlx::Sqlite>, sqlx::SqliteConnection);
+impl_sqlx_executor_adapter_types!(::sqlx::Transaction<'q, sqlx::Postgres>);
+impl_sqlx_executor_adapter_types!(::sqlx::Pool<sqlx::Postgres>);
+impl<'q> SqlxExecutorAdatper<'q, sqlx::Postgres> for sqlx::PgConnection {}
+
+impl_sqlx_executor_adapter_types!(::sqlx::Transaction<'q, sqlx::MySql>);
+impl_sqlx_executor_adapter_types!(::sqlx::Pool<sqlx::MySql>);
+impl<'q> SqlxExecutorAdatper<'q, sqlx::Postgres> for sqlx::MySqlConnection {}
+
+impl_sqlx_executor_adapter_types!(::sqlx::Transaction<'q, sqlx::Sqlite>);
+impl_sqlx_executor_adapter_types!(::sqlx::Pool<sqlx::Sqlite>);
+impl<'q> SqlxExecutorAdatper<'q, sqlx::Sqlite> for sqlx::SqliteConnection {}

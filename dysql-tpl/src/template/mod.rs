@@ -12,11 +12,10 @@ use std::hash::{Hash, Hasher};
 use std::io;
 use std::path::Path;
 
-use fnv::FnvHasher;
 use serde::{Serialize, Deserialize};
 
 use crate::encoding::EscapingIOEncoder;
-use crate::Partials;
+use crate::{Partials, hash_name};
 use crate::{Content, TemplateError};
 
 mod parse;
@@ -146,13 +145,6 @@ pub(crate) struct Block {
     hash: u64,
     tag: Tag,
     children: u32,
-}
-
-#[inline]
-pub(crate) fn hash_name(name: &str) -> u64 {
-    let mut hasher = FnvHasher::default();
-    name.hash(&mut hasher);
-    hasher.finish()
 }
 
 impl Block {

@@ -1,13 +1,6 @@
-use dysql::{Content, fetch_one, Value};
+use dysql::{Content, fetch_one, Value, wrap_binder_fn};
 use sqlx::{FromRow, Postgres, Pool, postgres::{PgPoolOptions, PgArguments}};
 use sqlx_core::query_as::QueryAs;
-
-fn wrap<V, Q, F>(f: F) -> impl FnOnce(V, Q) -> Q 
-where 
-    F: FnOnce(V, Q) -> Q,
-{
-    f
-}
 
 #[tokio::main]
 async fn main() {
@@ -26,13 +19,13 @@ async fn main() {
     // let val = get_id(&dto);
     let query = sqlx::query_as::<Postgres, User>("select * from test_user where id = $1 and name = $2");
 
-    let wfn = wrap(move |val, q: QueryAs<'_, Postgres, User, PgArguments> | {
+    let wfn = wrap_binder_fn(move |val, q: QueryAs<'_, Postgres, User, PgArguments> | {
         let q = q.bind(val);
         q
     });
 
     let query = wfn(&dto.id, query);
-    let wfn = wrap(move |val, q: QueryAs<'_, Postgres, User, PgArguments> | {
+    let wfn = wrap_binder_fn(move |val, q: QueryAs<'_, Postgres, User, PgArguments> | {
         let q = q.bind(val);
         q
     });

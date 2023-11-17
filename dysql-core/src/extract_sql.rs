@@ -25,10 +25,10 @@ use crate::{sql_dialect::SqlDialect, error::{ParseSqlResult, ParseSqlError}};
 ///     rst.unwrap()
 /// );
 /// ```
-pub fn extract_params(o_sql: &str, sql_dial: SqlDialect) -> ParseSqlResult<(String, Vec<String>)> {
+pub fn extract_params<'a>(o_sql: &'a str, sql_dial: SqlDialect) -> ParseSqlResult<(String, Vec<&'a str>)> {
     // eprintln!("{:#?}", o_sql);
     let mut r_sql = String::new();
-    let mut params: Vec<String> = vec![];
+    let mut params: Vec<&'a str> = vec![];
 
     let mut count = 0;
     let mut start: usize = 0;
@@ -66,7 +66,7 @@ pub fn extract_params(o_sql: &str, sql_dial: SqlDialect) -> ParseSqlResult<(Stri
 
                 cur = current_cursor;
                 let p = &o_sql[start..cur];
-                params.push(p.to_string());
+                params.push(p);
                 start = cur;
             }
         } else {
@@ -105,7 +105,7 @@ mod tests {
     fn test_extract_sql() {
         let sql = "select * from abc where id=:id and name=:name";
         let rst = extract_params(sql, SqlDialect::postgres);
-        assert_eq!(("select * from abc where id=$1 and name=$2".to_owned(), vec!["id".to_owned(), "name".to_owned()]), rst.unwrap());
+        assert_eq!(("select * from abc where id=$1 and name=$2".to_owned(), vec!["id", "name"]), rst.unwrap());
     }
 
     #[test]

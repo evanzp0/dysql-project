@@ -1,3 +1,4 @@
+
 use dysql::{Content, SqlxExecutorAdatper};
 use sqlx::{FromRow, Postgres, Pool, postgres::PgPoolOptions};
 
@@ -22,8 +23,8 @@ async fn main() {
         let sql_tpl = match dysql::get_sql_template(3245002281272997655u64) {
             Some(tpl) => tpl,
             None => {
-                let serd_template = [
-                ];
+                let serd_template = dysql::Template::new("select * from test_user where id = 1").unwrap();
+                let serd_template = serd_template.serialize();
                 dysql::put_sql_template(3245002281272997655u64, &serd_template)
                     .expect("Unexpected error when put_sql_template")
             }
@@ -32,10 +33,18 @@ async fn main() {
         let _named_sql = dysql::SqlNodeLinkList::new(&named_sql).trim().to_string();
 
         let named_sql = "select * from test_user where id = 1";
-        let query = conn.create_query(&named_sql, Some(dto));
-        let rst: User = query.fetch_one(&conn).await.unwrap();
-        // let query = tran.create_query(&named_sql, Some(dto));
-        // let rst: User = query.fetch_one(&mut *tran).await.unwrap();
+        let (sql, param_names) = dysql::extract_params(named_sql, conn.get_dialect()).unwrap(); // add, need handle exception
+
+        // let query = conn.create_query(&sql, param_names, Some(dto)); // add, need handle exception
+        // let rst: User = query.fetch_one(&conn).await.unwrap();
+
+        let query = tran.create_query(&sql, param_names, Some(dto));
+        let rst: User = query.fetch_one(&mut *tran).await.unwrap();
+
+        // conn.get_dialect();
+        // tran.get_dialect();
+
+
         
         
         println!("{:?}", rst);

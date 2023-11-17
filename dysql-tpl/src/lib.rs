@@ -65,7 +65,7 @@
 
 #![warn(missing_docs)]
 use std::collections::HashMap;
-use std::hash::BuildHasher;
+use std::hash::{BuildHasher, Hash, Hasher};
 use std::path::{Path, PathBuf};
 
 use std::io::ErrorKind;
@@ -73,16 +73,31 @@ use std::io::ErrorKind;
 mod content;
 mod error;
 mod template;
+mod simple;
 pub mod traits;
 
 pub mod encoding;
 
 pub use content::Content;
 pub use error::TemplateError;
+use fnv::FnvHasher;
 pub use template::{Section, Template};
+pub use simple::SimpleSection;
 
 #[cfg(feature = "export_derive")]
 pub use dysql_tpl_derive::Content;
+use traits::Combine;
+
+/// Necessary so that the warning of very complex type created when compiling
+/// with `cargo clippy` doesn't propagate to downstream crates
+type Next<C, X> = (<C as Combine>::I, <C as Combine>::J, <C as Combine>::K, X);
+
+#[inline]
+pub(crate) fn hash_name(name: &str) -> u64 {
+    let mut hasher = FnvHasher::default();
+    name.hash(&mut hasher);
+    hasher.finish()
+}
 
 /// Aggregator for [`Template`s](./struct.Template.html), that allows them to
 /// be loaded from the file system and use partials: `{{>partial}}`

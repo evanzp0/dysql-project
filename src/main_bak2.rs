@@ -1,12 +1,20 @@
 use dysql::{Content, fetch_one, Value};
-use sqlx::{FromRow, Postgres, Pool, postgres::PgPoolOptions};
+use sqlx::{FromRow, Postgres, Pool, postgres::{PgPoolOptions, PgArguments}};
+use sqlx_core::query_as::QueryAs;
+
+fn wrap<V, Q, F>(f: F) -> impl FnOnce(V, Q) -> Q 
+where 
+    F: FnOnce(V, Q) -> Q,
+{
+    f
+}
 
 #[tokio::main]
 async fn main() {
     let conn = connect_postgres_db().await;
     let mut tran = conn.begin().await.unwrap();
 
-    let dto = UserDto{ id: Some(1), name: None, age: Some(13) , id_rng: None };
+    let dto = UserDto{ id: Some(1), name: Some("huanglan1".to_owned()), age: Some(13) , id_rng: None };
 
 
     // let rst = fetch_one!(|&mut *tran, dto| -> User {
@@ -15,16 +23,28 @@ async fn main() {
     //     ORDER BY id"#
     // });
 
-    let val = get_id(&dto);
-    let query = sqlx::query_as::<Postgres, User>("select * from test_user where id = $1");
-    let query = match &val {
-        ValueKind::I64(v) => query.bind(v),
-    };
+    // let val = get_id(&dto);
+    let query = sqlx::query_as::<Postgres, User>("select * from test_user where id = $1 and name = $2");
+
+    let wfn = wrap(move |val, q: QueryAs<'_, Postgres, User, PgArguments> | {
+        let q = q.bind(val);
+        q
+    });
+
+    let query = wfn(&dto.id, query);
+    let wfn = wrap(move |val, q: QueryAs<'_, Postgres, User, PgArguments> | {
+        let q = q.bind(val);
+        q
+    });
+    let query = wfn(&dto.name, query);
+
+    // let query = match val {
+    //     ValueKind::I64(v) => query.bind(v),
+    // };
 
     let rst = query
         .fetch_one(&conn)
-        .await
-        .unwrap();
+        .await;
 
     println!("{:?}", rst);
 
@@ -65,12 +85,12 @@ async fn main() {
 
 }
 
-enum ValueKind {
-    I64(i64)
+enum ValueKind<'a> {
+    I64(&'a Option<i64>)
 }
 
 fn get_id(dto: &UserDto) -> ValueKind {
-    ValueKind::I64(dto.id.unwrap())
+    ValueKind::I64(&dto.id)
 }
 
 #[derive(Content, Clone)]

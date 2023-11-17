@@ -82,7 +82,7 @@ pub use content::Content;
 pub use error::TemplateError;
 use fnv::FnvHasher;
 pub use template::{Section, Template};
-pub use simple::SimpleSection;
+pub use simple::SimpleTemplate;
 
 #[cfg(feature = "export_derive")]
 pub use dysql_tpl_derive::Content;

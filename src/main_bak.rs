@@ -29,8 +29,8 @@ async fn main() {
                     .expect("Unexpected error when put_sql_template")
             }
         };
-        let named_sql: String = sql_tpl.render(&dto);
-        let _named_sql = dysql::SqlNodeLinkList::new(&named_sql).trim().to_string();
+        let named_sql = sql_tpl.render(&dto);
+        let named_sql = dysql::SqlNodeLinkList::new(&named_sql).trim().to_string();
 
         let named_sql = "select * from test_user where id = 1";
         let (sql, param_names) = dysql::extract_params(named_sql, conn.get_dialect()).unwrap(); // add, need handle exception

@@ -1,16 +1,19 @@
 use serde::{Serialize, Deserialize};
 
-use crate::{SimpleSection, Content};
+use crate::{Content, simple::simple_section::SimpleSection};
 
-use super::{SimpleBlock, SimpleTag};
+use super::{SimpleValue, simple_block::{SimpleBlock, SimpleTag}};
 
+/// 用于在 SQL 中绑定 DTO 值的简化模版
 #[derive(Debug)]
 #[derive(Serialize, Deserialize)]
 pub struct SimpleTemplate {
-    blocks: Vec<SimpleBlock>
+    blocks: Vec<SimpleBlock>,
 }
 
-impl SimpleTemplate {
+impl SimpleTemplate
+{
+    /// 生成简化模版
     pub fn new(source: &str) -> Self
     {
         let param_names: Vec<&str> = source.split(".").collect();
@@ -27,17 +30,17 @@ impl SimpleTemplate {
         }).collect();
 
         Self {
-            blocks
+            blocks,
         }
     }
 
-    pub fn apply<F, V, Q, C>(&self, binder: F, content: &C)
+    /// 进行参数值绑定
+    pub fn apply<C>(&self, content: &C) -> SimpleValue
     where 
-        F: FnOnce(V, Q) -> Q,
         C: Content,
     {
-        let section = SimpleSection::new(&self.blocks, binder)
+        let section = SimpleSection::new(&self.blocks)
             .with(content);
-        section.apply();
+        section.apply()
     }
 }

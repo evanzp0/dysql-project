@@ -108,7 +108,7 @@ impl Template {
     pub(crate) fn parse(
         &mut self,
         source: &str,
-        partials: &mut impl Partials,
+        _partials: &mut impl Partials,
     ) -> Result<usize, TemplateError> {
         let mut last = 0;
         let mut lex = Tag::lexer(source);

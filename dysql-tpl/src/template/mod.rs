@@ -8,7 +8,6 @@
 // along with Ramhorns.  If not, see <http://www.gnu.org/licenses/>
 
 use std::fs::File;
-use std::hash::{Hash, Hasher};
 use std::io;
 use std::path::Path;
 

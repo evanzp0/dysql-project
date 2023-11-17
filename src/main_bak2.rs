@@ -18,13 +18,13 @@ async fn main() {
 
     // let val = get_id(&dto);
     let query = sqlx::query_as::<Postgres, User>("select * from test_user where id = $1 and name = $2");
-
+    
     let wfn = wrap_binder_fn(move |val, q: QueryAs<'_, Postgres, User, PgArguments> | {
         let q = q.bind(val);
         q
     });
-
     let query = wfn(&dto.id, query);
+
     let wfn = wrap_binder_fn(move |val, q: QueryAs<'_, Postgres, User, PgArguments> | {
         let q = q.bind(val);
         q

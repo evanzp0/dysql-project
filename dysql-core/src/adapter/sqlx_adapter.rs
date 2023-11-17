@@ -1,6 +1,6 @@
 use std::{marker::PhantomData, any::TypeId};
 
-use dysql_tpl::Content;
+use dysql_tpl::{Content, SimpleTemplate};
 use sqlx::{Executor, FromRow, Database, IntoArguments, database::HasArguments};
 
 use crate::{DySqlError, ErrorInner, Kind, SqlDialect};
@@ -30,6 +30,13 @@ where
     {
         let query = sqlx::query_as::<DB, U>(self.sql);
         // todo : query.bind(), 需要在Content里取值
+        for params in self.param_names {
+            let stpl = SimpleTemplate::new(params);
+            let val = stpl.apply(&self.dto);
+
+            todo!()
+        }
+
         let rst = query.fetch_one(executor).await;
 
         rst.map_err(|e| DySqlError(ErrorInner::new(Kind::QueryError, Some(Box::new(e)), None)))

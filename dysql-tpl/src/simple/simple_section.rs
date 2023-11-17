@@ -45,7 +45,8 @@ where
         rst
     }
 
-    pub(crate) fn apply(&self) -> SimpleValue {
+    pub(crate) fn apply(&self) -> SimpleValue<'section> 
+    {
         todo!()
     }
 }

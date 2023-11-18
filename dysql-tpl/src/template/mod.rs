@@ -75,7 +75,10 @@ impl Template {
     }
 
     /// Render this `Template` with a given `Content` to a `String`.
-    pub fn render<C: crate::Content>(&self, content: &C) -> String {
+    pub fn render<C>(&self, content: &C) -> String 
+    where
+        for<'section> C: Content
+    {
         let mut capacity = content.capacity_hint(self);
 
         // Add extra 25% extra capacity for HTML escapes and an odd double variable use.
@@ -96,7 +99,7 @@ impl Template {
     pub fn render_to_writer<W, C>(&self, writer: &mut W, content: &C) -> io::Result<()>
     where
         W: io::Write,
-        C: Content,
+        for<'section> C: Content,
     {
         let mut encoder = EscapingIOEncoder::new(writer);
         Section::new(&self.blocks)
@@ -108,7 +111,7 @@ impl Template {
     pub fn render_to_file<P, C>(&self, path: P, content: &C) -> io::Result<()>
     where
         P: AsRef<Path>,
-        C: Content,
+        for<'section> C: Content,
     {
         use io::BufWriter;
 

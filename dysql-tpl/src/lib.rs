@@ -90,7 +90,7 @@ use traits::Combine;
 
 /// Necessary so that the warning of very complex type created when compiling
 /// with `cargo clippy` doesn't propagate to downstream crates
-type Next<C, X> = (<C as Combine>::I, <C as Combine>::J, <C as Combine>::K, X);
+type Next<'section, C, X> = (<C as Combine>::I, <C as Combine>::J, <C as Combine>::K, X);
 
 #[inline]
 pub(crate) fn hash_name(name: &str) -> u64 {

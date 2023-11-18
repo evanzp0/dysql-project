@@ -23,6 +23,7 @@ macro_rules! impl_simple_value_varaint {
                 option_NaiveDateTime(Option<NaiveDateTime>),
                 t_Utc(DateTime<Utc>),
                 option_Utc(Option<DateTime<Utc>>),
+                t_unknow,
             }
         }
     }

@@ -50,7 +50,7 @@ where
     /// Attach a `Content` to this section. This will keep track of a stack up to
     /// 4 `Content`s deep, cycling on overflow.
     #[inline]
-    pub fn with<X>(self, content: &X) -> Section<'section, Next<C, &X>>
+    pub fn with<X>(self, content: &X) -> Section<'section, Next<'section, C, &X>>
     where
         X: Content + ?Sized,
     {

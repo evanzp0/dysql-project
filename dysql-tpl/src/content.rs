@@ -8,6 +8,8 @@
 // along with Ramhorns.  If not, see <http://www.gnu.org/licenses/>
 
 use crate::encoding::Encoder;
+use crate::simple::simple_section::SimpleSection;
+use crate::simple::{SimpleValue, SimpleError};
 use crate::template::{Section, Template};
 use crate::traits::ContentSequence;
 
@@ -50,6 +52,14 @@ pub trait Content {
         self.render_escaped(encoder)
     }
 
+    /// Apply self as a variable.
+    ///
+    /// This doesn't perform any escaping at all.
+    #[inline]
+    fn apply_unescape(&self) -> Result<SimpleValue, SimpleError> {
+        Ok(SimpleValue::t_unknow)
+    }
+
     /// Render a section with self.
     #[inline]
     fn render_section<C, E, IC>(
@@ -68,6 +78,18 @@ pub trait Content {
         } else {
             Ok(())
         }
+    }
+
+    /// Apply a section with self.
+    #[inline]
+    fn apply_section<C>(
+        &self,
+        section: SimpleSection<C>
+    ) -> Result<SimpleValue, SimpleError>
+    where
+        C: ContentSequence,
+    {
+        section.apply()
     }
 
     /// Render a section with self.
@@ -138,6 +160,15 @@ pub trait Content {
         Ok(false)
     }
 
+    #[inline]
+    fn apply_field_unescaped(
+        &self,
+        _hash: u64,
+        _name: &str,
+    ) -> Result<SimpleValue, SimpleError> {
+        Ok(SimpleValue::t_unknow)
+    }
+
     /// Render a field by the hash **or** string of its name, as a section.
     /// If successful, returns `true` if the field exists in this content, otherwise `false`.
     #[inline]
@@ -153,6 +184,19 @@ pub trait Content {
         E: Encoder,
     {
         Ok(false)
+    }
+
+    #[inline]
+    fn apply_field_section<C>(
+        &self,
+        _hash: u64,
+        _name: &str,
+        _section: Section<C>,
+    ) -> Result<SimpleValue, SimpleError>
+    where
+        C: ContentSequence,
+    {
+        Ok(SimpleValue::t_unknow)
     }
 
     /// Render a field, by the hash of **or** string its name, as an inverse section.
@@ -262,7 +306,8 @@ impl Content for bool {
 macro_rules! impl_number_types {
     ($( $ty:ty ),*) => {
         $(
-            impl Content for $ty {
+            
+            impl Content  for $ty {
                 #[inline]
                 fn is_truthy(&self) -> bool {
                     *self != 0 as $ty
@@ -950,6 +995,15 @@ macro_rules! impl_pointer_types {
                 }
 
                 #[inline]
+                fn apply_field_unescaped(
+                    &self,
+                    hash: u64,
+                    name: &str,
+                ) -> Result<SimpleValue, SimpleError> {
+                    self.deref().apply_field_unescaped(hash, name)
+                }
+
+                #[inline]
                 fn render_field_section<C, E>(
                     &self,
                     hash: u64,
@@ -963,6 +1017,22 @@ macro_rules! impl_pointer_types {
                 {
                     let def = self.deref();
                     let rst = def.render_field_section(hash, name, section, encoder)?;
+
+                    Ok(rst)
+                }
+
+                #[inline]
+                fn apply_field_section<C>(
+                    &self,
+                    hash: u64,
+                    name: &str,
+                    section: Section<C>,
+                ) -> Result<SimpleValue, SimpleError>
+                where
+                    C: ContentSequence,
+                {
+                    let def = self.deref();
+                    let rst = def.apply_field_section(hash, name, section)?;
 
                     Ok(rst)
                 }

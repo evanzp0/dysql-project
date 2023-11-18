@@ -4,6 +4,8 @@
 //! runtime.
 
 use crate::encoding::Encoder;
+use crate::simple::simple_section::SimpleSection;
+use crate::simple::{SimpleValue, SimpleError};
 use crate::template::Section;
 use crate::Content;
 
@@ -63,13 +65,25 @@ pub trait ContentSequence: Combine + Sized + Copy {
         Ok(())
     }
 
+    /// Apply a dto field by the hash **or** string of its name.
+    ///
+    /// This doesn't perform any escaping at all.
+    #[inline]
+    fn apply_field_unescaped(
+        &self,
+        _hash: u64,
+        _name: &str
+    ) -> Result<SimpleValue, SimpleError> {
+        Ok(SimpleValue::t_unknow)
+    }
+
     /// Render a field by the hash **or** string of its name, as a section.
     #[inline]
-    fn render_field_section<'section, P, E>(
+    fn render_field_section<P, E>(
         &self,
         _hash: u64,
         _name: &str,
-        _section: Section<'section, P>,
+        _section: Section<P>,
         _encoder: &mut E,
     ) -> Result<(), E::Error>
     where
@@ -78,14 +92,29 @@ pub trait ContentSequence: Combine + Sized + Copy {
     {
         Ok(())
     }
+
+    /// Apply a dto field by the hash **or** string of its name, as a section.
+    #[inline]
+    fn apply_field_section<P>(
+        &self,
+        _hash: u64,
+        _name: &str,
+        _section: SimpleSection<P>,
+    ) -> Result<SimpleValue, SimpleError>
+    where
+        P: ContentSequence,
+    {
+        Ok(SimpleValue::t_unknow)
+    }
+
 
     /// Render a field, by the hash of **or** string its name, as an inverse section.
     #[inline]
-    fn render_field_inverse<'section, P, E>(
+    fn render_field_inverse<P, E>(
         &self,
         _hash: u64,
         _name: &str,
-        _section: Section<'section, P>,
+        _section: Section<P>,
         _encoder: &mut E,
     ) -> Result<(), E::Error>
     where
@@ -97,11 +126,11 @@ pub trait ContentSequence: Combine + Sized + Copy {
 
     /// Render a field by the hash **or** string of its name, as a section.
     #[inline]
-    fn render_field_notnone_section<'section, P, E>(
+    fn render_field_notnone_section<P, E>(
         &self,
         _hash: u64,
         _name: &str,
-        _section: Section<'section, P>,
+        _section: Section<P>,
         _encoder: &mut E,
     ) -> Result<bool, E::Error>
     where
@@ -189,6 +218,15 @@ where
             self.0.render_field_unescaped(hash, name, encoder)?;
         }
         Ok(())
+    }
+
+    #[inline]
+    fn apply_field_unescaped(
+        &self,
+        hash: u64,
+        name: &str,
+    ) -> Result<SimpleValue, SimpleError> {
+        self.3.apply_field_unescaped(hash, name)
     }
 
     #[inline]

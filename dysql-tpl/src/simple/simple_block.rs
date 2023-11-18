@@ -4,7 +4,7 @@ use crate::hash_name;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[derive(Serialize, Deserialize)]
-pub enum SimpleTag {
+pub(crate) enum SimpleTag {
     Unescaped,
     Section,
     // Tail,
@@ -13,10 +13,10 @@ pub enum SimpleTag {
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[derive(Serialize, Deserialize)]
 pub(crate) struct SimpleBlock {
-    name: String,
-    hash: u64,
-    tag: SimpleTag,
-    children: u32,
+    pub name: String,
+    pub hash: u64,
+    pub tag: SimpleTag,
+    pub children: u32,
 }
 
 impl SimpleBlock {

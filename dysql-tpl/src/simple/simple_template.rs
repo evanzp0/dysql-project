@@ -2,7 +2,7 @@ use serde::{Serialize, Deserialize};
 
 use crate::{Content, simple::simple_section::SimpleSection};
 
-use super::{SimpleValue, simple_block::{SimpleBlock, SimpleTag}};
+use super::{SimpleValue, simple_block::{SimpleBlock, SimpleTag}, SimpleError};
 
 /// 用于在 SQL 中绑定 DTO 值的简化模版
 #[derive(Debug)]
@@ -34,8 +34,8 @@ impl SimpleTemplate
         }
     }
 
-    /// 进行参数值绑定
-    pub fn apply<C>(&self, content: &C) -> SimpleValue
+    /// 获取对应参数值
+    pub fn apply<C>(&self, content: &C) -> Result<SimpleValue, SimpleError>
     where 
         C: Content,
     {

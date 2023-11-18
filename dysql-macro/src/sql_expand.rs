@@ -20,11 +20,16 @@ impl SqlExpand {
 
         let query_declare = if let Some(dto) = dto_ident {
             quote!(
-                let query = #executor_ident.create_query(&named_sql, Some(#dto));
+                let rst = dysql::extract_params(&named_sql, #executor_ident.get_dialect());
+                if let Err(e) = rst {
+                    break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::ExtractSqlParamterError, Some(Box::new(e)), None)))
+                }
+                let (sql, param_names) = rst.unwrap(); 
+                let query = #executor_ident.create_query(&sql, param_names, Some(#dto));
             )
         } else {
             quote!(
-                let query = #executor_ident.create_query(&named_sql, None);
+                let query = #executor_ident.create_query(&sql, vec![], None);
             )
         };
 

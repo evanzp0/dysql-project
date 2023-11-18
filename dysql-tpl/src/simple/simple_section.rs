@@ -1,6 +1,6 @@
 use std::ops::Range;
 
-use crate::{traits::ContentSequence, Content, Next, simple::simple_block::SimpleTag};
+use crate::{traits::ContentSequence, Content, Next, simple::simple_block::SimpleTag, SimpleInnerError};
 
 use super::{simple_block::SimpleBlock, SimpleValue, SimpleError};
 
@@ -60,24 +60,25 @@ where
     pub fn apply(&self) -> Result<SimpleValue, SimpleError>
     {
         let mut index = 0;
+        let mut rst = Err(SimpleInnerError("apply dto error: not found target field".to_owned()).into());
         while let Some(block) = self.blocks.get(index) { 
             index += 1;
 
             match block.tag {
                 SimpleTag::Unescaped => {
-                    self.contents.apply_field_unescaped(block.hash, &block.name)?;
+                    rst = self.contents.apply_field_unescaped(block.hash, &block.name);
                 },
                 SimpleTag::Section => {
-                    self.contents.apply_field_section(
+                    rst = self.contents.apply_field_section(
                         block.hash,
                         &block.name,
                         self.slice(index..index + block.children as usize), 
-                    )?;
+                    );
                     index += block.children as usize;
                 },
             }
         }
 
-        todo!()
+        rst
     }
 }

@@ -1,13 +1,13 @@
 use std::{marker::PhantomData, any::TypeId};
 
 use dysql_tpl::{Content, SimpleTemplate};
-use sqlx::{Executor, FromRow, Database};
+use sqlx::{Executor, FromRow};
 use paste::paste;
 
 use crate::{DySqlError, ErrorInner, Kind, SqlDialect};
 
 
-macro_rules! impl_fill_match_simple_value {
+macro_rules! impl_bind_param_value {
     (
         $query:ident, $p_val:ident, $($vtype:ty),+
     ) => {
@@ -51,7 +51,7 @@ where
                 
                 let param_value = stpl.apply(dto);
                 if let Ok(param_value) = param_value {
-                    query = impl_fill_match_simple_value!(query, param_value, i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime);
+                    query = impl_bind_param_value!(query, param_value, i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime);
                 }
             }
         }
@@ -72,7 +72,7 @@ where
                 
                 let param_value = stpl.apply(dto);
                 if let Ok(param_value) = param_value {
-                    query = impl_fill_match_simple_value!(query, param_value, i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime);
+                    query = impl_bind_param_value!(query, param_value, i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime);
                 }
             }
         }
@@ -88,12 +88,12 @@ where
 
 pub trait SqlxExecutorAdatper<'q, DB> 
 where 
-    DB: Database,
+    DB: sqlx::Database,
 {
     fn create_query<D: Clone> (&self, sql: &'q str, param_names: Vec<&'q str>, dto: Option<D>) -> SqlxQuery<'q, D, DB>
     where 
         D: Content + 'static + Send + Sync,
-        DB: Database
+        DB: sqlx::Database
     {
         println!("param_names: {:#?}", param_names);
 

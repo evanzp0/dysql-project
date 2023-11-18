@@ -9,15 +9,18 @@
 
 use crate::encoding::Encoder;
 use crate::simple::simple_section::SimpleSection;
-use crate::simple::{SimpleValue, SimpleError};
+use crate::simple::{SimpleValue, SimpleError, SimpleInnerError};
 use crate::template::{Section, Template};
 use crate::traits::ContentSequence;
 
 use arrayvec::ArrayVec;
+use chrono::Utc;
 use std::borrow::{Borrow, Cow, ToOwned};
 use std::collections::{BTreeMap, HashMap};
 use std::hash::{BuildHasher, Hash};
 use std::ops::Deref;
+
+use paste::paste;
 
 /// Trait allowing the rendering to quickly access data stored in the type that
 /// implements it. You needn't worry about implementing it, in virtually all
@@ -56,8 +59,8 @@ pub trait Content {
     ///
     /// This doesn't perform any escaping at all.
     #[inline]
-    fn apply_unescape(&self) -> Result<SimpleValue, SimpleError> {
-        Ok(SimpleValue::t_unknow)
+    fn apply_unescaped(&self) -> Result<SimpleValue, SimpleError> {
+        Err(SimpleInnerError(format!("the data type of field is not supported")).into())
     }
 
     /// Render a section with self.
@@ -160,13 +163,14 @@ pub trait Content {
         Ok(false)
     }
 
+    ///
     #[inline]
     fn apply_field_unescaped(
         &self,
         _hash: u64,
         _name: &str,
     ) -> Result<SimpleValue, SimpleError> {
-        Ok(SimpleValue::t_unknow)
+        Err(SimpleInnerError(format!("the data type of field is not supported")).into())
     }
 
     /// Render a field by the hash **or** string of its name, as a section.
@@ -186,17 +190,18 @@ pub trait Content {
         Ok(false)
     }
 
+    ///
     #[inline]
     fn apply_field_section<C>(
         &self,
         _hash: u64,
         _name: &str,
-        _section: Section<C>,
+        _section: SimpleSection<C>,
     ) -> Result<SimpleValue, SimpleError>
     where
         C: ContentSequence,
     {
-        Ok(SimpleValue::t_unknow)
+        Err(SimpleInnerError(format!("the data type of field is not supported")).into())
     }
 
     /// Render a field, by the hash of **or** string its name, as an inverse section.
@@ -261,6 +266,12 @@ impl Content for str {
     fn render_unescaped<E: Encoder>(&self, encoder: &mut E) -> Result<(), E::Error> {
         encoder.write_unescaped(self)
     }
+    
+    #[inline]
+    fn apply_unescaped(&self) -> Result<SimpleValue, SimpleError>
+    {
+        Ok(SimpleValue::t_str(self as *const str))
+    }
 }
 
 impl Content for String {
@@ -283,6 +294,12 @@ impl Content for String {
     fn render_unescaped<E: Encoder>(&self, encoder: &mut E) -> Result<(), E::Error> {
         encoder.write_unescaped(self)
     }
+
+    #[inline]
+    fn apply_unescaped(&self) -> Result<SimpleValue, SimpleError>
+    {
+        Ok(SimpleValue::t_String(self as *const String))
+    }
 }
 
 impl Content for bool {
@@ -301,28 +318,41 @@ impl Content for bool {
         // Nothing to escape here
         encoder.write_unescaped(if *self { "true" } else { "false" })
     }
+
+    #[inline]
+    fn apply_unescaped(&self) -> Result<SimpleValue, SimpleError>
+    {
+        Ok(SimpleValue::t_bool(*self))
+    }
 }
 
 macro_rules! impl_number_types {
     ($( $ty:ty ),*) => {
         $(
-            
-            impl Content  for $ty {
-                #[inline]
-                fn is_truthy(&self) -> bool {
-                    *self != 0 as $ty
-                }
+            paste! {
+                impl Content  for $ty {
+                    #[inline]
+                    fn is_truthy(&self) -> bool {
+                        *self != 0 as $ty
+                    }
 
-                #[inline]
-                fn capacity_hint(&self, _tpl: &Template) -> usize {
-                    5
-                }
+                    #[inline]
+                    fn capacity_hint(&self, _tpl: &Template) -> usize {
+                        5
+                    }
 
-                #[inline]
-                fn render_escaped<E: Encoder>(&self, encoder: &mut E) -> Result<(), E::Error>
-                {
-                    // Nothing to escape here
-                    encoder.format_unescaped(self)
+                    #[inline]
+                    fn render_escaped<E: Encoder>(&self, encoder: &mut E) -> Result<(), E::Error>
+                    {
+                        // Nothing to escape here
+                        encoder.format_unescaped(self)
+                    }
+
+                    #[inline]
+                    fn apply_unescaped(&self) -> Result<SimpleValue, SimpleError>
+                    {
+                        Ok(SimpleValue::[<t_ $ty>](*self))
+                    }
                 }
             }
         )*
@@ -348,6 +378,12 @@ impl Content for f32 {
         // Nothing to escape here
         encoder.format_unescaped(self)
     }
+
+    #[inline]
+    fn apply_unescaped(&self) -> Result<SimpleValue, SimpleError>
+    {
+        Ok(SimpleValue::t_f32(*self))
+    }
 }
 
 impl Content for f64 {
@@ -366,6 +402,12 @@ impl Content for f64 {
     fn render_escaped<E: Encoder>(&self, encoder: &mut E) -> Result<(), E::Error> {
         // Nothing to escape here
         encoder.format_unescaped(self)
+    }
+
+    #[inline]
+    fn apply_unescaped(&self) -> Result<SimpleValue, SimpleError>
+    {
+        Ok(SimpleValue::t_f64(*self))
     }
 }
 
@@ -402,6 +444,15 @@ impl<T: Content> Content for Option<T> {
     }
 
     #[inline]
+    fn apply_unescaped(&self) -> Result<SimpleValue, SimpleError> {
+        if let Some(ref inner) = self {
+            inner.apply_unescaped()
+        } else {
+            Ok(SimpleValue::Null(None))
+        }
+    }
+
+    #[inline]
     fn render_section<C, E, IC>(
         &self,
         section: Section<C>,
@@ -417,6 +468,21 @@ impl<T: Content> Content for Option<T> {
         }
 
         Ok(())
+    }
+
+    #[inline]
+    fn apply_section<C>(
+        &self,
+        section: SimpleSection<C>
+    ) -> Result<SimpleValue, SimpleError>
+    where
+        C: ContentSequence,
+    {
+        if let Some(ref item) = self {
+            item.apply_section(section)
+        } else {
+            Ok(SimpleValue::Null(None))
+        }
     }
 
     #[inline]
@@ -470,6 +536,15 @@ where
     }
 
     #[inline]
+    fn apply_unescaped(&self) -> Result<SimpleValue, SimpleError> {
+        if let Ok(ref inner) = self {
+            inner.apply_unescaped()
+        } else {
+            Err(SimpleInnerError(format!("the data type of field is not supported")).into())
+        }
+    }
+
+    #[inline]
     fn render_section<C, E, IC>(
         &self,
         section: Section<C>,
@@ -485,6 +560,21 @@ where
         }
 
         Ok(())
+    }
+
+    #[inline]
+    fn apply_section<C>(
+        &self,
+        section: SimpleSection<C>
+    ) -> Result<SimpleValue, SimpleError>
+    where
+        C: ContentSequence,
+    {
+        if let Ok(ref item) = self {
+            item.apply_section(section)
+        } else {
+            Err(SimpleInnerError(format!("the data type of field is not supported")).into())
+        }
     }
 
     #[inline]
@@ -933,6 +1023,11 @@ macro_rules! impl_pointer_types {
                 }
 
                 #[inline]
+                fn apply_unescaped(&self) -> Result<SimpleValue, SimpleError> {
+                    self.deref().apply_unescaped()
+                }
+
+                #[inline]
                 fn render_section<C, E, IC>(
                     &self,
                     section: Section<C>,
@@ -944,6 +1039,17 @@ macro_rules! impl_pointer_types {
                     E: Encoder,
                 {
                     self.deref().render_section(section, encoder, Some(self))
+                }
+
+                #[inline]
+                fn apply_section<C>(
+                    &self,
+                    section: SimpleSection<C>,
+                ) -> Result<SimpleValue, SimpleError>
+                where
+                    C: ContentSequence,
+                {
+                    self.deref().apply_section(section)
                 }
 
                 #[inline]
@@ -1026,7 +1132,7 @@ macro_rules! impl_pointer_types {
                     &self,
                     hash: u64,
                     name: &str,
-                    section: Section<C>,
+                    section: SimpleSection<C>,
                 ) -> Result<SimpleValue, SimpleError>
                 where
                     C: ContentSequence,
@@ -1140,12 +1246,15 @@ impl Content for chrono::NaiveDateTime {
     fn render_escaped<E: Encoder>(&self, encoder: &mut E) -> Result<(), E::Error> {
         encoder.format_unescaped(self)
     }
+
+    #[inline]
+    fn apply_unescaped(&self) -> Result<SimpleValue, SimpleError> {
+        Ok(SimpleValue::t_NaiveDateTime(*self))
+    }
 }
 
 #[cfg(feature = "chrono")]
-impl<Tz: chrono::offset::TimeZone> Content for chrono::DateTime<Tz> 
-where
-    Tz::Offset: core::fmt::Display,
+impl Content for chrono::DateTime<Utc>
 {
     #[inline]
     fn is_truthy(&self) -> bool {
@@ -1160,6 +1269,11 @@ where
     #[inline]
     fn render_escaped<E: Encoder>(&self, encoder: &mut E) -> Result<(), E::Error> {
         encoder.format_unescaped(self)
+    }
+
+    #[inline]
+    fn apply_unescaped(&self) -> Result<SimpleValue, SimpleError> {
+        Ok(SimpleValue::t_Utc(*self))
     }
 }
 
@@ -1178,5 +1292,10 @@ impl Content for uuid::Uuid {
     #[inline]
     fn render_escaped<E: Encoder>(&self, encoder: &mut E) -> Result<(), E::Error> {
         encoder.format_unescaped(self)
+    }
+
+    #[inline]
+    fn apply_unescaped(&self) -> Result<SimpleValue, SimpleError> {
+        Ok(SimpleValue::t_Uuid(*self))
     }
 }

@@ -45,7 +45,7 @@ where
 
     /// 传入实现 Content 的 dto
     #[inline]
-    pub(crate) fn with<X>(self, content: &X) -> SimpleSection<'section, Next<'section, C, &X>>
+    pub fn with<X>(self, content: &X) -> SimpleSection<'section, Next<'section, C, &X>>
     where
         X: Content + ?Sized,
     {
@@ -57,7 +57,7 @@ where
         rst
     }
 
-    pub(crate) fn apply(&self) -> Result<SimpleValue<'section>, SimpleError>
+    pub fn apply(&self) -> Result<SimpleValue, SimpleError>
     {
         let mut index = 0;
         while let Some(block) = self.blocks.get(index) { 

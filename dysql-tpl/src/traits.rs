@@ -5,7 +5,7 @@
 
 use crate::encoding::Encoder;
 use crate::simple::simple_section::SimpleSection;
-use crate::simple::{SimpleValue, SimpleError};
+use crate::simple::{SimpleValue, SimpleError, SimpleInnerError};
 use crate::template::Section;
 use crate::Content;
 
@@ -74,7 +74,7 @@ pub trait ContentSequence: Combine + Sized + Copy {
         _hash: u64,
         _name: &str
     ) -> Result<SimpleValue, SimpleError> {
-        Ok(SimpleValue::t_unknow)
+        Err(SimpleInnerError(format!("the data type of field is not supported")).into())
     }
 
     /// Render a field by the hash **or** string of its name, as a section.
@@ -104,7 +104,7 @@ pub trait ContentSequence: Combine + Sized + Copy {
     where
         P: ContentSequence,
     {
-        Ok(SimpleValue::t_unknow)
+        Err(SimpleInnerError(format!("the data type of field: {} is not supported ", _name)).into())
     }
 
 
@@ -259,6 +259,19 @@ where
             }
         }
         Ok(())
+    }
+
+    #[inline]
+    fn apply_field_section<P>(
+        &self,
+        hash: u64,
+        name: &str,
+        section: SimpleSection<P>,
+    ) -> Result<SimpleValue, SimpleError>
+    where
+        P: ContentSequence,
+    {
+        self.3.apply_field_section(hash, name, section)
     }
 
     #[inline]

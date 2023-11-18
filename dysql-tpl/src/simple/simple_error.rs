@@ -1,13 +1,15 @@
 use std::{error::Error, fmt::{Display, self}};
 
+///
+pub type SimpleError = Box<dyn Error>;
 
 #[derive(Debug)]
-pub struct SimpleError(pub String);
+pub struct SimpleInnerError(pub String);
 
-impl Error for SimpleError {
+impl Error for SimpleInnerError {
 }
 
-impl Display for SimpleError {
+impl Display for SimpleInnerError {
     fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(fmt, "apply dto error: {:?}", self.0)
     }

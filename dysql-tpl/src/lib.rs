@@ -63,7 +63,7 @@
 //!                       </article>");
 //! ```
 
-#![warn(missing_docs)]
+#![allow(missing_docs)]
 use std::collections::HashMap;
 use std::hash::{BuildHasher, Hash, Hasher};
 use std::path::{Path, PathBuf};
@@ -82,7 +82,7 @@ pub use content::Content;
 pub use error::TemplateError;
 use fnv::FnvHasher;
 pub use template::{Section, Template};
-pub use simple::SimpleTemplate;
+pub use simple::{SimpleTemplate, SimpleSection, SimpleValue, SimpleError, SimpleInnerError};
 
 #[cfg(feature = "export_derive")]
 pub use dysql_tpl_derive::Content;

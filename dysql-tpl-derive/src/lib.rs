@@ -197,9 +197,24 @@ pub fn content_derive(input: TokenStream) -> TokenStream {
         },
     );
 
+    let apply_field_unescaped = fields.iter().map(|Field {field, hash, ..}| {
+            quote! {
+                #hash => self.#field.apply_unescaped(),
+            }
+        },
+    );
+
+
     let render_field_section = fields.iter().map(|Field { field, hash, .. }| {
         quote! {
             #hash => self.#field.render_section(section, encoder, Option::<&()>::None).map(|_| true),
+        }
+    });
+
+    // dto 获取字段值
+    let apply_field_section = fields.iter().map(|Field { field, hash, .. }| {
+        quote! {
+            #hash => self.#field.apply_section(section),
         }
     });
 
@@ -250,6 +265,14 @@ pub fn content_derive(input: TokenStream) -> TokenStream {
             }
 
             #[inline]
+            fn apply_section<C>(&self, section: ::dysql::SimpleSection<C>) -> std::result::Result<::dysql::SimpleValue, ::dysql::SimpleError>
+            where
+                C: ::dysql::traits::ContentSequence,
+            {
+                section.with(self).apply()
+            }
+
+            #[inline]
             fn render_notnone_section<C, E, IC>(&self, section: ::dysql::Section<C>, encoder: &mut E, _content: Option<&IC>) -> std::result::Result<(), E::Error>
             where
                 C: ::dysql::traits::ContentSequence,
@@ -286,6 +309,16 @@ pub fn content_derive(input: TokenStream) -> TokenStream {
                 }
             }
 
+
+            #[inline]
+            fn apply_field_unescaped(&self, hash: u64, name: &str) -> std::result::Result<dysql::SimpleValue, dysql::SimpleError>
+            {
+                match hash {
+                    #( #apply_field_unescaped )*
+                    _ => Err(dysql::SimpleInnerError(format!("the data type of field: {} is not supported ", name)).into())
+                }
+            }
+
             fn render_field_section<P, E>(&self, hash: u64, name: &str, section: ::dysql::Section<P>, encoder: &mut E) -> std::result::Result<bool, E::Error>
             where
                 P: ::dysql::traits::ContentSequence,
@@ -297,6 +330,16 @@ pub fn content_derive(input: TokenStream) -> TokenStream {
                         #( self.#flatten.render_field_section(hash, name, section, encoder)? ||)*
                         false
                     )
+                }
+            }
+
+            fn apply_field_section<P>(&self, hash: u64, name: &str, section: ::dysql::SimpleSection<P>) -> std::result::Result<dysql::SimpleValue, dysql::SimpleError>
+            where
+                P: ::dysql::traits::ContentSequence,
+            {
+                match hash {
+                    #( #apply_field_section )*
+                    _ => Err(dysql::SimpleInnerError(format!("the data type of field is not supported")).into())
                 }
             }
 

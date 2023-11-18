@@ -1,3 +1,5 @@
+#![feature(vec_into_raw_parts)]
+#![feature(pointer_byte_offsets)]
 
 use dysql::{Content, SqlxExecutorAdatper};
 use sqlx::{FromRow, Postgres, Pool, postgres::PgPoolOptions};
@@ -43,11 +45,22 @@ async fn main() {
 
         // conn.get_dialect();
         // tran.get_dialect();
-
-
-        
-        
         println!("{:?}", rst);
+
+        let astr = "aaa bb";
+        let p_astr = astr as *const str;
+
+        let t_astr = unsafe{&*p_astr};
+        println!("{}", t_astr);
+        
+        let astr = "ab".to_owned();
+        let ptr = unsafe {
+            &astr as *const String
+        };
+        println!("{:p}", ptr);
+
+        let t_astr = unsafe{ &*ptr};
+        println!("{}", t_astr)
     };
 
     // let user: User = rst;

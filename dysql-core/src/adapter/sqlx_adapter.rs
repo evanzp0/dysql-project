@@ -1,14 +1,32 @@
 use std::{marker::PhantomData, any::TypeId};
 
 use dysql_tpl::{Content, SimpleTemplate};
-use sqlx::{Executor, FromRow, Database, IntoArguments, database::HasArguments};
+use sqlx::{Executor, FromRow, Database};
+use paste::paste;
 
 use crate::{DySqlError, ErrorInner, Kind, SqlDialect};
 
-pub struct SqlxQuery <'q, D, DB> 
-where 
-    D: Content + 'static + Send + Sync,
-    DB: Database,
+
+macro_rules! impl_fill_match_simple_value {
+    (
+        $query:ident, $p_val:ident, $($vtype:ty),+
+    ) => {
+        paste!{
+            match $p_val {
+                $(
+                    dysql_tpl::SimpleValue::[<t_ $vtype>](val) => $query.bind(val),
+                )*
+                dysql_tpl::SimpleValue::t_str(val) => $query.bind(unsafe {&*val}),
+                dysql_tpl::SimpleValue::t_String(val) => $query.bind(unsafe {&*val}),
+                dysql_tpl::SimpleValue::t_Utc(val) => $query.bind(val),
+                dysql_tpl::SimpleValue::Null(_) => $query.bind(Option::<i32>::None),
+                _ => Err(DySqlError(ErrorInner::new(Kind::BindParamterError, None, Some(format!("the type of {:?} is not support", $p_val)))))?,
+            }
+        }
+    };
+}
+
+pub struct SqlxQuery <'q, D: Clone, DB>
 {
     /// 不含模版信息的且替换掉命名参数的 sql
     pub sql: &'q str,
@@ -17,29 +35,54 @@ where
     pub(crate) temp_db: PhantomData<DB>,
 }
 
-impl<'q, D, DB> SqlxQuery <'q, D, DB> 
+impl<'q, D: Clone> SqlxQuery <'q, D, sqlx::Postgres> 
 where 
     D: Content + 'static + Send + Sync,
-    DB: Database,
 {
     pub async fn fetch_one<'e, 'c: 'e, E, U>(self, executor: E) -> Result<U, DySqlError>
     where
-        E: 'e + Executor<'c, Database = DB>,
-        for<'r> U: FromRow<'r, <DB as Database>::Row> + Send + Unpin,
-        <DB as HasArguments<'q>>::Arguments: IntoArguments<'q, DB>
+        E: 'e + Executor<'c, Database = sqlx::Postgres>,
+        for<'r> U: FromRow<'r, sqlx::postgres::PgRow> + Send + Unpin,
     {
-        let query = sqlx::query_as::<DB, U>(self.sql);
-        // todo : query.bind(), 需要在Content里取值
-        for params in self.param_names {
-            let stpl = SimpleTemplate::new(params);
-            let val = stpl.apply(&self.dto);
-
-            todo!()
+        let mut query = sqlx::query_as::<sqlx::Postgres, U>(self.sql);
+        if let Some(dto) = &self.dto {
+            for param_name in self.param_names {
+                let stpl = SimpleTemplate::new(param_name);
+                
+                let param_value = stpl.apply(dto);
+                if let Ok(param_value) = param_value {
+                    query = impl_fill_match_simple_value!(query, param_value, i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime);
+                }
+            }
         }
 
         let rst = query.fetch_one(executor).await;
 
         rst.map_err(|e| DySqlError(ErrorInner::new(Kind::QueryError, Some(Box::new(e)), None)))
+    }
+
+    pub async fn execute<'e, 'c: 'e, E>(self, executor: E) -> Result<u64, DySqlError>
+    where
+        E: 'e + Executor<'c, Database = sqlx::Postgres>,
+    {
+        let mut query = sqlx::query::<sqlx::Postgres>(self.sql);
+        if let Some(dto) = &self.dto {
+            for param_name in self.param_names {
+                let stpl = SimpleTemplate::new(param_name);
+                
+                let param_value = stpl.apply(dto);
+                if let Ok(param_value) = param_value {
+                    query = impl_fill_match_simple_value!(query, param_value, i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime);
+                }
+            }
+        }
+
+        let rst = query.execute(executor).await;
+        let rst = rst.map_err(|e| DySqlError(ErrorInner::new(Kind::QueryError, Some(Box::new(e)), None)))?;
+
+        let af_rows = rst.rows_affected();
+        
+        Ok(af_rows)
     }
 }
 
@@ -47,11 +90,13 @@ pub trait SqlxExecutorAdatper<'q, DB>
 where 
     DB: Database,
 {
-    fn create_query<D> (&self, sql: &'q str, param_names: Vec<&'q str>, dto: Option<D>) -> SqlxQuery<'q, D, DB>
+    fn create_query<D: Clone> (&self, sql: &'q str, param_names: Vec<&'q str>, dto: Option<D>) -> SqlxQuery<'q, D, DB>
     where 
         D: Content + 'static + Send + Sync,
         DB: Database
     {
+        println!("param_names: {:#?}", param_names);
+
         SqlxQuery {
             sql,
             param_names,

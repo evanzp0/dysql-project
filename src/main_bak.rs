@@ -1,25 +1,12 @@
-#![feature(vec_into_raw_parts)]
-#![feature(pointer_byte_offsets)]
-
 use dysql::{Content, SqlxExecutorAdatper};
 use sqlx::{FromRow, Postgres, Pool, postgres::PgPoolOptions};
 
 #[tokio::main]
 async fn main() {
     let conn = connect_postgres_db().await;
-    let mut tran = conn.begin().await.unwrap();
+    // let mut tran = conn.begin().await.unwrap();
 
-    let dto = UserDto{ id: None, name: None, age: Some(13) , id_rng: None };
-    // let query = sqlx::query::<Postgres>("select 1")
-    //     .execute(&conn).await;
-    
-    // let _rst = fetch_all!(|dto| -> User {
-    //     r#"SELECT * FROM test_user 
-    //     WHERE 1 = 1
-    //       {{#name}}AND name = :name{{/name}}
-    //       {{#age}}AND age > :age{{/age}}
-    //     ORDER BY id"#
-    // }).execute(&conn);
+    let dto = UserDto{ id: Some(1), name: None, age: Some(13) , id_rng: None };
 
     let rst = {
         let sql_tpl = match dysql::get_sql_template(3245002281272997655u64) {
@@ -34,33 +21,18 @@ async fn main() {
         let named_sql = sql_tpl.render(&dto);
         let named_sql = dysql::SqlNodeLinkList::new(&named_sql).trim().to_string();
 
-        let named_sql = "select * from test_user where id = 1";
+        // let named_sql = "select * from test_user where id = :id";
+        let named_sql = "update test_user set name = :name where id = :id";
         let (sql, param_names) = dysql::extract_params(named_sql, conn.get_dialect()).unwrap(); // add, need handle exception
 
-        // let query = conn.create_query(&sql, param_names, Some(dto)); // add, need handle exception
+        let query = conn.create_query(&sql, param_names, Some(dto)); // add, need handle exception
         // let rst: User = query.fetch_one(&conn).await.unwrap();
+        let rst = query.execute(&conn).await;
 
-        let query = tran.create_query(&sql, param_names, Some(dto));
-        let rst: User = query.fetch_one(&mut *tran).await.unwrap();
+        // let query = tran.create_query(&sql, param_names, Some(dto));
+        // let rst: User = query.fetch_one(&mut *tran).await.unwrap();
 
-        // conn.get_dialect();
-        // tran.get_dialect();
         println!("{:?}", rst);
-
-        let astr = "aaa bb";
-        let p_astr = astr as *const str;
-
-        let t_astr = unsafe{&*p_astr};
-        println!("{}", t_astr);
-        
-        let astr = "ab".to_owned();
-        let ptr = unsafe {
-            &astr as *const String
-        };
-        println!("{:p}", ptr);
-
-        let t_astr = unsafe{ &*ptr};
-        println!("{}", t_astr)
     };
 
     // let user: User = rst;

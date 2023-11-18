@@ -1106,7 +1106,8 @@ macro_rules! impl_pointer_types {
                     hash: u64,
                     name: &str,
                 ) -> Result<SimpleValue, SimpleError> {
-                    self.deref().apply_field_unescaped(hash, name)
+                    let def = self.deref();
+                    def.apply_field_unescaped(hash, name)
                 }
 
                 #[inline]

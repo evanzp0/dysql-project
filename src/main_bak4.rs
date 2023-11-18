@@ -1,21 +1,8 @@
 use dysql::{Content, SimpleTemplate, SimpleValue};
 
 fn main() {
-    let son = Son {
-        id: 1,
-        name: "maomao",
-    };
-
-    let dto = UserDto {
-        id: 12,
-        name: "evan",
-        job: Some("it".to_owned()),
-        descp: None,
-        son,
-    };
-
-    // let param_names = vec!["id", "name", "job", "descp", "not_exist", "son.id", "son.name" ];
-    let param_names = vec!["son.id", "son.name" ];
+    let dto = Some(UserDto{ id: Some(1), name: None, age: Some(13) , id_rng: None });
+    let param_names = vec!["id"];
     for name in param_names {
         let stpl = SimpleTemplate::new(name);
         let rst = stpl.apply(&dto);
@@ -34,17 +21,9 @@ fn main() {
 }
 
 #[derive(Content)]
-struct UserDto<'a> {
-    id: i32,
-    name: &'a str,
-    job: Option<String>,
-    descp: Option<&'a str>,
-    son: Son<'a>,
-}
-
-
-#[derive(Content)]
-struct Son<'a> {
-    id: i32,
-    name: &'a str,
+struct UserDto {
+    id: Option<i64>,
+    name: Option<String>,
+    age: Option<i32>,
+    id_rng: Option<Vec<i32>>,
 }

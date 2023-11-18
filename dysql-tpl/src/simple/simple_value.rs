@@ -18,7 +18,7 @@ macro_rules! impl_simple_value_varaint {
             pub enum SimpleValue {
                 $(
                     [<t_ $vtype>]($vtype),
-                    [<option_ $vtype>](Option<$vtype>),
+                    // [<option_ $vtype>](Option<$vtype>),
                 )*
                 t_str(*const str),
                 // option_str(Option<*const str>),

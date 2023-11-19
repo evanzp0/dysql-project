@@ -1,4 +1,4 @@
-use dysql::{Content, fetch_one, execute, fetch_all, fetch_scalar, insert};
+use dysql::{Content, fetch_one, execute, fetch_all, fetch_scalar, insert, SortModel, PageDto, page};
 use sqlx::{FromRow, Postgres, Pool, postgres::PgPoolOptions};
 
 #[tokio::main]
@@ -8,6 +8,7 @@ async fn main() {
     let dto1 = UserDto{ id: Some(2), name: Some("huanglan".to_owned()), age: Some(13) , id_rng: None };
     let dto2 = dto1.clone();
     let dto3 = dto1.clone();
+    let dto4 = dto1.clone();
 
     let rst = fetch_one!(|&conn, dto1| -> User {
         "select * from test_user 
@@ -46,6 +47,21 @@ async fn main() {
     }).unwrap();
     println!("insert: {:?}", rst);
     tran.rollback().await.unwrap();
+
+    let sort_model = vec![
+        SortModel {field: "id".to_owned(), sort: "desc".to_owned()}
+    ];
+    let pg_dto = PageDto::new_with_sort(3, 10, Some(dto4), sort_model);
+    
+    let rst = page!(|&conn, pg_dto| -> User {
+        "select * from test_user 
+        where 1 = 1
+        {{#data}}
+            {{#name}}and name like '%' || :data.name || '%'{{/name}}
+            {{#age}}and age > :data.age{{/age}}
+        {{/data}}"
+    }).unwrap();
+    println!("insert: {:?}", rst);
 }
 
 #[derive(Content, Clone)]

@@ -194,7 +194,7 @@ impl SqlExpand {
 
         let execute = match dto_ident {
             Some(_) => quote!(
-                query.page::<_, _, #ret_type>(#executor_token, &named_sql, Some(#dto_ident)).await
+                query.page::<_, _, #ret_type>(#executor_token, &named_sql, #dto_ident).await
             ),
             None => quote!(
                 query.page::<_, dysql::EmptyObject, #ret_type>(#executor_token, &named_sql, None).await 

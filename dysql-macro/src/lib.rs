@@ -243,7 +243,7 @@ pub fn fetch_all(input: TokenStream) -> TokenStream {
     // 将 input 解析成 SqlClosure
     let st = syn::parse_macro_input!(input as DyClosure);
 
-    // fetch_one 必须要指定单个 item 的返回值类型
+    // 必须要指定单个 item 的返回值类型
     if st.ret_type.is_none() { panic!("ret_type can't be null.") }
 
     match SqlExpand.fetch_all(&st) {
@@ -276,7 +276,7 @@ pub fn fetch_one(input: TokenStream) -> TokenStream {
     // 将 input 解析成 SqlClosure
     let st = syn::parse_macro_input!(input as DyClosure);
 
-    // fetch_one 必须要指定单个 item 的返回值类型
+    // 必须要指定单个 item 的返回值类型
     if st.ret_type.is_none() { panic!("ret_type can't be null.") }
 
     match SqlExpand.fetch_one(&st) {
@@ -304,6 +304,7 @@ pub fn fetch_one(input: TokenStream) -> TokenStream {
 pub fn fetch_scalar(input: TokenStream) -> TokenStream {
     // 将 input 解析成 SqlClosure
     let st = syn::parse_macro_input!(input as DyClosure);
+    if st.ret_type.is_none() { panic!("ret_type can't be null.") }
 
     match SqlExpand.fetch_scalar(&st) {
         Ok(ret) => ret.into(),
@@ -364,6 +365,7 @@ pub fn execute(input: TokenStream) -> TokenStream {
 pub fn insert(input: TokenStream) -> TokenStream {
     // 将 input 解析成 SqlClosure
     let st = syn::parse_macro_input!(input as DyClosure);
+    if st.ret_type.is_none() { panic!("ret_type can't be null.") }
 
     match SqlExpand.insert(&st) {
         Ok(ret) => ret.into(),
@@ -399,37 +401,37 @@ pub fn sql(input: TokenStream) -> TokenStream {
     quote!().into()
 }
 
-// page query
-// 
-// # Examples
-//
-// Basic usage:
-// 
-// ```ignore
-// let conn = connect_db().await;
-// let dto = UserDto::new(None, None, Some(13));
-// let mut pg_dto = PageDto::new(3, 10, &dto);
-// 
-// let rst = page!(|&mut pg_dto, &conn| -> User {
-//     "select * from test_user 
-//     where 1 = 1
-//         {{#data}}
-//             {{#name}}and name = :data.name{{/name}}
-//             {{#age}}and age > :data.age{{/age}}
-//         {{/data}}
-//     order by id"
-// }).unwrap();
-// 
-// assert_eq!(7, rst.total);
-// ```
+/// page query
+/// 
+/// # Examples
+///
+/// Basic usage:
+/// 
+/// ```ignore
+/// let conn = connect_db().await;
+/// let dto = UserDto::new(None, None, Some(13));
+/// let mut pg_dto = PageDto::new(3, 10, &dto);
+/// 
+/// let rst = page!(|&mut pg_dto, &conn| -> User {
+///     "select * from test_user 
+///     where 1 = 1
+///         {{#data}}
+///             {{#name}}and name = :data.name{{/name}}
+///             {{#age}}and age > :data.age{{/age}}
+///         {{/data}}
+///     order by id"
+/// }).unwrap();
+/// 
+/// assert_eq!(7, rst.total);
+/// ```
+#[proc_macro]
+pub fn page(input: TokenStream) -> TokenStream {
+    // 将 input 解析成 SqlClosure
+    let st = syn::parse_macro_input!(input as DyClosure);
+    if st.ret_type.is_none() { panic!("ret_type can't be null.") }
 
-// #[proc_macro]
-// pub fn page(input: TokenStream) -> TokenStream {
-//     let st = syn::parse_macro_input!(input as DySqlFragmentContext);
-//     if st.ret_type.is_none() { panic!("ret_type can't be null.") }
-
-//     match Page.expand(&st) {
-//         Ok(ret) => ret.into(),
-//         Err(e) => e.into_compile_error().into(),
-//     }
-// }
+    match SqlExpand.page(&st) {
+        Ok(ret) => ret.into(),
+        Err(e) => e.into_compile_error().into(),
+    }
+}

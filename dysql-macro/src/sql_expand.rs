@@ -23,7 +23,7 @@ impl SqlExpand {
             let query = #executor_ident.create_query();
         );
 
-        let execut = match dto_ident {
+        let execute = match dto_ident {
             Some(_) => quote!(
                 query.fetch_one::<_, _, #ret_type>(#executor_token, &named_sql, Some(#dto_ident)).await 
             ),
@@ -36,7 +36,7 @@ impl SqlExpand {
             use dysql::SqlxExecutorAdatper;
             #named_sql_declare  // let named_sql = ....;
             #query_declare      // let query = executor.create_query(....);
-            #execut
+            #execute
         });
 
         Ok(ret)
@@ -57,7 +57,7 @@ impl SqlExpand {
             let query = #executor_ident.create_query();
         );
 
-        let execut = match dto_ident {
+        let execute = match dto_ident {
             Some(_) => quote!(
                 query.fetch_all::<_, _, #ret_type>(#executor_token, &named_sql, Some(#dto_ident)).await 
             ),
@@ -70,7 +70,7 @@ impl SqlExpand {
             use dysql::SqlxExecutorAdatper;
             #named_sql_declare  // let named_sql = ....;
             #query_declare      // let query = executor.create_query(....);
-            #execut
+            #execute
         });
 
         Ok(ret)
@@ -91,7 +91,7 @@ impl SqlExpand {
             let query = #executor_ident.create_query();
         );
 
-        let execut = match dto_ident {
+        let execute = match dto_ident {
             Some(_) => quote!(
                 query.fetch_scalar<_, _, #ret_type>(#executor_token, &named_sql, Some(#dto_ident)).await 
             ),
@@ -104,7 +104,7 @@ impl SqlExpand {
             use dysql::SqlxExecutorAdatper;
             #named_sql_declare  // let named_sql = ....;
             #query_declare      // let query = executor.create_query(....);
-            #execut
+            #execute
         });
 
         Ok(ret)
@@ -124,7 +124,7 @@ impl SqlExpand {
             let query = #executor_ident.create_query();
         );
 
-        let execut = match dto_ident {
+        let execute = match dto_ident {
             Some(_) => quote!(
                 query.execute(#executor_token, &named_sql, Some(#dto_ident)).await
             ),
@@ -137,7 +137,7 @@ impl SqlExpand {
             use dysql::SqlxExecutorAdatper;
             #named_sql_declare  // let named_sql = ....;
             #query_declare      // let query = executor.create_query(....);
-            #execut
+            #execute
         });
 
         Ok(ret)
@@ -158,7 +158,7 @@ impl SqlExpand {
             let query = #executor_ident.create_query();
         );
 
-        let execut = match dto_ident {
+        let execute = match dto_ident {
             Some(_) => quote!(
                 query.insert::<_, _, #ret_type>(#executor_token, &named_sql, Some(#dto_ident)).await 
             ),
@@ -171,7 +171,7 @@ impl SqlExpand {
             use dysql::SqlxExecutorAdatper;
             #named_sql_declare  // let named_sql = ....;
             #query_declare      // let query = executor.create_query(....);
-            #execut
+            #execute
         });
 
         Ok(ret)
@@ -192,7 +192,7 @@ impl SqlExpand {
             let query = #executor_ident.create_query();
         );
 
-        let execut = match dto_ident {
+        let execute = match dto_ident {
             Some(_) => quote!(
                 query.page::<_, _, #ret_type>(#executor_token, &named_sql, Some(#dto_ident)).await
             ),
@@ -205,7 +205,7 @@ impl SqlExpand {
             use dysql::SqlxExecutorAdatper;
             #named_sql_declare  // let named_sql = ....;
             #query_declare      // let query = executor.create_query(....);
-            #execut
+            #execute
         });
 
         Ok(ret)

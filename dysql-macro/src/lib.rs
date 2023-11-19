@@ -9,7 +9,7 @@ mod sql_expand;
 use proc_macro::TokenStream;
 use sql_expand::SqlExpand;
 use sql_fragment::{STATIC_SQL_FRAGMENT_MAP, SqlFragment};
-use syn::{punctuated::Punctuated, parse_macro_input, Token};
+use syn::{parse_macro_input, Token};
 use std::{collections::HashMap, sync::RwLock, path::PathBuf};
 use quote::quote;
 
@@ -199,18 +199,18 @@ fn parse_body(input: &syn::parse::ParseBuffer) -> Result<String, syn::Error> {
     Ok(sql)
 }
 
-/// 根据 s 生成 syn::Path 对象，用于 dysql 中有返回值的过程宏
-pub(crate) fn gen_type_path(s: &str) -> syn::Path {
-    let seg = syn::PathSegment {
-        ident: syn::Ident::new(s, proc_macro2::Span::call_site()),
-        arguments: syn::PathArguments::None,
-    };
-    let mut punct: Punctuated<syn::PathSegment, syn::Token![::]> = Punctuated::new();
-    punct.push_value(seg);
-    let path = syn::Path{ leading_colon: None, segments: punct };
+// /// 根据 s 生成 syn::Path 对象，用于 dysql 中有返回值的过程宏
+// pub(crate) fn gen_type_path(s: &str) -> syn::Path {
+//     let seg = syn::PathSegment {
+//         ident: syn::Ident::new(s, proc_macro2::Span::call_site()),
+//         arguments: syn::PathArguments::None,
+//     };
+//     let mut punct: Punctuated<syn::PathSegment, syn::Token![::]> = Punctuated::new();
+//     punct.push_value(seg);
+//     let path = syn::Path{ leading_colon: None, segments: punct };
 
-    path
-}
+//     path
+// }
 
 /// fetch all datas that filtered by dto
 /// 
@@ -295,21 +295,21 @@ pub fn fetch_one(input: TokenStream) -> TokenStream {
 /// ```ignore
 /// let mut conn = connect_db().await;
 /// 
-/// let rst = fetch_scalar!(|_| -> i64 {
+/// let rst = fetch_scalar!(|&conn| -> i64 {
 ///     r#"select count (*) from test_user"#
 /// }).unwrap();
 /// assert_eq!(3, rst);
 /// ```
-// #[proc_macro]
-// pub fn fetch_scalar(input: TokenStream) -> TokenStream {
-//     let st = syn::parse_macro_input!(input as DySqlFragmentContext);
-//     if st.ret_type.is_none() { panic!("ret_type can't be null.") }
+#[proc_macro]
+pub fn fetch_scalar(input: TokenStream) -> TokenStream {
+    // 将 input 解析成 SqlClosure
+    let st = syn::parse_macro_input!(input as DyClosure);
 
-//     match FetchScalar.expand(&st) {
-//         Ok(ret) => ret.into(),
-//         Err(e) => e.into_compile_error().into(),
-//     }
-// }
+    match SqlExpand.fetch_scalar(&st) {
+        Ok(ret) => ret.into(),
+        Err(e) => e.into_compile_error().into(),
+    }
+}
 
 ///
 /// Execute query
@@ -352,7 +352,7 @@ pub fn execute(input: TokenStream) -> TokenStream {
 /// let mut tran = get_transaction().await.unwrap();
 
 /// let dto = UserDto{ id: Some(4), name: Some("lisi".to_owned()), age: Some(50) };
-/// let last_insert_id = insert!(|&dto, &mut tran| -> (_, mysql) {
+/// let last_insert_id = insert!(|&mut *tran, &dto| -> (_, mysql) {
 ///     r#"insert into test_user (id, name, age) values (4, 'aa', 1)"#  // works for mysql and sqlite
 ///     // r#"insert into test_user (id, name, age) values (4, 'aa', 1) returning id"#  // works for postgres
 /// }).unwrap();
@@ -360,15 +360,16 @@ pub fn execute(input: TokenStream) -> TokenStream {
 /// 
 /// tran.rollback().await?;
 /// ```
-// #[proc_macro]
-// pub fn insert(input: TokenStream) -> TokenStream {
-//     let st = syn::parse_macro_input!(input as DySqlFragmentContext);
+#[proc_macro]
+pub fn insert(input: TokenStream) -> TokenStream {
+    // 将 input 解析成 SqlClosure
+    let st = syn::parse_macro_input!(input as DyClosure);
 
-//     match Insert.expand(&st) {
-//         Ok(ret) => ret.into(),
-//         Err(e) => e.into_compile_error().into(),
-//     }
-// }
+    match SqlExpand.insert(&st) {
+        Ok(ret) => ret.into(),
+        Err(e) => e.into_compile_error().into(),
+    }
+}
 
 ///
 /// Define a global sql fragment

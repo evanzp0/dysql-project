@@ -6,10 +6,9 @@ use paste::paste;
 
 use crate::{DySqlError, ErrorInner, Kind, SqlDialect};
 
-
 macro_rules! impl_bind_param_value {
     (
-        $query:ident, $p_val:ident, $($vtype:ty),+
+        $query:ident, $p_val:ident, [$($vtype:ty),+]
     ) => {
         paste!{
             match $p_val {
@@ -51,7 +50,7 @@ where
                 
                 let param_value = stpl.apply(dto);
                 if let Ok(param_value) = param_value {
-                    query = impl_bind_param_value!(query, param_value, i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime);
+                    query = impl_bind_param_value!(query, param_value, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime]);
                 }
             }
         }
@@ -73,12 +72,35 @@ where
                 
                 let param_value = stpl.apply(dto);
                 if let Ok(param_value) = param_value {
-                    query = impl_bind_param_value!(query, param_value, i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime);
+                    query = impl_bind_param_value!(query, param_value, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime]);
                 }
             }
         }
 
         let rst = query.fetch_all(executor).await;
+
+        rst.map_err(|e| DySqlError(ErrorInner::new(Kind::QueryError, Some(Box::new(e)), None)))
+    }
+
+    pub async fn fetch_scalar<'e, 'c: 'e, E, U>(self, executor: E) -> Result<U, DySqlError>
+    where
+        E: 'e + Executor<'c, Database = sqlx::Postgres>,
+        for<'r> U: sqlx::Decode<'r, sqlx::Postgres> + Send + Unpin,
+        U: sqlx::Type<sqlx::Postgres>,
+    {
+        let mut query = sqlx::query_scalar::<_, U>(self.sql);
+        if let Some(dto) = &self.dto {
+            for param_name in self.param_names {
+                let stpl = SimpleTemplate::new(param_name);
+                
+                let param_value = stpl.apply(dto);
+                if let Ok(param_value) = param_value {
+                    query = impl_bind_param_value!(query, param_value, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime]);
+                }
+            }
+        }
+
+        let rst = query.fetch_one(executor).await;
 
         rst.map_err(|e| DySqlError(ErrorInner::new(Kind::QueryError, Some(Box::new(e)), None)))
     }
@@ -94,7 +116,7 @@ where
                 
                 let param_value = stpl.apply(dto);
                 if let Ok(param_value) = param_value {
-                    query = impl_bind_param_value!(query, param_value, i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime);
+                    query = impl_bind_param_value!(query, param_value, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime]);
                 }
             }
         }
@@ -105,6 +127,29 @@ where
         let af_rows = rst.rows_affected();
         
         Ok(af_rows)
+    }
+
+    pub async fn insert<'e, 'c: 'e, E, U>(self, executor: E) -> Result<U, DySqlError>
+    where
+        E: 'e + Executor<'c, Database = sqlx::Postgres>,
+        for<'r> U: sqlx::Decode<'r, sqlx::Postgres> + Send + Unpin,
+        U: sqlx::Type<sqlx::Postgres>,
+    {
+        let mut query = sqlx::query_scalar::<_, U>(self.sql);
+        if let Some(dto) = &self.dto {
+            for param_name in self.param_names {
+                let stpl = SimpleTemplate::new(param_name);
+                
+                let param_value = stpl.apply(dto);
+                if let Ok(param_value) = param_value {
+                    query = impl_bind_param_value!(query, param_value, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime]);
+                }
+            }
+        }
+
+        let insert_id = query.fetch_one(executor).await;
+
+        insert_id.map_err(|e| DySqlError(ErrorInner::new(Kind::QueryError, Some(Box::new(e)), None)))
     }
 }
 

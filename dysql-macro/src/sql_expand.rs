@@ -78,6 +78,41 @@ impl SqlExpand {
         Ok(ret)
     }
 
+    /// expend fetch_scalar
+    pub fn fetch_scalar(&self, st: &DyClosure) -> syn::Result<proc_macro2::TokenStream>{
+        let dto_ident = &st.dto;
+        let executor_ident = &st.executor;
+        let executor_token = st.gen_executor_token();
+        let ret_type = &st.ret_type;
+
+        // declare named_sql at runtime
+        let named_sql_declare = self.gen_named_sql_declare(st, &st.body, false)?;
+
+        let query_declare = if let Some(dto) = dto_ident {
+            quote!(
+                let rst = dysql::extract_params(&named_sql, #executor_ident.get_dialect());
+                if let Err(e) = rst {
+                    break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::ExtractSqlParamterError, Some(Box::new(e)), None)))
+                }
+                let (sql, param_names) = rst.unwrap(); 
+                let query = #executor_ident.create_query(&sql, param_names, Some(#dto));
+            )
+        } else {
+            quote!(
+                let query = #executor_ident.create_query::<dysql::EmptyObject>(&named_sql, Vec::<&str>::new(), None);
+            )
+        };
+
+        let ret = quote!('rst_block: {
+            use dysql::SqlxExecutorAdatper;
+            #named_sql_declare  // let named_sql = ....;
+            #query_declare      // let query = executor.create_query(....);
+            query.fetch_scalar::<_, #ret_type>(#executor_token).await // all adapter must keep the same interface, let rst: ::std::result::Result<#ret_type, ::dysql::DySqlError>
+        });
+
+        Ok(ret)
+    }
+
     /// expend execute
     pub fn execute(&self, st: &DyClosure) -> syn::Result<proc_macro2::TokenStream>{
         let dto_ident = &st.dto;
@@ -107,6 +142,41 @@ impl SqlExpand {
             #named_sql_declare  // let named_sql = ....;
             #query_declare      // let query = executor.create_query(....);
             query.execute(#executor_token).await
+        });
+
+        Ok(ret)
+    }
+
+    /// expend insert
+    pub fn insert(&self, st: &DyClosure) -> syn::Result<proc_macro2::TokenStream>{
+        let dto_ident = &st.dto;
+        let executor_ident = &st.executor;
+        let executor_token = st.gen_executor_token();
+        let ret_type = &st.ret_type;
+
+        // declare named_sql at runtime
+        let named_sql_declare = self.gen_named_sql_declare(st, &st.body, false)?;
+
+        let query_declare = if let Some(dto) = dto_ident {
+            quote!(
+                let rst = dysql::extract_params(&named_sql, #executor_ident.get_dialect());
+                if let Err(e) = rst {
+                    break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::ExtractSqlParamterError, Some(Box::new(e)), None)))
+                }
+                let (sql, param_names) = rst.unwrap(); 
+                let query = #executor_ident.create_query(&sql, param_names, Some(#dto));
+            )
+        } else {
+            quote!(
+                let query = #executor_ident.create_query::<dysql::EmptyObject>(&named_sql, Vec::<&str>::new(), None);
+            )
+        };
+
+        let ret = quote!('rst_block: {
+            use dysql::SqlxExecutorAdatper;
+            #named_sql_declare  // let named_sql = ....;
+            #query_declare      // let query = executor.create_query(....);
+            query.insert::<_, #ret_type>(#executor_token).await // all adapter must keep the same interface, let rst: ::std::result::Result<#ret_type, ::dysql::DySqlError>
         });
 
         Ok(ret)

@@ -218,7 +218,7 @@ impl SqlExpand {
         Ok(ret)
     }
 
-    /// 根据 dto 生成运行时的 named_sql
+    /// 在编译时根据 dto 生成运行时需要使用的 named_sql
     /// 
     /// st: 在编译时生成的包含 sql 的结构体;
     fn gen_named_sql_declare(&self, st: &crate::DyClosure) -> syn::Result<proc_macro2::TokenStream> {
@@ -236,16 +236,6 @@ impl SqlExpand {
         
         match std::env::var("DYSQL_PESIST_SQL") {
             Ok(val) if val.to_ascii_uppercase() == "TRUE" => {
-                
-                // let sql_name = st.sql_name
-                //     .clone()
-                //     .map(|val|                    
-                //         if is_page_count {
-                //             "count_".to_owned() + &val
-                //         } else {
-                //             val.to_owned()
-                //         }
-                //     );
                 save_sql_template(source_file, template_id, &st.body, st.sql_name.clone()).unwrap();
             },
             _ => (),

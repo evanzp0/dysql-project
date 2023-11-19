@@ -205,7 +205,7 @@ impl SqlExpand {
             use dysql::SqlxExecutorAdatper;
             #named_sql_declare  // let named_sql = ....;
             #query_declare      // let query = executor.create_query(....);
-            
+            #execut
         });
 
         Ok(ret)

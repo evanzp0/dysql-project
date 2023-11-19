@@ -14,31 +14,29 @@ impl SqlExpand {
         let executor_ident = &st.executor;
         let executor_token = st.gen_executor_token();
         let ret_type = &st.ret_type;
-
+        
         // declare named_sql at runtime
         let named_sql_declare = self.gen_named_sql_declare(st)?;
 
-        let query_declare = if let Some(dto) = dto_ident {
-            quote!(
-                let rst = dysql::extract_params(&named_sql, #executor_ident.get_dialect());
-                // println!("rst == {:?}", rst);
-                if let Err(e) = rst {
-                    break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::ExtractSqlParamterError, Some(Box::new(e)), None)))
-                }
-                let (sql, param_names) = rst.unwrap(); 
-                let query = #executor_ident.create_query(&sql, param_names, Some(#dto));
-            )
-        } else {
-            quote!(
-                let query = #executor_ident.create_query::<dysql::EmptyObject>(&named_sql, Vec::<&str>::new(), None);
-            )
-        };
+        // 生成 QueryAdapter 对象
+        let query_declare = quote!(
+            let query = #executor_ident.create_query();
+        );
 
+        let execut = match dto_ident {
+            Some(_) => quote!(
+                query.fetch_one::<_, _, #ret_type>(#executor_token, &named_sql, Some(#dto_ident)).await 
+            ),
+            None => quote!(
+                query.fetch_one::<_, dysql::EmptyObject, #ret_type>(#executor_token, &named_sql, None).await 
+            ),
+        };
+        
         let ret = quote!('rst_block: {
             use dysql::SqlxExecutorAdatper;
             #named_sql_declare  // let named_sql = ....;
             #query_declare      // let query = executor.create_query(....);
-            query.fetch_one::<_, #ret_type>(#executor_token).await // all adapter must keep the same interface, let rst: ::std::result::Result<#ret_type, ::dysql::DySqlError>
+            #execut
         });
 
         Ok(ret)
@@ -54,26 +52,25 @@ impl SqlExpand {
         // declare named_sql at runtime
         let named_sql_declare = self.gen_named_sql_declare(st)?;
 
-        let query_declare = if let Some(dto) = dto_ident {
-            quote!(
-                let rst = dysql::extract_params(&named_sql, #executor_ident.get_dialect());
-                if let Err(e) = rst {
-                    break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::ExtractSqlParamterError, Some(Box::new(e)), None)))
-                }
-                let (sql, param_names) = rst.unwrap(); 
-                let query = #executor_ident.create_query(&sql, param_names, Some(#dto));
-            )
-        } else {
-            quote!(
-                let query = #executor_ident.create_query::<dysql::EmptyObject>(&named_sql, Vec::<&str>::new(), None);
-            )
+        // 生成 QueryAdapter 对象
+        let query_declare = quote!(
+            let query = #executor_ident.create_query();
+        );
+
+        let execut = match dto_ident {
+            Some(_) => quote!(
+                query.fetch_all::<_, _, #ret_type>(#executor_token, &named_sql, Some(#dto_ident)).await 
+            ),
+            None => quote!(
+                query.fetch_all::<_, dysql::EmptyObject, #ret_type>(#executor_token, &named_sql, None).await 
+            ),
         };
 
         let ret = quote!('rst_block: {
             use dysql::SqlxExecutorAdatper;
             #named_sql_declare  // let named_sql = ....;
             #query_declare      // let query = executor.create_query(....);
-            query.fetch_all::<_, #ret_type>(#executor_token).await
+            #execut
         });
 
         Ok(ret)
@@ -89,26 +86,25 @@ impl SqlExpand {
         // declare named_sql at runtime
         let named_sql_declare = self.gen_named_sql_declare(st)?;
 
-        let query_declare = if let Some(dto) = dto_ident {
-            quote!(
-                let rst = dysql::extract_params(&named_sql, #executor_ident.get_dialect());
-                if let Err(e) = rst {
-                    break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::ExtractSqlParamterError, Some(Box::new(e)), None)))
-                }
-                let (sql, param_names) = rst.unwrap(); 
-                let query = #executor_ident.create_query(&sql, param_names, Some(#dto));
-            )
-        } else {
-            quote!(
-                let query = #executor_ident.create_query::<dysql::EmptyObject>(&named_sql, Vec::<&str>::new(), None);
-            )
+        // 生成 QueryAdapter 对象
+        let query_declare = quote!(
+            let query = #executor_ident.create_query();
+        );
+
+        let execut = match dto_ident {
+            Some(_) => quote!(
+                query.fetch_scalar<_, _, #ret_type>(#executor_token, &named_sql, Some(#dto_ident)).await 
+            ),
+            None => quote!(
+                query.fetch_scalar::<_, dysql::EmptyObject, #ret_type>(#executor_token, &named_sql, None).await 
+            ),
         };
 
         let ret = quote!('rst_block: {
             use dysql::SqlxExecutorAdatper;
             #named_sql_declare  // let named_sql = ....;
             #query_declare      // let query = executor.create_query(....);
-            query.fetch_scalar::<_, #ret_type>(#executor_token).await // all adapter must keep the same interface, let rst: ::std::result::Result<#ret_type, ::dysql::DySqlError>
+            #execut
         });
 
         Ok(ret)
@@ -123,26 +119,25 @@ impl SqlExpand {
         // declare named_sql at runtime
         let named_sql_declare = self.gen_named_sql_declare(st)?;
 
-        let query_declare = if let Some(dto) = dto_ident {
-            quote!(
-                let rst = dysql::extract_params(&named_sql, #executor_ident.get_dialect());
-                if let Err(e) = rst {
-                    break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::ExtractSqlParamterError, Some(Box::new(e)), None)))
-                }
-                let (sql, param_names) = rst.unwrap(); 
-                let query = #executor_ident.create_query(&sql, param_names, Some(#dto));
-            )
-        } else {
-            quote!(
-                let query = #executor_ident.create_query::<dysql::EmptyObject>(&named_sql, Vec::<&str>::new(), None);
-            )
+        // 生成 QueryAdapter 对象
+        let query_declare = quote!(
+            let query = #executor_ident.create_query();
+        );
+
+        let execut = match dto_ident {
+            Some(_) => quote!(
+                query.execute(#executor_token, &named_sql, Some(#dto_ident)).await
+            ),
+            None => quote!(
+                query.execute::<_, dysql::EmptyObject>(#executor_token, &named_sql, None).await 
+            ),
         };
 
         let ret = quote!('rst_block: {
             use dysql::SqlxExecutorAdatper;
             #named_sql_declare  // let named_sql = ....;
             #query_declare      // let query = executor.create_query(....);
-            query.execute(#executor_token).await
+            #execut
         });
 
         Ok(ret)
@@ -158,26 +153,25 @@ impl SqlExpand {
         // declare named_sql at runtime
         let named_sql_declare = self.gen_named_sql_declare(st)?;
 
-        let query_declare = if let Some(dto) = dto_ident {
-            quote!(
-                let rst = dysql::extract_params(&named_sql, #executor_ident.get_dialect());
-                if let Err(e) = rst {
-                    break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::ExtractSqlParamterError, Some(Box::new(e)), None)))
-                }
-                let (sql, param_names) = rst.unwrap(); 
-                let query = #executor_ident.create_query(&sql, param_names, Some(#dto));
-            )
-        } else {
-            quote!(
-                let query = #executor_ident.create_query::<dysql::EmptyObject>(&named_sql, Vec::<&str>::new(), None);
-            )
+        // 生成 QueryAdapter 对象
+        let query_declare = quote!(
+            let query = #executor_ident.create_query();
+        );
+
+        let execut = match dto_ident {
+            Some(_) => quote!(
+                query.insert::<_, _, #ret_type>(#executor_token, &named_sql, Some(#dto_ident)).await 
+            ),
+            None => quote!(
+                query.insert::<_, dysql::EmptyObject, #ret_type>(#executor_token, &named_sql, None).await 
+            ),
         };
 
         let ret = quote!('rst_block: {
             use dysql::SqlxExecutorAdatper;
             #named_sql_declare  // let named_sql = ....;
             #query_declare      // let query = executor.create_query(....);
-            query.insert::<_, #ret_type>(#executor_token).await // all adapter must keep the same interface, let rst: ::std::result::Result<#ret_type, ::dysql::DySqlError>
+            #execut
         });
 
         Ok(ret)
@@ -193,32 +187,31 @@ impl SqlExpand {
         // declare named_sql whith template at runtime 
         let named_sql_declare = self.gen_named_sql_declare(st)?;
 
-        let query_declare = if let Some(dto) = dto_ident {
-            quote!(
-                let rst = dysql::extract_params(&named_sql, #executor_ident.get_dialect());
-                if let Err(e) = rst {
-                    break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::ExtractSqlParamterError, Some(Box::new(e)), None)))
-                }
-                let (sql, param_names) = rst.unwrap(); 
-                let query = #executor_ident.create_query(&sql, param_names, Some(#dto));
-            )
-        } else {
-            quote!(
-                let query = #executor_ident.create_query::<dysql::EmptyObject>(&named_sql, Vec::<&str>::new(), None);
-            )
+        // page_dto 通过 QueryAdapter.page() 方法传递，所以这里只要生成没有 dto 的 QueryAdapter 对象就可以了
+        let query_declare = quote!(
+            let query = #executor_ident.create_query();
+        );
+
+        let execut = match dto_ident {
+            Some(_) => quote!(
+                query.page::<_, _, #ret_type>(#executor_token, &named_sql, Some(#dto_ident)).await
+            ),
+            None => quote!(
+                query.page::<_, dysql::EmptyObject, #ret_type>(#executor_token, &named_sql, None).await 
+            ),
         };
 
         let ret = quote!('rst_block: {
             use dysql::SqlxExecutorAdatper;
             #named_sql_declare  // let named_sql = ....;
             #query_declare      // let query = executor.create_query(....);
-            query.fetch_all::<_, #ret_type>(#executor_token).await
+            
         });
 
         Ok(ret)
     }
 
-    /// 在编译时根据 dto 生成运行时需要使用的 named_sql
+    /// 在编译时生成运行时根据 dto 进行 render 后得到的 named_sql
     /// 
     /// st: 在编译时生成的包含 sql 的结构体;
     fn gen_named_sql_declare(&self, st: &crate::DyClosure) -> syn::Result<proc_macro2::TokenStream> {

@@ -5,63 +5,63 @@ use sqlx::{FromRow, Postgres, Pool, postgres::PgPoolOptions};
 async fn main() {
     let conn = connect_postgres_db().await;
 
-    let dto1 = UserDto{ id: Some(2), name: Some("huanglan".to_owned()), age: Some(13) , id_rng: None };
+    let dto1 = UserDto{ id: Some(1), name: Some("huanglan".to_owned()), age: Some(13) , id_rng: None };
     let dto2 = dto1.clone();
     let dto3 = dto1.clone();
     let dto4 = dto1.clone();
 
-    let rst = fetch_one!(|&conn, dto1| -> User {
-        "select * from test_user 
-        where 1 = 1
-            {{#id}} and id = :id  {{/id}}
-        order by id
-        "
-    }).unwrap();
-    println!("fetch_one with dto: {:?}", rst);
+    // let rst = fetch_one!(|&conn, dto1| -> User {
+    //     "select * from test_user 
+    //     where 1 = 1
+    //         {{#id}} and id = :id  {{/id}}
+    //     order by id
+    //     "
+    // }).unwrap();
+    // println!("fetch_one with dto: {:?}", rst);
 
-    let rst = fetch_one!(|&conn| -> User {
-        "select * from test_user where id = 1 order by id"
-    }).unwrap();
-    println!("fetch_one without dto: {:?}", rst);
+    // let rst = fetch_one!(|&conn| -> User {
+    //     "select * from test_user where id = 1 order by id"
+    // }).unwrap();
+    // println!("fetch_one without dto: {:?}", rst);
 
-    let rst = fetch_all!(|&conn| -> User {
-        "select * from test_user order by id"
-    }).unwrap();
-    println!("fetch_all without dto: {:?}", rst);
+    // let rst = fetch_all!(|&conn| -> User {
+    //     "select * from test_user order by id"
+    // }).unwrap();
+    // println!("fetch_all without dto: {:?}", rst);
 
-    let rst = fetch_scalar!(|&conn| -> i64 {
-        "select count(*) from test_user "
+    let rst = fetch_scalar!(|&conn, dto4| -> i64 {
+        "select count(*) from test_user where id = :id"
     }).unwrap();
     println!("fetch_scalar without dto: {:?}", rst);
 
-    let mut tran = conn.begin().await.unwrap();
-    let rst = execute!(|&mut *tran, dto2| -> User {
-        "update test_user set name = :name where id = :id"
-    }).unwrap();
-    println!("execute: {:?}", rst);
-    tran.rollback().await.unwrap();
+    // let mut tran = conn.begin().await.unwrap();
+    // let rst = execute!(|&mut *tran, dto2| -> User {
+    //     "update test_user set name = :name where id = :id"
+    // }).unwrap();
+    // println!("execute: {:?}", rst);
+    // tran.rollback().await.unwrap();
 
-    let mut tran = conn.begin().await.unwrap();
-    let rst = insert!(|&mut *tran, dto3| -> i64 {
-        "insert into test_user (name, age) values (:name, :age) returning id"
-    }).unwrap();
-    println!("insert: {:?}", rst);
-    tran.rollback().await.unwrap();
+    // let mut tran = conn.begin().await.unwrap();
+    // let rst = insert!(|&mut *tran, dto3| -> i64 {
+    //     "insert into test_user (name, age) values (:name, :age) returning id"
+    // }).unwrap();
+    // println!("insert: {:?}", rst);
+    // tran.rollback().await.unwrap();
 
-    let sort_model = vec![
-        SortModel {field: "id".to_owned(), sort: "desc".to_owned()}
-    ];
-    let pg_dto = PageDto::new_with_sort(3, 10, Some(dto4), sort_model);
+    // let sort_model = vec![
+    //     SortModel {field: "id".to_owned(), sort: "desc".to_owned()}
+    // ];
+    // let pg_dto = PageDto::new_with_sort(3, 10, Some(dto4), sort_model);
     
-    let rst = page!(|&conn, pg_dto| -> User {
-        "select * from test_user 
-        where 1 = 1
-        {{#data}}
-            {{#name}}and name like '%' || :data.name || '%'{{/name}}
-            {{#age}}and age > :data.age{{/age}}
-        {{/data}}"
-    }).unwrap();
-    println!("insert: {:?}", rst);
+    // let rst = page!(|&conn, pg_dto| -> User {
+    //     "select * from test_user 
+    //     where 1 = 1
+    //     {{#data}}
+    //         {{#name}}and name like '%' || :data.name || '%'{{/name}}
+    //         {{#age}}and age > :data.age{{/age}}
+    //     {{/data}}"
+    // }).unwrap();
+    // println!("insert: {:?}", rst);
 }
 
 #[derive(Content, Clone)]

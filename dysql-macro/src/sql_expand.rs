@@ -93,7 +93,7 @@ impl SqlExpand {
 
         let execute = match dto_ident {
             Some(_) => quote!(
-                query.fetch_scalar<_, _, #ret_type>(#executor_token, &named_sql, Some(#dto_ident)).await 
+                query.fetch_scalar::<_, _, #ret_type>(#executor_token, &named_sql, Some(#dto_ident)).await 
             ),
             None => quote!(
                 query.fetch_scalar::<_, dysql::EmptyObject, #ret_type>(#executor_token, &named_sql, None).await 

@@ -322,22 +322,23 @@ pub fn fetch_one(input: TokenStream) -> TokenStream {
 /// let mut tran = get_transaction().await.unwrap();
 /// 
 /// let dto = UserDto::new(Some(2), None, None);
-/// let rst = execute!(|&dto, &mut tran| {
+/// let rst = execute!(|&mut *tran, &dto| {
 ///     r#"delete from test_user where id = :id"#
 /// }).unwrap();
 /// assert_eq!(1, rst);
 /// 
 /// tran.rollback().await?;
 /// ```
-// #[proc_macro]
-// pub fn execute(input: TokenStream) -> TokenStream {
-//     let st = syn::parse_macro_input!(input as DySqlFragmentContext);
+#[proc_macro]
+pub fn execute(input: TokenStream) -> TokenStream {
+    // 将 input 解析成 SqlClosure
+    let st = syn::parse_macro_input!(input as DyClosure);
 
-//     match Execute.expand(&st) {
-//         Ok(ret) => ret.into(),
-//         Err(e) => e.into_compile_error().into(),
-//     }
-// }
+    match SqlExpand.execute(&st) {
+        Ok(ret) => ret.into(),
+        Err(e) => e.into_compile_error().into(),
+    }
+}
 
 ///
 /// Insert data

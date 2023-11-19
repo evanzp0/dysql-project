@@ -44,7 +44,7 @@ where
         E: 'e + Executor<'c, Database = sqlx::Postgres>,
         for<'r> U: FromRow<'r, sqlx::postgres::PgRow> + Send + Unpin,
     {
-        let mut query = sqlx::query_as::<sqlx::Postgres, U>(self.sql);
+        let mut query = sqlx::query_as::<_, U>(self.sql);
         if let Some(dto) = &self.dto {
             for param_name in self.param_names {
                 let stpl = SimpleTemplate::new(param_name);
@@ -65,7 +65,7 @@ where
     where
         E: 'e + Executor<'c, Database = sqlx::Postgres>,
     {
-        let mut query = sqlx::query::<sqlx::Postgres>(self.sql);
+        let mut query = sqlx::query::<_>(self.sql);
         if let Some(dto) = &self.dto {
             for param_name in self.param_names {
                 let stpl = SimpleTemplate::new(param_name);

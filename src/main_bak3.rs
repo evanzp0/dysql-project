@@ -1,4 +1,4 @@
-use dysql::{Content, fetch_one};
+use dysql::{Content, fetch_one, execute};
 use sqlx::{FromRow, Postgres, Pool, postgres::PgPoolOptions};
 
 #[tokio::main]
@@ -6,19 +6,26 @@ async fn main() {
     let conn = connect_postgres_db().await;
     let mut tran = conn.begin().await.unwrap();
 
-    let dto = UserDto{ id: Some(2), name: None, age: Some(13) , id_rng: None };
-
-    let rst = fetch_one!(|&mut *tran| -> User {
-        "select * from test_user where id = 1 order by id"
-    }).unwrap();
-
-    println!("{:?}", rst);
+    let dto = UserDto{ id: Some(2), name: Some("huanglan".to_owned()), age: Some(13) , id_rng: None };
+    let dto1 = dto.clone();
 
     let rst = fetch_one!(|&mut *tran, dto| -> User {
         "select * from test_user where id = :id order by id"
     }).unwrap();
 
-    println!("{:?}", rst);
+    println!("fetch_one with dto: {:?}", rst);
+
+    let rst = fetch_one!(|&mut *tran| -> User {
+        "select * from test_user where id = 1 order by id"
+    }).unwrap();
+
+    println!("fetch_one without dto: {:?}", rst);
+
+    let rst = execute!(|&mut *tran, dto1| -> User {
+        "update test_user set name = :name where id = :id"
+    }).unwrap();
+
+    println!("execute: {:?}", rst);
 }
 
 #[derive(Content, Clone)]

@@ -7,7 +7,7 @@ use crate::SortModel;
 #[derive(Debug, Deserialize, Clone)]
 // #[derive(Content)]
 pub struct PageDto <T> {
-    pub data: T,
+    pub data: Option<T>,
     pub page_size: u64,
     pub page_no: u64,
     pub total_page: Option<u64>,
@@ -19,7 +19,7 @@ pub struct PageDto <T> {
 
 impl<T> PageDto<T>
 {
-    pub fn new(page_size: u64, page_no: u64, data: T) -> Self {
+    pub fn new(page_size: u64, page_no: u64, data: Option<T>) -> Self {
         Self {
             page_size,
             page_no,
@@ -32,7 +32,7 @@ impl<T> PageDto<T>
         }
     }
 
-    pub fn new_with_sort(page_size: u64, page_no: u64, data: T, sort_model: Vec<SortModel>) -> Self {
+    pub fn new_with_sort(page_size: u64, page_no: u64, data: Option<T>, sort_model: Vec<SortModel>) -> Self {
         Self {
             page_size,
             page_no,

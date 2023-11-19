@@ -10,7 +10,11 @@ async fn main() {
     let dto3 = dto1.clone();
 
     let rst = fetch_one!(|&conn, dto1| -> User {
-        "select * from test_user where id = :id order by id"
+        "select * from test_user 
+        where 1 = 1
+            {{#id}} and id = :id  {{/id}}
+        order by id
+        "
     }).unwrap();
     println!("fetch_one with dto: {:?}", rst);
 

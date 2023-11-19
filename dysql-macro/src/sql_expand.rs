@@ -16,11 +16,12 @@ impl SqlExpand {
         let ret_type = &st.ret_type;
 
         // declare named_sql at runtime
-        let named_sql_declare = self.gen_named_sql_declare(st, &st.body, false)?;
+        let named_sql_declare = self.gen_named_sql_declare(st)?;
 
         let query_declare = if let Some(dto) = dto_ident {
             quote!(
                 let rst = dysql::extract_params(&named_sql, #executor_ident.get_dialect());
+                // println!("rst == {:?}", rst);
                 if let Err(e) = rst {
                     break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::ExtractSqlParamterError, Some(Box::new(e)), None)))
                 }
@@ -51,7 +52,7 @@ impl SqlExpand {
         let ret_type = &st.ret_type;
 
         // declare named_sql at runtime
-        let named_sql_declare = self.gen_named_sql_declare(st, &st.body, false)?;
+        let named_sql_declare = self.gen_named_sql_declare(st)?;
 
         let query_declare = if let Some(dto) = dto_ident {
             quote!(
@@ -86,7 +87,7 @@ impl SqlExpand {
         let ret_type = &st.ret_type;
 
         // declare named_sql at runtime
-        let named_sql_declare = self.gen_named_sql_declare(st, &st.body, false)?;
+        let named_sql_declare = self.gen_named_sql_declare(st)?;
 
         let query_declare = if let Some(dto) = dto_ident {
             quote!(
@@ -120,7 +121,7 @@ impl SqlExpand {
         let executor_token = st.gen_executor_token();
 
         // declare named_sql at runtime
-        let named_sql_declare = self.gen_named_sql_declare(st, &st.body, false)?;
+        let named_sql_declare = self.gen_named_sql_declare(st)?;
 
         let query_declare = if let Some(dto) = dto_ident {
             quote!(
@@ -155,7 +156,7 @@ impl SqlExpand {
         let ret_type = &st.ret_type;
 
         // declare named_sql at runtime
-        let named_sql_declare = self.gen_named_sql_declare(st, &st.body, false)?;
+        let named_sql_declare = self.gen_named_sql_declare(st)?;
 
         let query_declare = if let Some(dto) = dto_ident {
             quote!(
@@ -182,15 +183,49 @@ impl SqlExpand {
         Ok(ret)
     }
 
-    /// 生成运行时的 named_sql
+    /// expend page query
+    pub fn page(&self, st: &DyClosure) -> syn::Result<proc_macro2::TokenStream>{
+        let dto_ident = &st.dto;
+        let executor_ident = &st.executor;
+        let executor_token = st.gen_executor_token();
+        let ret_type = &st.ret_type;
+
+        // declare named_sql whith template at runtime 
+        let named_sql_declare = self.gen_named_sql_declare(st)?;
+
+        let query_declare = if let Some(dto) = dto_ident {
+            quote!(
+                let rst = dysql::extract_params(&named_sql, #executor_ident.get_dialect());
+                if let Err(e) = rst {
+                    break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::ExtractSqlParamterError, Some(Box::new(e)), None)))
+                }
+                let (sql, param_names) = rst.unwrap(); 
+                let query = #executor_ident.create_query(&sql, param_names, Some(#dto));
+            )
+        } else {
+            quote!(
+                let query = #executor_ident.create_query::<dysql::EmptyObject>(&named_sql, Vec::<&str>::new(), None);
+            )
+        };
+
+        let ret = quote!('rst_block: {
+            use dysql::SqlxExecutorAdatper;
+            #named_sql_declare  // let named_sql = ....;
+            #query_declare      // let query = executor.create_query(....);
+            query.fetch_all::<_, #ret_type>(#executor_token).await
+        });
+
+        Ok(ret)
+    }
+
+    /// 根据 dto 生成运行时的 named_sql
     /// 
-    /// st: 在编译时生成的包含 sql 的结构体;\
-    /// sql 可能会是 page 和 page 相关的两个sql，它表示分页查询时的 count sql 和 order sql;
-    fn gen_named_sql_declare(&self, st: &crate::DyClosure, sql: &str, is_page_count: bool) -> syn::Result<proc_macro2::TokenStream> {
+    /// st: 在编译时生成的包含 sql 的结构体;
+    fn gen_named_sql_declare(&self, st: &crate::DyClosure) -> syn::Result<proc_macro2::TokenStream> {
         let dto_ident = &st.dto;
 
         // 根据 sql body 生成唯一 hash 标识
-        let template_id = hash_str(sql);
+        let template_id = hash_str(&st.body);
         
         // 根据配置决定是否持久化 sql
         let source_file = if let Some(path) = st.source_file.to_str() {
@@ -202,22 +237,22 @@ impl SqlExpand {
         match std::env::var("DYSQL_PESIST_SQL") {
             Ok(val) if val.to_ascii_uppercase() == "TRUE" => {
                 
-                let sql_name = st.sql_name
-                    .clone()
-                    .map(|val|                    
-                        if is_page_count {
-                            "count_".to_owned() + &val
-                        } else {
-                            val.to_owned()
-                        }
-                    );
-                save_sql_template(source_file, template_id, sql, sql_name).unwrap();
+                // let sql_name = st.sql_name
+                //     .clone()
+                //     .map(|val|                    
+                //         if is_page_count {
+                //             "count_".to_owned() + &val
+                //         } else {
+                //             val.to_owned()
+                //         }
+                //     );
+                save_sql_template(source_file, template_id, &st.body, st.sql_name.clone()).unwrap();
             },
             _ => (),
         }
         
         // 根据 sql 生成模板
-        let template = Template::new(sql).expect("error: generate template from sql failed");
+        let template = Template::new(&st.body).expect("error: generate template from sql failed");
         // 将模板序列化，接下来通过 TokenSteam 放在编译后的文件里，可以加快加载速度
         let serd_template = template.serialize();
 

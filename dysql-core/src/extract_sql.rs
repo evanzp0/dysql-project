@@ -26,7 +26,7 @@ use crate::{sql_dialect::SqlDialect, error::{ParseSqlResult, ParseSqlError}};
 /// );
 /// ```
 pub fn extract_params<'a>(o_sql: &'a str, sql_dial: SqlDialect) -> ParseSqlResult<(String, Vec<&'a str>)> {
-    // eprintln!("{:#?}", o_sql);
+    // eprintln!("o_sql = {:#?}", o_sql);
     let mut r_sql = String::new();
     let mut params: Vec<&'a str> = vec![];
 

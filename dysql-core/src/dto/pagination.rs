@@ -16,7 +16,10 @@ pub struct Pagination <T> {
 }
 
 impl<T> Pagination<T> {
-    pub fn from_dto<Dto: Clone>(dto: &PageDto<Dto>, data: Vec<T>) -> Self {
+    pub fn from_dto<Dto>(dto: &PageDto<Dto>, data: Vec<T>) -> Self 
+    where
+        Dto: Clone
+    {
         Self {
             data,
             page_size: dto.page_size,

@@ -4,7 +4,7 @@ use dysql_tpl::{Content, SimpleTemplate};
 use sqlx::{Executor, FromRow};
 use paste::paste;
 
-use crate::{DySqlError, ErrorInner, Kind, SqlDialect};
+use crate::{DySqlError, ErrorInner, Kind, SqlDialect, Pagination, PageDto};
 
 macro_rules! impl_bind_param_value {
     (
@@ -152,27 +152,35 @@ where
         insert_id.map_err(|e| DySqlError(ErrorInner::new(Kind::QueryError, Some(Box::new(e)), None)))
     }
 
-    // pub async fn page<'e, 'c: 'e, E, U>(self, executor: E) -> Result<Pagination<U>, DySqlError>
-    // where
-    //     E: 'e + Executor<'c, Database = sqlx::Postgres>,
-    //     for<'r> U: FromRow<'r, sqlx::postgres::PgRow> + Send + Unpin,
-    // {
-    //     let mut query = sqlx::query_as::<_, U>(self.sql);
-    //     if let Some(dto) = &self.dto {
-    //         for param_name in self.param_names {
-    //             let stpl = SimpleTemplate::new(param_name);
-                
-    //             let param_value = stpl.apply(dto);
-    //             if let Ok(param_value) = param_value {
-    //                 query = impl_bind_param_value!(query, param_value, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime]);
-    //             }
-    //         }
-    //     }
+    pub async fn page<'e, 'c: 'e, E, U>(self, executor: E, page_dto: PageDto<D>) -> Result<Pagination<U>, DySqlError>
+    where
+        E: 'e + Executor<'c, Database = sqlx::Postgres>,
+        for<'r> U: FromRow<'r, sqlx::postgres::PgRow> + Send + Unpin,
+    {
+        // let count_sql;
+        // todo!
 
-    //     let rst = query.fetch_all(executor).await;
 
-    //     rst.map_err(|e| DySqlError(ErrorInner::new(Kind::QueryError, Some(Box::new(e)), None)))
-    // }
+        // let page_sql;
+        
+        let mut query = sqlx::query_as::<_, U>(self.sql);
+        
+        for param_name in self.param_names {
+            let stpl = SimpleTemplate::new(param_name);
+            
+            let param_value = stpl.apply(&page_dto);
+            if let Ok(param_value) = param_value {
+                query = impl_bind_param_value!(query, param_value, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime]);
+            }
+        }
+
+        let rst = query.fetch_all(executor).await;
+        let rst = rst.map_err(|e| DySqlError(ErrorInner::new(Kind::QueryError, Some(Box::new(e)), None)))?;
+
+        let pg_data = Pagination::from_dto(&page_dto, rst);
+
+        Ok(pg_data)
+    }
 }
 
 pub trait SqlxExecutorAdatper<'q, DB> 

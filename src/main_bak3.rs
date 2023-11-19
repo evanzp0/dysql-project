@@ -8,12 +8,17 @@ async fn main() {
 
     let dto = UserDto{ id: Some(2), name: None, age: Some(13) , id_rng: None };
 
+    let rst = fetch_one!(|&mut *tran| -> User {
+        "select * from test_user where id = 1 order by id"
+    }).unwrap();
+
+    println!("{:?}", rst);
+
     let rst = fetch_one!(|&mut *tran, dto| -> User {
         "select * from test_user where id = :id order by id"
     }).unwrap();
 
-    println!("{:?}", rst)
-
+    println!("{:?}", rst);
 }
 
 #[derive(Content, Clone)]

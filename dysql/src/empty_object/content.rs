@@ -1,14 +1,11 @@
 #![allow(unused)]
 
-use crate::Value;
+use crate::EmptyObject;
 
-impl<T> crate::Content for Value<T>
-where
-    T: crate::Content,
-{
+impl crate::Content for EmptyObject {
     #[inline]
     fn capacity_hint(&self, tpl: &crate::Template) -> usize {
-        tpl.capacity_hint() + self.value.capacity_hint(tpl)
+        tpl.capacity_hint()
     }
     #[inline]
     fn render_section<C, E, IC>(
@@ -57,7 +54,6 @@ where
         E: crate::encoding::Encoder,
     {
         match hash {
-            2388869121238140847u64 => self.value.render_escaped(encoder).map(|_| true),
             _ => Ok(false),
         }
     }
@@ -72,7 +68,6 @@ where
         E: crate::encoding::Encoder,
     {
         match hash {
-            2388869121238140847u64 => self.value.render_unescaped(encoder).map(|_| true),
             _ => Ok(false),
         }
     }
@@ -83,7 +78,6 @@ where
         name: &str,
     ) -> std::result::Result<crate::SimpleValue, crate::SimpleError> {
         match hash {
-            2388869121238140847u64 => self.value.apply_unescaped(),
             _ => {
                 Err(
                     crate::SimpleInnerError(std::format!("the data type of field: {0} is not supported ", name)).into()
@@ -103,11 +97,6 @@ where
         E: crate::encoding::Encoder,
     {
         match hash {
-            2388869121238140847u64 => {
-                self.value
-                    .render_section(section, encoder, Option::<&()>::None)
-                    .map(|_| true)
-            }
             _ => Ok(false),
         }
     }
@@ -121,7 +110,6 @@ where
         P: crate::traits::ContentSequence,
     {
         match hash {
-            2388869121238140847u64 => self.value.apply_section(section),
             _ => {
                 Err(
                     crate::SimpleInnerError(std::format!("tthe data type of field is not supported")).into()
@@ -141,11 +129,6 @@ where
         E: crate::encoding::Encoder,
     {
         match hash {
-            2388869121238140847u64 => {
-                self.value
-                    .render_inverse(section, encoder, Option::<&()>::None)
-                    .map(|_| true)
-            }
             _ => Ok(false),
         }
     }
@@ -161,13 +144,7 @@ where
         E: crate::encoding::Encoder,
     {
         match hash {
-            2388869121238140847u64 => {
-                self.value
-                    .render_notnone_section(section, encoder, Option::<&()>::None)?;
-                Ok(self.value.is_truthy())
-            }
             _ => Ok(false),
         }
     }
 }
-

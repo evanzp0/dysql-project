@@ -19,7 +19,7 @@ macro_rules! impl_bind_param_value {
                 dysql_tpl::SimpleValue::t_str(val) => $query.bind(unsafe {&*val}),
                 dysql_tpl::SimpleValue::t_String(val) => $query.bind(unsafe {&*val}),
                 dysql_tpl::SimpleValue::t_Utc(val) => $query.bind(val),
-                dysql_tpl::SimpleValue::Null(_) => $query.bind(Option::<i32>::None),
+                dysql_tpl::SimpleValue::None(val) => $query.bind(val),
                 _ => Err(DySqlError(ErrorInner::new(Kind::BindParamterError, None, Some(format!("the type of {:?} is not support", $p_val)))))?,
             }
         }
@@ -95,8 +95,6 @@ where
         D: Content + 'static + Send + Sync,
         DB: sqlx::Database
     {
-        println!("param_names: {:#?}", param_names);
-
         SqlxQuery {
             sql,
             param_names,

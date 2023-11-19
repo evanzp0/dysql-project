@@ -26,7 +26,7 @@ macro_rules! impl_simple_value_varaint {
                 // option_String(Option<*const String>),
                 t_Utc(DateTime<Utc>),
                 // option_Utc(Option<DateTime<Utc>>),
-                Null(Option<()>),
+                None(Option<i32>),
                 // t_unknown,
             }
         }

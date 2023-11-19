@@ -4,7 +4,7 @@ use crate::PageDto;
 
 mod content;
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 // #[derive(Content)]
 pub struct Pagination <T> {
     pub data: Vec<T>,

@@ -4,7 +4,7 @@ use serde::Deserialize;
 
 use crate::SortModel;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 // #[derive(Content)]
 pub struct PageDto <T> {
     pub data: T,

@@ -29,8 +29,6 @@ impl SimpleTemplate
             SimpleBlock::new(name, tag, children as u32)
         }).collect();
 
-        println!("blocks: {:#?}", blocks);
-
         Self {
             blocks,
         }

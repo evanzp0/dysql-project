@@ -21,6 +21,16 @@ impl crate::Content for SortModel {
         section.with(self).render(encoder, Option::<&()>::None)
     }
     #[inline]
+    fn apply_section<C>(
+        &self,
+        section: crate::SimpleSection<C>,
+    ) -> std::result::Result<crate::SimpleValue, crate::SimpleError>
+    where
+        C: crate::traits::ContentSequence,
+    {
+        section.with(self).apply()
+    }
+    #[inline]
     fn render_notnone_section<C, E, IC>(
         &self,
         section: crate::Section<C>,
@@ -65,6 +75,22 @@ impl crate::Content for SortModel {
             _ => Ok(false),
         }
     }
+    #[inline]
+    fn apply_field_unescaped(
+        &self,
+        hash: u64,
+        name: &str,
+    ) -> std::result::Result<crate::SimpleValue, crate::SimpleError> {
+        match hash {
+            5264107000299760680u64 => self.field.apply_unescaped(),
+            9189260103713392746u64 => self.sort.apply_unescaped(),
+            _ => {
+                Err(
+                    crate::SimpleInnerError(std::format!("the data type of field: {0} is not supported ", name)).into()
+                )
+            }
+        }
+    }
     fn render_field_section<P, E>(
         &self,
         hash: u64,
@@ -78,18 +104,35 @@ impl crate::Content for SortModel {
     {
         match hash {
             5264107000299760680u64 => {
-                self
-                    .field
+                self.field
                     .render_section(section, encoder, Option::<&()>::None)
                     .map(|_| true)
             }
             9189260103713392746u64 => {
-                self
-                    .sort
+                self.sort
                     .render_section(section, encoder, Option::<&()>::None)
                     .map(|_| true)
             }
             _ => Ok(false),
+        }
+    }
+    fn apply_field_section<P>(
+        &self,
+        hash: u64,
+        name: &str,
+        section: crate::SimpleSection<P>,
+    ) -> std::result::Result<crate::SimpleValue, crate::SimpleError>
+    where
+        P: crate::traits::ContentSequence,
+    {
+        match hash {
+            5264107000299760680u64 => self.field.apply_section(section),
+            9189260103713392746u64 => self.sort.apply_section(section),
+            _ => {
+                Err(
+                    crate::SimpleInnerError(std::format!("tthe data type of field is not supported")).into()
+                )
+            }
         }
     }
     fn render_field_inverse<P, E>(
@@ -105,14 +148,12 @@ impl crate::Content for SortModel {
     {
         match hash {
             5264107000299760680u64 => {
-                self
-                    .field
+                self.field
                     .render_inverse(section, encoder, Option::<&()>::None)
                     .map(|_| true)
             }
             9189260103713392746u64 => {
-                self
-                    .sort
+                self.sort
                     .render_inverse(section, encoder, Option::<&()>::None)
                     .map(|_| true)
             }

@@ -29,7 +29,7 @@ impl SqlExpand {
             )
         } else {
             quote!(
-                let query = #executor_ident.create_query(&sql, vec![], None);
+                let query = #executor_ident.create_query::<dysql::EmptyObject>(&named_sql, Vec::<&str>::new(), None);
             )
         };
 

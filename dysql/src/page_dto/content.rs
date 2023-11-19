@@ -1,7 +1,7 @@
 #![allow(unused)]
-use crate::PageDto;
 
-impl<T: Clone> crate::Content for PageDto<T>
+use crate::PageDto;
+impl<T> crate::Content for PageDto<T>
 where
     T: crate::Content,
 {
@@ -25,6 +25,16 @@ where
         E: crate::encoding::Encoder,
     {
         section.with(self).render(encoder, Option::<&()>::None)
+    }
+    #[inline]
+    fn apply_section<C>(
+        &self,
+        section: crate::SimpleSection<C>,
+    ) -> std::result::Result<crate::SimpleValue, crate::SimpleError>
+    where
+        C: crate::traits::ContentSequence,
+    {
+        section.with(self).apply()
     }
     #[inline]
     fn render_notnone_section<C, E, IC>(
@@ -99,6 +109,28 @@ where
             _ => Ok(false),
         }
     }
+    #[inline]
+    fn apply_field_unescaped(
+        &self,
+        hash: u64,
+        name: &str,
+    ) -> std::result::Result<crate::SimpleValue, crate::SimpleError> {
+        match hash {
+            1212331373962215526u64 => self.total.apply_unescaped(),
+            4430724373119788750u64 => self.data.apply_unescaped(),
+            8220941355636662115u64 => self.is_sort.apply_unescaped(),
+            9928246550803098198u64 => self.total_page.apply_unescaped(),
+            10087286125916898991u64 => self.page_size.apply_unescaped(),
+            11609058959308731613u64 => self.page_no.apply_unescaped(),
+            11721374545196086984u64 => self.sort_model.apply_unescaped(),
+            13127600857983441824u64 => self.start.apply_unescaped(),
+            _ => {
+                Err(
+                    crate::SimpleInnerError(std::format!("the data type of field: {0} is not supported ", name)).into()
+                )
+            }
+        }
+    }
     fn render_field_section<P, E>(
         &self,
         hash: u64,
@@ -112,54 +144,71 @@ where
     {
         match hash {
             1212331373962215526u64 => {
-                self
-                    .total
+                self.total
                     .render_section(section, encoder, Option::<&()>::None)
                     .map(|_| true)
             }
             4430724373119788750u64 => {
-                self
-                    .data
+                self.data
                     .render_section(section, encoder, Option::<&()>::None)
                     .map(|_| true)
             }
             8220941355636662115u64 => {
-                self
-                    .is_sort
+                self.is_sort
                     .render_section(section, encoder, Option::<&()>::None)
                     .map(|_| true)
             }
             9928246550803098198u64 => {
-                self
-                    .total_page
+                self.total_page
                     .render_section(section, encoder, Option::<&()>::None)
                     .map(|_| true)
             }
             10087286125916898991u64 => {
-                self
-                    .page_size
+                self.page_size
                     .render_section(section, encoder, Option::<&()>::None)
                     .map(|_| true)
             }
             11609058959308731613u64 => {
-                self
-                    .page_no
+                self.page_no
                     .render_section(section, encoder, Option::<&()>::None)
                     .map(|_| true)
             }
             11721374545196086984u64 => {
-                self
-                    .sort_model
+                self.sort_model
                     .render_section(section, encoder, Option::<&()>::None)
                     .map(|_| true)
             }
             13127600857983441824u64 => {
-                self
-                    .start
+                self.start
                     .render_section(section, encoder, Option::<&()>::None)
                     .map(|_| true)
             }
             _ => Ok(false),
+        }
+    }
+    fn apply_field_section<P>(
+        &self,
+        hash: u64,
+        name: &str,
+        section: crate::SimpleSection<P>,
+    ) -> std::result::Result<crate::SimpleValue, crate::SimpleError>
+    where
+        P: crate::traits::ContentSequence,
+    {
+        match hash {
+            1212331373962215526u64 => self.total.apply_section(section),
+            4430724373119788750u64 => self.data.apply_section(section),
+            8220941355636662115u64 => self.is_sort.apply_section(section),
+            9928246550803098198u64 => self.total_page.apply_section(section),
+            10087286125916898991u64 => self.page_size.apply_section(section),
+            11609058959308731613u64 => self.page_no.apply_section(section),
+            11721374545196086984u64 => self.sort_model.apply_section(section),
+            13127600857983441824u64 => self.start.apply_section(section),
+            _ => {
+                Err(
+                    crate::SimpleInnerError(std::format!("tthe data type of field is not supported")).into()
+                )
+            }
         }
     }
     fn render_field_inverse<P, E>(
@@ -175,50 +224,42 @@ where
     {
         match hash {
             1212331373962215526u64 => {
-                self
-                    .total
+                self.total
                     .render_inverse(section, encoder, Option::<&()>::None)
                     .map(|_| true)
             }
             4430724373119788750u64 => {
-                self
-                    .data
+                self.data
                     .render_inverse(section, encoder, Option::<&()>::None)
                     .map(|_| true)
             }
             8220941355636662115u64 => {
-                self
-                    .is_sort
+                self.is_sort
                     .render_inverse(section, encoder, Option::<&()>::None)
                     .map(|_| true)
             }
             9928246550803098198u64 => {
-                self
-                    .total_page
+                self.total_page
                     .render_inverse(section, encoder, Option::<&()>::None)
                     .map(|_| true)
             }
             10087286125916898991u64 => {
-                self
-                    .page_size
+                self.page_size
                     .render_inverse(section, encoder, Option::<&()>::None)
                     .map(|_| true)
             }
             11609058959308731613u64 => {
-                self
-                    .page_no
+                self.page_no
                     .render_inverse(section, encoder, Option::<&()>::None)
                     .map(|_| true)
             }
             11721374545196086984u64 => {
-                self
-                    .sort_model
+                self.sort_model
                     .render_inverse(section, encoder, Option::<&()>::None)
                     .map(|_| true)
             }
             13127600857983441824u64 => {
-                self
-                    .start
+                self.start
                     .render_inverse(section, encoder, Option::<&()>::None)
                     .map(|_| true)
             }

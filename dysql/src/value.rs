@@ -1,7 +1,7 @@
 mod content;
 
 #[allow(unused)]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Value<T> {
     pub value: T
 }

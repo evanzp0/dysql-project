@@ -448,7 +448,7 @@ impl<T: Content> Content for Option<T> {
         if let Some(ref inner) = self {
             inner.apply_unescaped()
         } else {
-            Ok(SimpleValue::Null(None))
+            Ok(SimpleValue::None(None))
         }
     }
 
@@ -481,7 +481,7 @@ impl<T: Content> Content for Option<T> {
         if let Some(ref item) = self {
             item.apply_section(section)
         } else {
-            Ok(SimpleValue::Null(None))
+            Ok(SimpleValue::None(None))
         }
     }
 

@@ -1,45 +1,45 @@
 #![allow(unused)]
 
-use crate::EmptyObject;
+use super::EmptyObject;
 
-impl crate::Content for EmptyObject {
+impl dysql_tpl::Content for EmptyObject {
     #[inline]
-    fn capacity_hint(&self, tpl: &crate::Template) -> usize {
+    fn capacity_hint(&self, tpl: &dysql_tpl::Template) -> usize {
         tpl.capacity_hint()
     }
     #[inline]
     fn render_section<C, E, IC>(
         &self,
-        section: crate::Section<C>,
+        section: dysql_tpl::Section<C>,
         encoder: &mut E,
         _content: Option<&IC>,
     ) -> std::result::Result<(), E::Error>
     where
-        C: crate::traits::ContentSequence,
-        E: crate::encoding::Encoder,
+        C: dysql_tpl::traits::ContentSequence,
+        E: dysql_tpl::encoding::Encoder,
     {
         section.with(self).render(encoder, Option::<&()>::None)
     }
     #[inline]
     fn apply_section<C>(
         &self,
-        section: crate::SimpleSection<C>,
-    ) -> std::result::Result<crate::SimpleValue, crate::SimpleError>
+        section: dysql_tpl::SimpleSection<C>,
+    ) -> std::result::Result<dysql_tpl::SimpleValue, dysql_tpl::SimpleError>
     where
-        C: crate::traits::ContentSequence,
+        C: dysql_tpl::traits::ContentSequence,
     {
         section.with(self).apply()
     }
     #[inline]
     fn render_notnone_section<C, E, IC>(
         &self,
-        section: crate::Section<C>,
+        section: dysql_tpl::Section<C>,
         encoder: &mut E,
         _content: Option<&IC>,
     ) -> std::result::Result<(), E::Error>
     where
-        C: crate::traits::ContentSequence,
-        E: crate::encoding::Encoder,
+        C: dysql_tpl::traits::ContentSequence,
+        E: dysql_tpl::encoding::Encoder,
     {
         section.with(self).render(encoder, Option::<&()>::None)
     }
@@ -51,7 +51,7 @@ impl crate::Content for EmptyObject {
         encoder: &mut E,
     ) -> std::result::Result<bool, E::Error>
     where
-        E: crate::encoding::Encoder,
+        E: dysql_tpl::encoding::Encoder,
     {
         match hash {
             _ => Ok(false),
@@ -65,7 +65,7 @@ impl crate::Content for EmptyObject {
         encoder: &mut E,
     ) -> std::result::Result<bool, E::Error>
     where
-        E: crate::encoding::Encoder,
+        E: dysql_tpl::encoding::Encoder,
     {
         match hash {
             _ => Ok(false),
@@ -76,11 +76,11 @@ impl crate::Content for EmptyObject {
         &self,
         hash: u64,
         name: &str,
-    ) -> std::result::Result<crate::SimpleValue, crate::SimpleError> {
+    ) -> std::result::Result<dysql_tpl::SimpleValue, dysql_tpl::SimpleError> {
         match hash {
             _ => {
                 Err(
-                    crate::SimpleInnerError(std::format!("the data type of field: {0} is not supported ", name)).into()
+                    dysql_tpl::SimpleInnerError(std::format!("the data type of field: {0} is not supported ", name)).into()
                 )
             }
         }
@@ -89,12 +89,12 @@ impl crate::Content for EmptyObject {
         &self,
         hash: u64,
         name: &str,
-        section: crate::Section<P>,
+        section: dysql_tpl::Section<P>,
         encoder: &mut E,
     ) -> std::result::Result<bool, E::Error>
     where
-        P: crate::traits::ContentSequence,
-        E: crate::encoding::Encoder,
+        P: dysql_tpl::traits::ContentSequence,
+        E: dysql_tpl::encoding::Encoder,
     {
         match hash {
             _ => Ok(false),
@@ -104,15 +104,15 @@ impl crate::Content for EmptyObject {
         &self,
         hash: u64,
         name: &str,
-        section: crate::SimpleSection<P>,
-    ) -> std::result::Result<crate::SimpleValue, crate::SimpleError>
+        section: dysql_tpl::SimpleSection<P>,
+    ) -> std::result::Result<dysql_tpl::SimpleValue, dysql_tpl::SimpleError>
     where
-        P: crate::traits::ContentSequence,
+        P: dysql_tpl::traits::ContentSequence,
     {
         match hash {
             _ => {
                 Err(
-                    crate::SimpleInnerError(std::format!("tthe data type of field is not supported")).into()
+                    dysql_tpl::SimpleInnerError(std::format!("tthe data type of field is not supported")).into()
                 )
             }
         }
@@ -121,12 +121,12 @@ impl crate::Content for EmptyObject {
         &self,
         hash: u64,
         name: &str,
-        section: crate::Section<P>,
+        section: dysql_tpl::Section<P>,
         encoder: &mut E,
     ) -> std::result::Result<bool, E::Error>
     where
-        P: crate::traits::ContentSequence,
-        E: crate::encoding::Encoder,
+        P: dysql_tpl::traits::ContentSequence,
+        E: dysql_tpl::encoding::Encoder,
     {
         match hash {
             _ => Ok(false),
@@ -136,12 +136,12 @@ impl crate::Content for EmptyObject {
         &self,
         hash: u64,
         name: &str,
-        section: crate::Section<P>,
+        section: dysql_tpl::Section<P>,
         encoder: &mut E,
     ) -> std::result::Result<bool, E::Error>
     where
-        P: crate::traits::ContentSequence,
-        E: crate::encoding::Encoder,
+        P: dysql_tpl::traits::ContentSequence,
+        E: dysql_tpl::encoding::Encoder,
     {
         match hash {
             _ => Ok(false),

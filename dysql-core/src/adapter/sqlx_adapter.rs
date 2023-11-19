@@ -61,6 +61,28 @@ where
         rst.map_err(|e| DySqlError(ErrorInner::new(Kind::QueryError, Some(Box::new(e)), None)))
     }
 
+    pub async fn fetch_all<'e, 'c: 'e, E, U>(self, executor: E) -> Result<Vec<U>, DySqlError>
+    where
+        E: 'e + Executor<'c, Database = sqlx::Postgres>,
+        for<'r> U: FromRow<'r, sqlx::postgres::PgRow> + Send + Unpin,
+    {
+        let mut query = sqlx::query_as::<_, U>(self.sql);
+        if let Some(dto) = &self.dto {
+            for param_name in self.param_names {
+                let stpl = SimpleTemplate::new(param_name);
+                
+                let param_value = stpl.apply(dto);
+                if let Ok(param_value) = param_value {
+                    query = impl_bind_param_value!(query, param_value, i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime);
+                }
+            }
+        }
+
+        let rst = query.fetch_all(executor).await;
+
+        rst.map_err(|e| DySqlError(ErrorInner::new(Kind::QueryError, Some(Box::new(e)), None)))
+    }
+
     pub async fn execute<'e, 'c: 'e, E>(self, executor: E) -> Result<u64, DySqlError>
     where
         E: 'e + Executor<'c, Database = sqlx::Postgres>,

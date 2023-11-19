@@ -222,7 +222,7 @@ pub(crate) fn gen_type_path(s: &str) -> syn::Path {
 /// let mut conn = connect_db().await;
 /// 
 /// let dto = UserDto {id: None, name: None, age: 13};
-/// let rst = fetch_all!(|dto| -> User {
+/// let rst = fetch_all!(|&conn, dto| -> User {
 ///     r#"select * from test_user 
 ///     where 1 = 1
 ///         {{#name}}and name = :name{{/name}}
@@ -238,19 +238,19 @@ pub(crate) fn gen_type_path(s: &str) -> syn::Path {
 ///     rst
 /// );
 /// ```
-// #[proc_macro]
-// pub fn fetch_all(input: TokenStream) -> TokenStream {
-//     // 将 input 解析成 SqlClosure
-//     let st = syn::parse_macro_input!(input as DyClosure);
+#[proc_macro]
+pub fn fetch_all(input: TokenStream) -> TokenStream {
+    // 将 input 解析成 SqlClosure
+    let st = syn::parse_macro_input!(input as DyClosure);
 
-//     // fetch_all 必须要指定单个 item 的返回值类型
-//     if st.ret_type.is_none() { panic!("ret_type can't be null.") }
+    // fetch_one 必须要指定单个 item 的返回值类型
+    if st.ret_type.is_none() { panic!("ret_type can't be null.") }
 
-//     match FetchAll.expand(&st) {
-//         Ok(ret) => ret.into(),
-//         Err(e) => e.into_compile_error().into(),
-//     }
-// }
+    match SqlExpand.fetch_all(&st) {
+        Ok(ret) => ret.into(),
+        Err(e) => e.into_compile_error().into(),
+    }
+}
 
 ///
 /// fetch one data that filtered by dto

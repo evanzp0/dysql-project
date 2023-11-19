@@ -1,4 +1,4 @@
-use dysql::{Content, fetch_one, execute};
+use dysql::{Content, fetch_one, execute, fetch_all};
 use sqlx::{FromRow, Postgres, Pool, postgres::PgPoolOptions};
 
 #[tokio::main]
@@ -6,26 +6,29 @@ async fn main() {
     let conn = connect_postgres_db().await;
     let mut tran = conn.begin().await.unwrap();
 
-    let dto = UserDto{ id: Some(2), name: Some("huanglan".to_owned()), age: Some(13) , id_rng: None };
-    let dto1 = dto.clone();
+    let dto1 = UserDto{ id: Some(2), name: Some("huanglan".to_owned()), age: Some(13) , id_rng: None };
+    let dto2 = dto1.clone();
+    let dto3 = dto1.clone();
 
-    let rst = fetch_one!(|&mut *tran, dto| -> User {
+    let rst = execute!(|&mut *tran, dto1| -> User {
+        "update test_user set name = :name where id = :id"
+    }).unwrap();
+    println!("execute: {:?}", rst);
+
+    let rst = fetch_one!(|&mut *tran, dto2| -> User {
         "select * from test_user where id = :id order by id"
     }).unwrap();
-
     println!("fetch_one with dto: {:?}", rst);
 
     let rst = fetch_one!(|&mut *tran| -> User {
         "select * from test_user where id = 1 order by id"
     }).unwrap();
-
     println!("fetch_one without dto: {:?}", rst);
 
-    let rst = execute!(|&mut *tran, dto1| -> User {
-        "update test_user set name = :name where id = :id"
+    let rst = fetch_all!(|&mut *tran| -> User {
+        "select * from test_user order by id"
     }).unwrap();
-
-    println!("execute: {:?}", rst);
+    println!("fetch_all without dto: {:?}", rst);
 }
 
 #[derive(Content, Clone)]

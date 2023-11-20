@@ -4,6 +4,7 @@ use std::hash::{Hash, Hasher};
 
 use fnv::FnvHasher;
 
+use log::trace;
 use once_cell::sync::OnceCell;
 use dysql_tpl::Template;
 
@@ -27,10 +28,12 @@ pub fn get_sql_template(template_id: u64) -> Option<Arc<Template>> {
         .unwrap()
         .get_template(template_id);
     
-    if let Some(_) = rst {
-        println!("hit: {}", template_id);
-    } else {
-        println!("not hit: {}", template_id);
+    if log::log_enabled!(log::Level::Trace) {
+        if let Some(_) = rst {
+            trace!("hit: {}", template_id);
+        } else {
+            trace!("not hit: {}", template_id);
+        }
     }
 
     rst

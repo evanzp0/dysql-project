@@ -23,4 +23,5 @@ anyhow = "1.0"
 sqlx = { version = "0.7", features = [ "postgres",  "mysql", "sqlite" ] }
 async-trait = "0.1"
 paste = "1"
+log = "0.4"
 # sqlx-postgres = "0.7"

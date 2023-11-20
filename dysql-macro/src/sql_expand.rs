@@ -23,9 +23,10 @@ impl SqlExpand {
             let query = #executor_ident.create_query();
         );
 
+        let dto_token = st.dto_info.gen_token();
         let execute = match dto_ident {
             Some(_) => quote!(
-                query.fetch_one::<_, _, #ret_type>(#executor_token, &named_sql, Some(&#dto_ident)).await 
+                query.fetch_one::<_, _, #ret_type>(#executor_token, &named_sql, Some(#dto_token)).await 
             ),
             None => quote!(
                 query.fetch_one::<_, dysql::EmptyObject, #ret_type>(#executor_token, &named_sql, None).await 
@@ -57,9 +58,10 @@ impl SqlExpand {
             let query = #executor_ident.create_query();
         );
 
+        let dto_token = st.dto_info.gen_token();
         let execute = match dto_ident {
             Some(_) => quote!(
-                query.fetch_all::<_, _, #ret_type>(#executor_token, &named_sql, Some(&#dto_ident)).await 
+                query.fetch_all::<_, _, #ret_type>(#executor_token, &named_sql, Some(#dto_token)).await 
             ),
             None => quote!(
                 query.fetch_all::<_, dysql::EmptyObject, #ret_type>(#executor_token, &named_sql, None).await 
@@ -91,9 +93,10 @@ impl SqlExpand {
             let query = #executor_ident.create_query();
         );
 
+        let dto_token = st.dto_info.gen_token();
         let execute = match dto_ident {
             Some(_) => quote!(
-                query.fetch_scalar::<_, _, #ret_type>(#executor_token, &named_sql, Some(&#dto_ident)).await 
+                query.fetch_scalar::<_, _, #ret_type>(#executor_token, &named_sql, Some(#dto_token)).await 
             ),
             None => quote!(
                 query.fetch_scalar::<_, dysql::EmptyObject, #ret_type>(#executor_token, &named_sql, None).await 
@@ -124,9 +127,10 @@ impl SqlExpand {
             let query = #executor_ident.create_query();
         );
 
+        let dto_token = st.dto_info.gen_token();
         let execute = match dto_ident {
             Some(_) => quote!(
-                query.execute(#executor_token, &named_sql, Some(&#dto_ident)).await
+                query.execute(#executor_token, &named_sql, Some(#dto_token)).await
             ),
             None => quote!(
                 query.execute::<_, dysql::EmptyObject>(#executor_token, &named_sql, None).await 
@@ -158,9 +162,10 @@ impl SqlExpand {
             let query = #executor_ident.create_query();
         );
 
+        let dto_token = st.dto_info.gen_token();
         let execute = match dto_ident {
             Some(_) => quote!(
-                query.insert::<_, _, #ret_type>(#executor_token, &named_sql, Some(&#dto_ident)).await 
+                query.insert::<_, _, #ret_type>(#executor_token, &named_sql, Some(#dto_token)).await 
             ),
             None => quote!(
                 query.insert::<_, dysql::EmptyObject, #ret_type>(#executor_token, &named_sql, None).await 
@@ -204,10 +209,11 @@ impl SqlExpand {
             };
         );
 
+        let dto_token = st.dto_info.gen_token();
         let count_exexute = match dto_ident {
             Some(_) => quote!(
                 #buf_count_named_sql_declare
-                let count_rst = query.fetch_scalar::<_, _, i64>(#executor_token, &count_named_sql, Some(&#dto_ident)).await;
+                let count_rst = query.fetch_scalar::<_, _, i64>(#executor_token, &count_named_sql, Some(&#dto_token)).await;
             ),
             None => quote!(
                 #buf_count_named_sql_declare
@@ -234,7 +240,7 @@ impl SqlExpand {
                 
                 let sort_fragment = "{{#is_sort}} ORDER BY {{#sort_model}} {{field}} {{sort}}, {{/sort_model}} ![B_DEL(,)] {{/is_sort}} LIMIT {{page_size}} OFFSET {{start}}";
                 let template = dysql::Template::new(sort_fragment).expect("unexpected error: generate template from sql failed");
-                let sort_fragment = template.render(&#dto_ident);
+                let sort_fragment = template.render(&#dto_token);
                 let sort_fragment = dysql::SqlNodeLinkList::new(&sort_fragment).trim().to_string();
                 
                 write!(sql_buf, "{} {} ", named_sql, sort_fragment).unwrap();
@@ -242,7 +248,7 @@ impl SqlExpand {
             };
 
             #query_declare
-            query.page::<_, _, #ret_type>(#executor_token, &page_named_sql, &#dto_ident).await 
+            query.page::<_, _, #ret_type>(#executor_token, &page_named_sql, &#dto_token).await 
         });
 
         Ok(ret)

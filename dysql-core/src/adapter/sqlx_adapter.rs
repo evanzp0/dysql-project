@@ -3,6 +3,11 @@ use std::marker::PhantomData;
 
 use crate::SqlDialect;
 
+pub struct SqlxQuery <DB>
+{
+    pub(crate) temp_db: PhantomData<DB>,
+}
+
 pub trait SqlxExecutorAdatper<DB> 
 where 
     DB: sqlx::Database,
@@ -17,18 +22,21 @@ where
     fn get_dialect(&self) -> SqlDialect 
     {
         // 以下分支需要用条件宏进行编译
-        #[cfg(feature = "sqlx-postges")]
+        #[cfg(feature = "sqlx-postgres")]
         if std::any::TypeId::of::<DB>() == std::any::TypeId::of::<sqlx::Postgres>() {
+
             return SqlDialect::postgres
         }
         
         #[cfg(feature = "sqlx-mysql")]
         if std::any::TypeId::of::<DB>() == std::any::TypeId::of::<sqlx::MySql>() {
+
             return SqlDialect::mysql
         } 
         
         #[cfg(feature = "sqlx-sqlite")]
         if std::any::TypeId::of::<DB>() == std::any::TypeId::of::<sqlx::Sqlite>() {
+
             return SqlDialect::sqlite
         }
 
@@ -36,7 +44,3 @@ where
     }
 }
 
-pub struct SqlxQuery <DB>
-{
-    pub(crate) temp_db: PhantomData<DB>,
-}

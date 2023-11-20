@@ -1,9 +1,20 @@
+mod common;
 
 use std::error::Error;
 
 use dysql::{PageDto, SortModel, sql, fetch_one, insert, fetch_scalar, execute, page, fetch_all, Value};
+use sqlx::{Pool, MySql, mysql::MySqlPoolOptions};
 
-use crate::{connect_mysql_db, UserDto, User};
+use crate::common::{UserDto, User};
+
+
+pub async fn connect_mysql_db() -> Pool<MySql> {
+    let conn = MySqlPoolOptions::new()
+        .max_connections(5)
+        .connect("mysql://root:111111@127.0.0.1/my_database").await.unwrap();
+
+    conn
+}
 
 #[tokio::test]
 async fn test_fetch_all() {

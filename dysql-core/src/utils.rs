@@ -8,7 +8,7 @@ use log::trace;
 use once_cell::sync::OnceCell;
 use dysql_tpl::Template;
 
-use crate::{DySqlError, ErrorInner, Kind, DySqlResult, DysqlContext, SqlxVer};
+use crate::{DySqlError, ErrorInner, Kind, DySqlResult, DysqlContext};
 
 pub static SQL_CACHE: OnceCell<RwLock<DysqlContext>> = OnceCell::new();
 
@@ -82,14 +82,6 @@ pub fn save_sql_template(source_file: &str, template_id: u64, sql: &str, sql_nam
         .save_sql_template(meta_id, source_file, template_id, template, sql_name);
 
     Ok(())
-}
-
-pub fn get_sqlx_version() -> SqlxVer {
-    get_sql_cache()
-        .read()
-        .unwrap()
-        .sqlx_ver
-        .clone()
 }
 
 pub fn hash_str(name: &str) -> u64 {

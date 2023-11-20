@@ -1,8 +1,7 @@
-// #![cfg(feature = "sqlx")]
-
 use std::str::FromStr;
-use dysql::{Content, sql, fetch_one};
-//  PageDto, SortModel, insert, sql, fetch_one, fetch_scalar, execute, page, 
+use dysql::Content;
+
+mod test_sqlx_case;
 
 use sqlx::{
     postgres::PgPoolOptions, FromRow, Pool, Postgres, mysql::MySqlPoolOptions, MySql, 

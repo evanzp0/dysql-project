@@ -1,4 +1,4 @@
-use dysql::{Content, Ramhorns, Template};
+use dysql::{Content, Template};
 
 #[derive(Content)]
 struct Post<'a> {

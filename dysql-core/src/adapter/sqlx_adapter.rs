@@ -1,11 +1,10 @@
 use std::{marker::PhantomData, any::TypeId};
-use std::io::{Cursor, Write};
 
 use dysql_tpl::{Content, SimpleTemplate, Template};
 use sqlx::{Executor, FromRow};
 use paste::paste;
 
-use crate::{DySqlError, ErrorInner, Kind, SqlDialect, Pagination, PageDto, extract_params, SqlNodeLinkList};
+use crate::{DySqlError, ErrorInner, Kind, SqlDialect, Pagination, PageDto, extract_params, SqlNodeLinkList, impl_bind_param_value};
 
 pub trait SqlxExecutorAdatper<DB> 
 where 
@@ -56,25 +55,6 @@ impl SqlxExecutorAdatper<sqlx::Sqlite> for &sqlx::Pool<sqlx::Sqlite> {}
 impl SqlxExecutorAdatper<sqlx::Sqlite> for sqlx::SqliteConnection {}
 impl SqlxExecutorAdatper<sqlx::Sqlite> for &mut sqlx::SqliteConnection {}
 
-macro_rules! impl_bind_param_value {
-    (
-        $query:ident, $p_val:ident, [$($vtype:ty),+]
-    ) => {
-        paste!{
-            match $p_val {
-                $(
-                    dysql_tpl::SimpleValue::[<t_ $vtype>](val) => $query.bind(val),
-                )*
-                dysql_tpl::SimpleValue::t_str(val) => $query.bind(unsafe {&*val}),
-                dysql_tpl::SimpleValue::t_String(val) => $query.bind(unsafe {&*val}),
-                dysql_tpl::SimpleValue::t_Utc(val) => $query.bind(val),
-                dysql_tpl::SimpleValue::None(val) => $query.bind(val),
-                _ => Err(DySqlError(ErrorInner::new(Kind::BindParamterError, None, Some(format!("the type of {:?} is not support", $p_val)))))?,
-            }
-        }
-    };
-}
-
 pub struct SqlxQuery <DB>
 {
     pub(crate) temp_db: PhantomData<DB>,
@@ -83,7 +63,7 @@ pub struct SqlxQuery <DB>
 impl SqlxQuery <sqlx::Postgres>
 {
     /// named_sql: 是已经代入 dto 进行模版 render 后的 named sql 
-    pub async fn fetch_one<'e, 'c: 'e, E, D, U>(self, executor: E, named_sql: &str, dto: Option<D>) -> Result<U, DySqlError>
+    pub async fn fetch_one<'e, 'c: 'e, E, D, U>(self, executor: E, named_sql: &str, dto: Option<&'e D>) -> Result<U, DySqlError>
     where
         E: 'e + Executor<'c, Database = sqlx::Postgres> + SqlxExecutorAdatper<sqlx::Postgres>,
         D: Content + 'static + Send + Sync,
@@ -98,7 +78,7 @@ impl SqlxQuery <sqlx::Postgres>
         };
 
         let mut query = sqlx::query_as::<_, U>(&sql);
-        if let Some(dto) = &dto {
+        if let Some(dto) = dto {
             for param_name in &param_names {
                 let stpl = SimpleTemplate::new(param_name);
                 
@@ -114,7 +94,7 @@ impl SqlxQuery <sqlx::Postgres>
         rst.map_err(|e| DySqlError(ErrorInner::new(Kind::QueryError, Some(Box::new(e)), None)))
     }
 
-    pub async fn fetch_all<'e, 'c: 'e, E, D, U>(self, executor: E, named_sql: &str, dto: Option<D>) -> Result<Vec<U>, DySqlError>
+    pub async fn fetch_all<'e, 'c: 'e, E, D, U>(self, executor: E, named_sql: &str, dto: Option<&'e D>) -> Result<Vec<U>, DySqlError>
     where
         E: 'e + Executor<'c, Database = sqlx::Postgres> + SqlxExecutorAdatper<sqlx::Postgres>,
         D: Content + 'static + Send + Sync,
@@ -129,7 +109,7 @@ impl SqlxQuery <sqlx::Postgres>
         };
 
         let mut query = sqlx::query_as::<_, U>(&sql);
-        if let Some(dto) = &dto {
+        if let Some(dto) = dto {
             for param_name in &param_names {
                 let stpl = SimpleTemplate::new(param_name);
                 
@@ -145,7 +125,7 @@ impl SqlxQuery <sqlx::Postgres>
         rst.map_err(|e| DySqlError(ErrorInner::new(Kind::QueryError, Some(Box::new(e)), None)))
     }
 
-    pub async fn fetch_scalar<'e, 'c: 'e, E, D, U>(self, executor: E, named_sql: &str, dto: Option<D>) -> Result<U, DySqlError>
+    pub async fn fetch_scalar<'e, 'c: 'e, E, D, U>(self, executor: E, named_sql: &str, dto: Option<&'e D>) -> Result<U, DySqlError>
     where
         E: 'e + Executor<'c, Database = sqlx::Postgres> + SqlxExecutorAdatper<sqlx::Postgres>,
         D: Content + 'static + Send + Sync,
@@ -160,7 +140,7 @@ impl SqlxQuery <sqlx::Postgres>
         };
 
         let mut query = sqlx::query_scalar::<_, U>(&sql);
-        if let Some(dto) = &dto {
+        if let Some(dto) = dto {
             for param_name in &param_names {
                 let stpl = SimpleTemplate::new(param_name);
                 
@@ -176,7 +156,7 @@ impl SqlxQuery <sqlx::Postgres>
         rst.map_err(|e| DySqlError(ErrorInner::new(Kind::QueryError, Some(Box::new(e)), None)))
     }
 
-    pub async fn execute<'e, 'c: 'e, E, D>(self, executor: E, named_sql: &str, dto: Option<D>) -> Result<u64, DySqlError>
+    pub async fn execute<'e, 'c: 'e, E, D>(self, executor: E, named_sql: &str, dto: Option<&'e D>) -> Result<u64, DySqlError>
     where
         E: 'e + Executor<'c, Database = sqlx::Postgres> + SqlxExecutorAdatper<sqlx::Postgres>,
         D: Content + 'static + Send + Sync,
@@ -209,7 +189,7 @@ impl SqlxQuery <sqlx::Postgres>
         Ok(af_rows)
     }
 
-    pub async fn insert<'e, 'c: 'e, E, D, U>(self, executor: E, named_sql: &str, dto: Option<D>) -> Result<U, DySqlError>
+    pub async fn insert<'e, 'c: 'e, E, D, U>(self, executor: E, named_sql: &str, dto: Option<&'e D>) -> Result<U, DySqlError>
     where
         E: 'e + Executor<'c, Database = sqlx::Postgres> + SqlxExecutorAdatper<sqlx::Postgres> ,
         D: Content + 'static + Send + Sync,
@@ -224,7 +204,7 @@ impl SqlxQuery <sqlx::Postgres>
         };
 
         let mut query = sqlx::query_scalar::<_, U>(&sql);
-        if let Some(dto) = &dto {
+        if let Some(dto) = dto {
             for param_name in &param_names {
                 let stpl = SimpleTemplate::new(param_name);
                 
@@ -240,13 +220,12 @@ impl SqlxQuery <sqlx::Postgres>
         insert_id.map_err(|e| DySqlError(ErrorInner::new(Kind::QueryError, Some(Box::new(e)), None)))
     }
 
-    pub async fn page<'e, 'c: 'e, E, D, U>(self, executor: E, named_sql: &str, mut page_dto: PageDto<D>) -> Result<Pagination<U>, DySqlError>
+    pub async fn page<'e, 'c: 'e, E, D, U>(self, executor: E, named_sql: &str, page_dto: &PageDto<D>) -> Result<Pagination<U>, DySqlError>
     where
-        E: 'e + Executor<'c, Database = sqlx::Postgres> + SqlxExecutorAdatper<sqlx::Postgres> + Copy,
+        E: 'e + Executor<'c, Database = sqlx::Postgres> + SqlxExecutorAdatper<sqlx::Postgres>,
         D: Content + 'static + Send + Sync,
         for<'r> U: FromRow<'r, sqlx::postgres::PgRow> + Send + Unpin,
     {
-        println!("name_sql: {}", named_sql);
         let sql_and_params = extract_params(&named_sql, executor.get_dialect());
         let (sql, param_names) = match sql_and_params {
             Ok(val) => val,
@@ -255,44 +234,48 @@ impl SqlxQuery <sqlx::Postgres>
             )?,
         };
 
-        let buffer_size = sql.len() + 200;
-        let mut sql_buf = Vec::<u8>::with_capacity(buffer_size);
+        // let buffer_size = sql.len() + 200;
+        // let mut sql_buf = Vec::<u8>::with_capacity(buffer_size);
 
-        // count query
-        write!(sql_buf, "SELECT count(*) FROM ({}) as _tmp", sql).unwrap();
-        let count_sql = std::str::from_utf8(&sql_buf).unwrap();
-        println!("count_sql: {}", count_sql);
+        // // count query
+        // let count_sql = {
+        //     use std::io::Write;
+        //     write!(sql_buf, "SELECT count(*) FROM ({}) as _tmp", sql).unwrap();
+        //     std::str::from_utf8(&sql_buf).unwrap()
+        // };
         
-        let mut query = sqlx::query_scalar::<_, i64>(&count_sql);
-        for param_name in &param_names {
-            let stpl = SimpleTemplate::new(param_name);
+        // let mut query = sqlx::query_scalar::<_, i64>(&count_sql);
+        // for param_name in &param_names {
+        //     let stpl = dysql_tpl::SimpleTemplate::new(param_name);
             
-            let param_value = stpl.apply(&page_dto);
-            if let Ok(param_value) = param_value {
-                query = impl_bind_param_value!(query, param_value, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime]);
-            }
-        }
-        let rst = query.fetch_one(executor).await;
-        let count = match rst {
-            Ok(v) => v,
-            Err(e) => Err(DySqlError(ErrorInner::new(Kind::QueryError, Some(Box::new(e)), None)))?,
-        };
-        page_dto.init(count as u64);
-
-        sql_buf.clear();
+        //     let param_value = stpl.apply(&page_dto);
+        //     if let Ok(param_value) = param_value {
+        //         query = impl_bind_param_value!(query, param_value, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime]);
+        //     }
+        // }
+        // let rst = query.fetch_one(executor).await;
+        // let count = match rst {
+        //     Ok(v) => v,
+        //     Err(e) => Err(DySqlError(ErrorInner::new(Kind::QueryError, Some(Box::new(e)), None)))?,
+        // };
+        // page_dto.init(count as u64);
 
         // page query
-        let sort_fragment = "{{#is_sort}} ORDER BY {{#sort_model}} {{field}} {{sort}}, {{/sort_model}} ![B_DEL(,)] {{/is_sort}} LIMIT {{page_size}} OFFSET {{start}}";
-        let template = Template::new(sort_fragment).expect("unexpected error: generate template from sql failed");
-        let sort_fragment = template.render(&page_dto);
-        let sort_fragment = SqlNodeLinkList::new(&sort_fragment).trim().to_string();
+        // let page_sql = {
+        //     use std::io::Write;
 
-        write!(sql_buf, "{} {} ", sql, sort_fragment).unwrap();
-        let page_sql = std::str::from_utf8(&sql_buf).unwrap();
+        //     sql_buf.clear();
 
-        println!("page_sql = {}", page_sql);
-        
-        let mut query = sqlx::query_as::<_, U>(&page_sql);
+        //     let sort_fragment = "{{#is_sort}} ORDER BY {{#sort_model}} {{field}} {{sort}}, {{/sort_model}} ![B_DEL(,)] {{/is_sort}} LIMIT {{page_size}} OFFSET {{start}}";
+        //     let template = dysql_tpl::Template::new(sort_fragment).expect("unexpected error: generate template from sql failed");
+        //     let sort_fragment = template.render(&page_dto);
+        //     let sort_fragment = crate::SqlNodeLinkList::new(&sort_fragment).trim().to_string();
+            
+        //     write!(sql_buf, "{} {} ", sql, sort_fragment).unwrap();
+        //     std::str::from_utf8(&sql_buf).unwrap()
+        // };
+
+        let mut query = sqlx::query_as::<_, U>(&sql);
         for param_name in &param_names {
             let stpl = SimpleTemplate::new(param_name);
             

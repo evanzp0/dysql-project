@@ -25,7 +25,7 @@ impl SqlExpand {
 
         let execute = match dto_ident {
             Some(_) => quote!(
-                query.fetch_one::<_, _, #ret_type>(#executor_token, &named_sql, Some(#dto_ident)).await 
+                query.fetch_one::<_, _, #ret_type>(#executor_token, &named_sql, Some(&#dto_ident)).await 
             ),
             None => quote!(
                 query.fetch_one::<_, dysql::EmptyObject, #ret_type>(#executor_token, &named_sql, None).await 
@@ -59,7 +59,7 @@ impl SqlExpand {
 
         let execute = match dto_ident {
             Some(_) => quote!(
-                query.fetch_all::<_, _, #ret_type>(#executor_token, &named_sql, Some(#dto_ident)).await 
+                query.fetch_all::<_, _, #ret_type>(#executor_token, &named_sql, Some(&#dto_ident)).await 
             ),
             None => quote!(
                 query.fetch_all::<_, dysql::EmptyObject, #ret_type>(#executor_token, &named_sql, None).await 
@@ -93,7 +93,7 @@ impl SqlExpand {
 
         let execute = match dto_ident {
             Some(_) => quote!(
-                query.fetch_scalar::<_, _, #ret_type>(#executor_token, &named_sql, Some(#dto_ident)).await 
+                query.fetch_scalar::<_, _, #ret_type>(#executor_token, &named_sql, Some(&#dto_ident)).await 
             ),
             None => quote!(
                 query.fetch_scalar::<_, dysql::EmptyObject, #ret_type>(#executor_token, &named_sql, None).await 
@@ -126,7 +126,7 @@ impl SqlExpand {
 
         let execute = match dto_ident {
             Some(_) => quote!(
-                query.execute(#executor_token, &named_sql, Some(#dto_ident)).await
+                query.execute(#executor_token, &named_sql, Some(&#dto_ident)).await
             ),
             None => quote!(
                 query.execute::<_, dysql::EmptyObject>(#executor_token, &named_sql, None).await 
@@ -160,7 +160,7 @@ impl SqlExpand {
 
         let execute = match dto_ident {
             Some(_) => quote!(
-                query.insert::<_, _, #ret_type>(#executor_token, &named_sql, Some(#dto_ident)).await 
+                query.insert::<_, _, #ret_type>(#executor_token, &named_sql, Some(&#dto_ident)).await 
             ),
             None => quote!(
                 query.insert::<_, dysql::EmptyObject, #ret_type>(#executor_token, &named_sql, None).await 
@@ -192,12 +192,26 @@ impl SqlExpand {
             let query = #executor_ident.create_query();
         );
 
-        let execute = match dto_ident {
+        let buf_count_named_sql_declare = quote!(
+            let buffer_size = named_sql.len() + 200;
+            let mut sql_buf = Vec::<u8>::with_capacity(buffer_size);
+    
+            // count query
+            let count_named_sql = {
+                use std::io::Write;
+                write!(sql_buf, "SELECT count(*) FROM ({}) as _tmp", named_sql).unwrap();
+                std::str::from_utf8(&sql_buf).unwrap()
+            };
+        );
+
+        let count_exexute = match dto_ident {
             Some(_) => quote!(
-                query.page::<_, _, #ret_type>(#executor_token, &named_sql, #dto_ident).await
+                #buf_count_named_sql_declare
+                let count_rst = query.fetch_scalar::<_, _, i64>(#executor_token, &count_named_sql, Some(&#dto_ident)).await;
             ),
             None => quote!(
-                query.page::<_, dysql::EmptyObject, #ret_type>(#executor_token, &named_sql, None).await 
+                #buf_count_named_sql_declare
+                let count_rst = query.fetch_scalar::<_, dysql::EmptyObject, i64>(#executor_token, &count_named_sql, None).await;
             ),
         };
 
@@ -205,7 +219,30 @@ impl SqlExpand {
             use dysql::SqlxExecutorAdatper;
             #named_sql_declare  // let named_sql = ....;
             #query_declare      // let query = executor.create_query(....);
-            #execute
+
+            #count_exexute
+            if let Err(e) = count_rst {
+                break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)), None)))
+            }
+            let count = count_rst.expect("Unexpected error");
+            #dto_ident.init(count as u64);
+
+            let page_named_sql = {
+                use std::io::Write;
+    
+                sql_buf.clear();
+                
+                let sort_fragment = "{{#is_sort}} ORDER BY {{#sort_model}} {{field}} {{sort}}, {{/sort_model}} ![B_DEL(,)] {{/is_sort}} LIMIT {{page_size}} OFFSET {{start}}";
+                let template = dysql::Template::new(sort_fragment).expect("unexpected error: generate template from sql failed");
+                let sort_fragment = template.render(&#dto_ident);
+                let sort_fragment = dysql::SqlNodeLinkList::new(&sort_fragment).trim().to_string();
+                
+                write!(sql_buf, "{} {} ", named_sql, sort_fragment).unwrap();
+                std::str::from_utf8(&sql_buf).unwrap()
+            };
+
+            #query_declare
+            query.page::<_, _, #ret_type>(#executor_token, &page_named_sql, &#dto_ident).await 
         });
 
         Ok(ret)

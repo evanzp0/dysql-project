@@ -260,10 +260,10 @@ pub fn fetch_all(input: TokenStream) -> TokenStream {
 /// Basic usage:
 /// 
 /// ```ignore
-/// let mut conn = connect_db().await;
+/// let conn = connect_db().await;
 /// 
 /// let dto = UserDto {id: 2, name: None, age: None};
-/// let rst = fetch_one!(|dto| -> User {
+/// let rst = fetch_one!(|&conn, dto| -> User {
 ///     r#"select * from test_user 
 ///     where id = :id
 ///     order by id"#
@@ -293,7 +293,7 @@ pub fn fetch_one(input: TokenStream) -> TokenStream {
 /// Basic usage:
 /// 
 /// ```ignore
-/// let mut conn = connect_db().await;
+/// let conn = connect_db().await;
 /// 
 /// let rst = fetch_scalar!(|&conn| -> i64 {
 ///     r#"select count (*) from test_user"#
@@ -323,7 +323,7 @@ pub fn fetch_scalar(input: TokenStream) -> TokenStream {
 /// let mut tran = get_transaction().await.unwrap();
 /// 
 /// let dto = UserDto::new(Some(2), None, None);
-/// let rst = execute!(|&mut *tran, &dto| {
+/// let rst = execute!(|&mut *tran, dto| {
 ///     r#"delete from test_user where id = :id"#
 /// }).unwrap();
 /// assert_eq!(1, rst);
@@ -353,7 +353,7 @@ pub fn execute(input: TokenStream) -> TokenStream {
 /// let mut tran = get_transaction().await.unwrap();
 
 /// let dto = UserDto{ id: Some(4), name: Some("lisi".to_owned()), age: Some(50) };
-/// let last_insert_id = insert!(|&mut *tran, &dto| -> (_, mysql) {
+/// let last_insert_id = insert!(|&mut *tran, dto| -> (_, mysql) {
 ///     r#"insert into test_user (id, name, age) values (4, 'aa', 1)"#  // works for mysql and sqlite
 ///     // r#"insert into test_user (id, name, age) values (4, 'aa', 1) returning id"#  // works for postgres
 /// }).unwrap();
@@ -383,7 +383,7 @@ pub fn insert(input: TokenStream) -> TokenStream {
 /// ```ignore
 /// sql!("select_sql", "select * from table1 ")
 /// 
-/// let last_insert_id = fetch_all!(|&dto, &mut tran| {
+/// let last_insert_id = fetch_all!(|&conn, &dto| {
 ///     select_sql + "where age > 10 "
 /// }).unwrap();
 /// 
@@ -412,7 +412,7 @@ pub fn sql(input: TokenStream) -> TokenStream {
 /// let dto = UserDto::new(None, None, Some(13));
 /// let mut pg_dto = PageDto::new(3, 10, &dto);
 /// 
-/// let rst = page!(|&mut pg_dto, &conn| -> User {
+/// let rst = page!(|&conn, pg_dto| -> User {
 ///     "select * from test_user 
 ///     where 1 = 1
 ///         {{#data}}

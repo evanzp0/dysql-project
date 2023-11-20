@@ -1,10 +1,10 @@
 use std::{marker::PhantomData, any::TypeId};
 
-use dysql_tpl::{Content, SimpleTemplate, Template};
+use dysql_tpl::{Content, SimpleTemplate};
 use sqlx::{Executor, FromRow};
 use paste::paste;
 
-use crate::{DySqlError, ErrorInner, Kind, SqlDialect, Pagination, PageDto, extract_params, SqlNodeLinkList, impl_bind_param_value};
+use crate::{DySqlError, ErrorInner, Kind, SqlDialect, Pagination, PageDto, extract_params, impl_bind_param_value};
 
 pub trait SqlxExecutorAdatper<DB> 
 where 

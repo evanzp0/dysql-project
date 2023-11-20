@@ -302,21 +302,3 @@ impl SqlExpand {
         Ok(rst)
     }
 }
-
-
-// macro_rules! impl_sqlspand_types {
-//     ($( $name:ident),*) => {
-//         $(
-//             impl SqlExpand for $name {}
-//         )*
-//     }
-// }
-
-// pub struct FetchAll;
-// pub struct Execute;
-// pub struct FetchOne;
-
-// pub struct FetchScalar;
-// pub struct Insert;
-
-// impl_sqlspand_types!(FetchAll, Execute, FetchOne, FetchScalar, Insert);

@@ -21,9 +21,6 @@ once_cell = "1.13"
 dotenv = "0.15"
 
 [features]
-default = []
-sqlx = []
-tokio-postgres = []
 
 [dev-dependencies]
 tokio = { version = "1.0", features = ["full"] }

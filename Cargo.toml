@@ -44,9 +44,23 @@ ahash = "0.8"
 test_sqlx = "cargo clean -p dysql-core && cargo test"
 
 [dependencies]
+tiaojian-macro = { path="../tiaojian/tiaojian-macro" }
+env_logger = "0.10"
 dotenv = "0.15"
 tokio = { version = "1.0", features = ["full"] }
 dysql = { path = "./dysql" }
-sqlx = { version = "0.7", features = [ "runtime-tokio-native-tls" , "postgres",  "mysql", "sqlite", "chrono", "uuid" ] }
-sqlx-core = "0.7"
-env_logger = "0.10"
+sqlx = { version = "0.7", features = [ "runtime-tokio-native-tls", "chrono", "uuid" ], optional = true } #"mysql", "sqlite" , "postgres"
+
+[features]
+# default = ["sqlx-postgres", "sqlx-sqlite", "sqlx-mysql"]
+# sqlx-postgres = ["sqlx/postgres", "dysql/sqlx-postgres"]
+# sqlx-sqlite = ["sqlx/sqlite", "dysql/sqlx-sqlite"]
+# sqlx-mysql = ["sqlx/mysql", "dysql/sqlx-mysql"]
+
+
+sqlx-test = []
+
+[[test]]
+name = "test_sqlx"
+path = "tests/test_sqlx.rs"
+required-features = ["sqlx-test"]

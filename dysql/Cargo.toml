@@ -13,6 +13,12 @@ name = "dysql"
 
 [dependencies]
 dysql-tpl = { path = "../dysql-tpl", features = ["chrono", "uuid"] }
-dysql-core = { path = "../dysql-core" }
+dysql-core = { path = "../dysql-core", feature=[] }
 dysql-macro = { path = "../dysql-macro"  }
 serde = { version = "1", features = ["derive"] }
+
+[features]
+default = [] #"sqlx-sqlite", "sqlx-postgres", "sqlx-sqlite"
+# sqlx-postgres = ["dysql-core/sqlx-postgres"]
+# sqlx-mysql = ["dysql-core/sqlx-mysql"]
+# sqlx-sqlite = ["dysql-core/sqlx-sqlite"]

@@ -5,6 +5,12 @@ use paste::paste;
 use crate::{SqlxQuery, SqlxExecutorAdatper};
 use crate::{DySqlError, ErrorInner, Kind, Pagination, PageDto, extract_params, impl_bind_param_value};
 
+impl<'q> SqlxExecutorAdatper<sqlx::MySql> for sqlx::Transaction<'q, sqlx::MySql> {}
+impl SqlxExecutorAdatper<sqlx::MySql> for sqlx::Pool<sqlx::MySql> {}
+impl SqlxExecutorAdatper<sqlx::MySql> for &sqlx::Pool<sqlx::MySql> {}
+impl SqlxExecutorAdatper<sqlx::MySql> for sqlx::MySqlConnection {}
+impl SqlxExecutorAdatper<sqlx::MySql> for &mut sqlx::MySqlConnection {}
+
 impl SqlxQuery <sqlx::MySql>
 {
     /// named_sql: 是已经代入 dto 进行模版 render 后的 named sql 

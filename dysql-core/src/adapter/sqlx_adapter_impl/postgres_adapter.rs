@@ -2,8 +2,15 @@ use dysql_tpl::{Content, SimpleTemplate};
 use sqlx::{Executor, FromRow};
 use paste::paste;
 
-use crate::{SqlxQuery, SqlxExecutorAdatper};
-use crate::{DySqlError, ErrorInner, Kind, Pagination, PageDto, extract_params, impl_bind_param_value};
+use crate::{SqlxQuery, SqlxExecutorAdatper, impl_bind_param_value};
+use crate::{DySqlError, ErrorInner, Kind, Pagination, PageDto, extract_params};
+
+impl<'q> SqlxExecutorAdatper<sqlx::Postgres> for sqlx::Transaction<'q, sqlx::Postgres> {}
+impl SqlxExecutorAdatper<sqlx::Postgres> for sqlx::Pool<sqlx::Postgres> {}
+impl SqlxExecutorAdatper<sqlx::Postgres> for &sqlx::Pool<sqlx::Postgres> {}
+impl SqlxExecutorAdatper<sqlx::Postgres> for sqlx::PgConnection {}
+impl SqlxExecutorAdatper<sqlx::Postgres> for &mut sqlx::PgConnection {}
+
 
 impl SqlxQuery <sqlx::Postgres>
 {

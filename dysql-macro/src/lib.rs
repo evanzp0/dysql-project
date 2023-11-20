@@ -308,7 +308,7 @@ pub fn fetch_all(input: TokenStream) -> TokenStream {
     let st = syn::parse_macro_input!(input as DyClosure);
 
     // 必须要指定单个 item 的返回值类型
-    if st.ret_type.is_none() { panic!("ret_type can't be null.") }
+    if st.ret_type.is_none() { panic!("return type can't be null.") }
 
     match SqlExpand.fetch_all(&st) {
         Ok(ret) => ret.into(),
@@ -341,7 +341,7 @@ pub fn fetch_one(input: TokenStream) -> TokenStream {
     let st = syn::parse_macro_input!(input as DyClosure);
 
     // 必须要指定单个 item 的返回值类型
-    if st.ret_type.is_none() { panic!("ret_type can't be null.") }
+    if st.ret_type.is_none() { panic!("return type can't be null.") }
 
     match SqlExpand.fetch_one(&st) {
         Ok(ret) => ret.into(),
@@ -368,7 +368,7 @@ pub fn fetch_one(input: TokenStream) -> TokenStream {
 pub fn fetch_scalar(input: TokenStream) -> TokenStream {
     // 将 input 解析成 SqlClosure
     let st = syn::parse_macro_input!(input as DyClosure);
-    if st.ret_type.is_none() { panic!("ret_type can't be null.") }
+    if st.ret_type.is_none() { panic!("return type can't be null.") }
 
     match SqlExpand.fetch_scalar(&st) {
         Ok(ret) => ret.into(),
@@ -429,7 +429,7 @@ pub fn execute(input: TokenStream) -> TokenStream {
 pub fn insert(input: TokenStream) -> TokenStream {
     // 将 input 解析成 SqlClosure
     let st = syn::parse_macro_input!(input as DyClosure);
-    if st.ret_type.is_none() { panic!("ret_type can't be null.") }
+    if st.ret_type.is_none() { panic!("return type can't be null.") }
 
     match SqlExpand.insert(&st) {
         Ok(ret) => ret.into(),
@@ -492,7 +492,7 @@ pub fn sql(input: TokenStream) -> TokenStream {
 pub fn page(input: TokenStream) -> TokenStream {
     // 将 input 解析成 SqlClosure
     let st = syn::parse_macro_input!(input as DyClosure);
-    if st.ret_type.is_none() { panic!("ret_type can't be null.") }
+    if st.ret_type.is_none() { panic!("return type can't be null.") }
 
     match SqlExpand.page(&st) {
         Ok(ret) => ret.into(),

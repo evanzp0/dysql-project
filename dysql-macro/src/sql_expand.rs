@@ -179,7 +179,7 @@ impl SqlExpand {
             #query_declare      // let query = executor.create_query(....);
             #execute
             
-            match insert_rst {
+            let rst = match insert_rst {
                 Ok(Some(insert_id)) => Ok(insert_id),
                 Ok(None) => {
                     let query = tran.create_query();
@@ -188,7 +188,9 @@ impl SqlExpand {
                 Err(e) => {
                     break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)), None)));
                 }
-            }
+            };
+            // rst.map(|v| v as #ret_type)
+            rst
         });
 
         Ok(ret)

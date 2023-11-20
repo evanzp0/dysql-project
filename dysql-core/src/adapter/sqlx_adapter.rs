@@ -18,17 +18,17 @@ where
     {
         // 以下分支需要用条件宏进行编译
         #[cfg(feature = "sqlx-postges")]
-        if any::TypeId::of::<DB>() == any::TypeId::of::<sqlx::Postgres>() {
+        if std::any::TypeId::of::<DB>() == std::any::TypeId::of::<sqlx::Postgres>() {
             return SqlDialect::postgres
         }
         
         #[cfg(feature = "sqlx-mysql")]
-        if any::TypeId::of::<DB>() == any::TypeId::of::<sqlx::MySql>() {
+        if std::any::TypeId::of::<DB>() == std::any::TypeId::of::<sqlx::MySql>() {
             return SqlDialect::mysql
         } 
         
         #[cfg(feature = "sqlx-sqlite")]
-        if any::TypeId::of::<DB>() == any::TypeId::of::<sqlx::Sqlite>() {
+        if std::any::TypeId::of::<DB>() == std::any::TypeId::of::<sqlx::Sqlite>() {
             return SqlDialect::sqlite
         }
 

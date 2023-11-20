@@ -27,7 +27,7 @@ log = "0.4"
 uuid = "1"
 
 [features]
-default=[] # "sqlx-postgres", "sqlx-mysql", "sqlx-sqlite"
+default=[]
 sqlx-postgres = ["sqlx/postgres"]
 sqlx-mysql = ["sqlx/mysql"]
 sqlx-sqlite = ["sqlx/sqlite"]

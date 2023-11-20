@@ -20,12 +20,53 @@ use sql_fragment::get_sql_fragment;
 #[derive(Debug)]
 pub(crate) struct DyClosure {
     executor_info: ExecutorInfo,
-    dto: Option<syn::Ident>,
+    dto_info: DtoInfo,
     sql_name: Option<String>,
     ret_type: Option<syn::Path>, // return type
     body: String,
     source_file: PathBuf,
 }
+
+#[derive(Debug)]
+enum RefKind {
+    Immutable,
+    Mutable,
+    None
+}
+
+
+#[derive(Debug)]
+struct DtoInfo {
+    src: Option<syn::Ident>,
+    ref_kind: RefKind,
+}
+
+impl DtoInfo {
+    pub fn new(src: Option<syn::Ident>, ref_kind: RefKind) -> Self {
+        Self {
+            src,
+            ref_kind,
+        }
+    }
+
+    pub fn gen_token(&self) -> proc_macro2::TokenStream {
+        if let Some(_) = self.src {
+            let mut rst = match self.ref_kind {
+                RefKind::Immutable => quote!(&),
+                RefKind::Mutable => quote!(&mut),
+                RefKind::None => quote!(),
+            };
+    
+            let dto = &self.src;
+            rst.extend(quote!(#dto));
+
+            rst.into()
+        } else {
+            quote!()
+        }
+    }
+}
+
 
 #[derive(Debug)]
 struct ExecutorInfo {
@@ -61,32 +102,6 @@ impl ExecutorInfo {
     }
 }
 
-#[derive(Debug)]
-enum RefKind {
-    Immutable,
-    Mutable,
-    None
-}
-
-// impl DyClosure {
-//     pub(crate) fn gen_executor_token(&self) -> proc_macro2::TokenStream {
-//         let mut rst = match self.dto_ref_kind {
-//             RefKind::Immutable => quote!(&),
-//             RefKind::Mutable => quote!(&mut),
-//             RefKind::None => quote!(),
-//         };
-
-//         if self.is_executor_deref {
-//             rst.extend(quote!(*))
-//         }
-
-//         let executor = &self.executor;
-//         rst.extend(quote!(#executor));
-
-//         rst.into()
-//     }
-// }
-
 impl syn::parse::Parse for DyClosure {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
         // 加载 .env 文件中的环境变量，读取自动持久化 sql 文件的参数
@@ -96,12 +111,12 @@ impl syn::parse::Parse for DyClosure {
         input.parse::<syn::Token!(|)>()?;
 
         // 解析 executor 的引用(可能为 &mut, &)
-        let dto_ref_kind: RefKind;
+        let executor_ref_kind: RefKind;
         match input.parse::<syn::Token!(&)>() {
-            Err(_) => dto_ref_kind = RefKind::None,
+            Err(_) => executor_ref_kind = RefKind::None,
             Ok(_) => match input.parse::<syn::Token!(mut)>() {
-                Err(_) => dto_ref_kind = RefKind::Immutable,
-                Ok(_) => dto_ref_kind = RefKind::Mutable,
+                Err(_) => executor_ref_kind = RefKind::Immutable,
+                Ok(_) => executor_ref_kind = RefKind::Mutable,
             }
         }
 
@@ -117,23 +132,37 @@ impl syn::parse::Parse for DyClosure {
             Ok(ex) => executor = ex,
         }
 
-        // 测试是否 | 结束, 并解析 ',dto '(dto 可能为 _, dto)
+        // 测试是否 | 结束, 并解析 ',dto '(dto 可能为 _, &dto, &mut dto)
         let sql_name: Option<String>;
         let dto: Option<syn::Ident>;
+        let dto_ref_kind: RefKind;
         match input.parse::<syn::Token!(|)>() {
             Ok(_) => {
                 sql_name = None;
                 dto = None;
+                dto_ref_kind = RefKind::None;
             },
             Err(_) => match input.parse::<syn::Token!(,)>() {
                 Err(e) =>  return Err(e),
                 Ok(_) => {
                     // 解析 dto
                     match input.parse::<syn::Token!(_)>() {
-                        Ok(_) => dto = None,
-                        Err(_) => match input.parse::<syn::Ident>() {
-                            Err(e) => return Err(e),
-                            Ok(d) => dto = Some(d),
+                        Ok(_) => {
+                            dto = None;
+                            dto_ref_kind = RefKind::None;
+                        },
+                        Err(_) => {
+                            match input.parse::<syn::Token!(&)>() {
+                                Ok(_) => match input.parse::<syn::Token!(mut)>(){
+                                    Ok(_) => dto_ref_kind = RefKind::Mutable,
+                                    Err(_) => dto_ref_kind = RefKind::Immutable,
+                                },
+                                Err(_) =>  dto_ref_kind = RefKind::None,
+                            }
+                            match input.parse::<syn::Ident>() {
+                                Err(e) => return Err(e),
+                                Ok(d) => dto = Some(d),
+                            }
                         }
                     }
 
@@ -183,9 +212,10 @@ impl syn::parse::Parse for DyClosure {
         let span: proc_macro::Span = input.span().unwrap();
         let source_file = span.source_file().path();
 
-        let executor_info = ExecutorInfo::new(executor, dto_ref_kind, is_executor_deref);
+        let executor_info = ExecutorInfo::new(executor, executor_ref_kind, is_executor_deref);
+        let dto_info = DtoInfo::new(dto, dto_ref_kind);
 
-        let dsf = DyClosure { executor_info, dto, sql_name, ret_type, body, source_file };
+        let dsf = DyClosure { executor_info, dto_info, sql_name, ret_type, body, source_file };
         // eprintln!("{:#?}", dsf);
 
         Ok(dsf)

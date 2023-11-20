@@ -10,7 +10,7 @@ impl SqlExpand {
 
     /// expend fetch_one
     pub fn fetch_one(&self, st: &DyClosure) -> syn::Result<proc_macro2::TokenStream>{
-        let dto_ident = &st.dto;
+        let dto_ident = &st.dto_info.src;
         let executor_ident = &st.executor_info.src;
         let executor_token = st.executor_info.gen_token();
         let ret_type = &st.ret_type;
@@ -44,7 +44,7 @@ impl SqlExpand {
 
     /// expend fetch_all
     pub fn fetch_all(&self, st: &DyClosure) -> syn::Result<proc_macro2::TokenStream>{
-        let dto_ident = &st.dto;
+        let dto_ident = &st.dto_info.src;
         let executor_ident = &st.executor_info.src;
         let executor_token = st.executor_info.gen_token();
         let ret_type = &st.ret_type;
@@ -78,7 +78,7 @@ impl SqlExpand {
 
     /// expend fetch_scalar
     pub fn fetch_scalar(&self, st: &DyClosure) -> syn::Result<proc_macro2::TokenStream>{
-        let dto_ident = &st.dto;
+        let dto_ident = &st.dto_info.src;
         let executor_ident = &st.executor_info.src;
         let executor_token = st.executor_info.gen_token();
         let ret_type = &st.ret_type;
@@ -112,7 +112,7 @@ impl SqlExpand {
 
     /// expend execute
     pub fn execute(&self, st: &DyClosure) -> syn::Result<proc_macro2::TokenStream>{
-        let dto_ident = &st.dto;
+        let dto_ident = &st.dto_info.src;
         let executor_ident = &st.executor_info.src;
         let executor_token = st.executor_info.gen_token();
 
@@ -145,7 +145,7 @@ impl SqlExpand {
 
     /// expend insert
     pub fn insert(&self, st: &DyClosure) -> syn::Result<proc_macro2::TokenStream>{
-        let dto_ident = &st.dto;
+        let dto_ident = &st.dto_info.src;
         let executor_ident = &st.executor_info.src;
         let executor_token = st.executor_info.gen_token();
         let ret_type = &st.ret_type;
@@ -179,7 +179,7 @@ impl SqlExpand {
 
     /// expend page query
     pub fn page(&self, st: &DyClosure) -> syn::Result<proc_macro2::TokenStream>{
-        let dto_ident = &st.dto;
+        let dto_ident = &st.dto_info.src;
         let executor_ident = &st.executor_info.src;
         let executor_token = st.executor_info.gen_token();
         let ret_type = &st.ret_type;
@@ -252,7 +252,7 @@ impl SqlExpand {
     /// 
     /// st: 在编译时生成的包含 sql 的结构体;
     fn gen_named_sql_declare(&self, st: &crate::DyClosure) -> syn::Result<proc_macro2::TokenStream> {
-        let dto_ident = &st.dto;
+        let dto_ident = &st.dto_info.src;
 
         // 根据 sql body 生成唯一 hash 标识
         let template_id = hash_str(&st.body);

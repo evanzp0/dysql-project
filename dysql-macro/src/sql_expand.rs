@@ -189,7 +189,7 @@ impl SqlExpand {
                     break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)), None)));
                 }
             };
-            // rst.map(|v| v as #ret_type)
+            let rst = rst.map(|v| v as #ret_type);
             rst
         });
 

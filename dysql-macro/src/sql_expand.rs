@@ -11,8 +11,8 @@ impl SqlExpand {
     /// expend fetch_one
     pub fn fetch_one(&self, st: &DyClosure) -> syn::Result<proc_macro2::TokenStream>{
         let dto_ident = &st.dto;
-        let executor_ident = &st.executor;
-        let executor_token = st.gen_executor_token();
+        let executor_ident = &st.executor_info.src;
+        let executor_token = st.executor_info.gen_token();
         let ret_type = &st.ret_type;
         
         // declare named_sql at runtime
@@ -45,8 +45,8 @@ impl SqlExpand {
     /// expend fetch_all
     pub fn fetch_all(&self, st: &DyClosure) -> syn::Result<proc_macro2::TokenStream>{
         let dto_ident = &st.dto;
-        let executor_ident = &st.executor;
-        let executor_token = st.gen_executor_token();
+        let executor_ident = &st.executor_info.src;
+        let executor_token = st.executor_info.gen_token();
         let ret_type = &st.ret_type;
 
         // declare named_sql at runtime
@@ -79,8 +79,8 @@ impl SqlExpand {
     /// expend fetch_scalar
     pub fn fetch_scalar(&self, st: &DyClosure) -> syn::Result<proc_macro2::TokenStream>{
         let dto_ident = &st.dto;
-        let executor_ident = &st.executor;
-        let executor_token = st.gen_executor_token();
+        let executor_ident = &st.executor_info.src;
+        let executor_token = st.executor_info.gen_token();
         let ret_type = &st.ret_type;
 
         // declare named_sql at runtime
@@ -113,8 +113,8 @@ impl SqlExpand {
     /// expend execute
     pub fn execute(&self, st: &DyClosure) -> syn::Result<proc_macro2::TokenStream>{
         let dto_ident = &st.dto;
-        let executor_ident = &st.executor;
-        let executor_token = st.gen_executor_token();
+        let executor_ident = &st.executor_info.src;
+        let executor_token = st.executor_info.gen_token();
 
         // declare named_sql at runtime
         let named_sql_declare = self.gen_named_sql_declare(st)?;
@@ -146,8 +146,8 @@ impl SqlExpand {
     /// expend insert
     pub fn insert(&self, st: &DyClosure) -> syn::Result<proc_macro2::TokenStream>{
         let dto_ident = &st.dto;
-        let executor_ident = &st.executor;
-        let executor_token = st.gen_executor_token();
+        let executor_ident = &st.executor_info.src;
+        let executor_token = st.executor_info.gen_token();
         let ret_type = &st.ret_type;
 
         // declare named_sql at runtime
@@ -180,8 +180,8 @@ impl SqlExpand {
     /// expend page query
     pub fn page(&self, st: &DyClosure) -> syn::Result<proc_macro2::TokenStream>{
         let dto_ident = &st.dto;
-        let executor_ident = &st.executor;
-        let executor_token = st.gen_executor_token();
+        let executor_ident = &st.executor_info.src;
+        let executor_token = st.executor_info.gen_token();
         let ret_type = &st.ret_type;
 
         // declare named_sql whith template at runtime 

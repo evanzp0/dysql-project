@@ -19,14 +19,46 @@ use sql_fragment::get_sql_fragment;
 #[allow(dead_code)]
 #[derive(Debug)]
 pub(crate) struct DyClosure {
-    dto_ref_kind: RefKind,
-    is_executor_deref: bool,
-    executor: syn::Ident,
+    executor_info: ExecutorInfo,
     dto: Option<syn::Ident>,
     sql_name: Option<String>,
     ret_type: Option<syn::Path>, // return type
     body: String,
     source_file: PathBuf,
+}
+
+#[derive(Debug)]
+struct ExecutorInfo {
+    src: syn::Ident,
+    ref_kind: RefKind,
+    is_deref: bool,
+}
+
+impl ExecutorInfo {
+    pub fn new(src: syn::Ident, ref_kind: RefKind, is_deref: bool) -> Self {
+        Self {
+            src,
+            ref_kind,
+            is_deref,
+        }
+    }
+
+    pub fn gen_token(&self) -> proc_macro2::TokenStream {
+        let mut rst = match self.ref_kind {
+            RefKind::Immutable => quote!(&),
+            RefKind::Mutable => quote!(&mut),
+            RefKind::None => quote!(),
+        };
+
+        if self.is_deref {
+            rst.extend(quote!(*))
+        }
+
+        let executor = &self.src;
+        rst.extend(quote!(#executor));
+
+        rst.into()
+    }
 }
 
 #[derive(Debug)]
@@ -36,24 +68,24 @@ enum RefKind {
     None
 }
 
-impl DyClosure {
-    pub(crate) fn gen_executor_token(&self) -> proc_macro2::TokenStream {
-        let mut rst = match self.dto_ref_kind {
-            RefKind::Immutable => quote!(&),
-            RefKind::Mutable => quote!(&mut),
-            RefKind::None => quote!(),
-        };
+// impl DyClosure {
+//     pub(crate) fn gen_executor_token(&self) -> proc_macro2::TokenStream {
+//         let mut rst = match self.dto_ref_kind {
+//             RefKind::Immutable => quote!(&),
+//             RefKind::Mutable => quote!(&mut),
+//             RefKind::None => quote!(),
+//         };
 
-        if self.is_executor_deref {
-            rst.extend(quote!(*))
-        }
+//         if self.is_executor_deref {
+//             rst.extend(quote!(*))
+//         }
 
-        let executor = &self.executor;
-        rst.extend(quote!(#executor));
+//         let executor = &self.executor;
+//         rst.extend(quote!(#executor));
 
-        rst.into()
-    }
-}
+//         rst.into()
+//     }
+// }
 
 impl syn::parse::Parse for DyClosure {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
@@ -151,7 +183,9 @@ impl syn::parse::Parse for DyClosure {
         let span: proc_macro::Span = input.span().unwrap();
         let source_file = span.source_file().path();
 
-        let dsf = DyClosure { dto_ref_kind, is_executor_deref, executor, dto, sql_name, ret_type, body, source_file };
+        let executor_info = ExecutorInfo::new(executor, dto_ref_kind, is_executor_deref);
+
+        let dsf = DyClosure { executor_info, dto, sql_name, ret_type, body, source_file };
         // eprintln!("{:#?}", dsf);
 
         Ok(dsf)

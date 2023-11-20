@@ -49,6 +49,7 @@ async fn main() {
         "insert into test_user (name, age) values (:name, :age) returning id"
     }).unwrap();
     println!("insert: {:?}", rst);
+
     tran.rollback().await.unwrap();
 
     let sort_model = vec![

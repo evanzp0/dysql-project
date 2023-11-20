@@ -2,7 +2,7 @@ use dysql_tpl::{Content, SimpleTemplate};
 use sqlx::{Executor, FromRow};
 use paste::paste;
 
-use super::{SqlxQuery, SqlxExecutorAdatper};
+use crate::{SqlxQuery, SqlxExecutorAdatper};
 use crate::{DySqlError, ErrorInner, Kind, Pagination, PageDto, extract_params, impl_bind_param_value};
 
 impl SqlxQuery <sqlx::Postgres>
@@ -134,7 +134,7 @@ impl SqlxQuery <sqlx::Postgres>
         Ok(af_rows)
     }
 
-    pub async fn insert<'e, 'c: 'e, E, D, U>(self, executor: E, named_sql: &str, dto: Option<D>) -> Result<U, DySqlError>
+    pub async fn insert<'e, 'c: 'e, E, D, U>(self, executor: E, named_sql: &str, dto: Option<D>) -> Result<Option<U>, DySqlError>
     where
         E: 'e + Executor<'c, Database = sqlx::Postgres> + SqlxExecutorAdatper<sqlx::Postgres> ,
         D: Content + Send + Sync,
@@ -161,8 +161,15 @@ impl SqlxQuery <sqlx::Postgres>
         }
 
         let insert_id = query.fetch_one(executor).await;
+        
 
-        insert_id.map_err(|e| DySqlError(ErrorInner::new(Kind::QueryError, Some(Box::new(e)), None)))
+        let insert_id = insert_id.map_err(|e| DySqlError(ErrorInner::new(Kind::QueryError, Some(Box::new(e)), None)))?;
+        Ok(Some(insert_id))
+    }
+
+    pub async fn fetch_insert_id<'e, 'c: 'e, E>(self, _executor: E) -> Result<i64, DySqlError>
+    {
+        Ok(-1)
     }
 
     pub async fn page<'e, 'c: 'e, E, D, U>(self, executor: E, named_sql: &str, page_dto: &PageDto<D>) -> Result<Pagination<U>, DySqlError>

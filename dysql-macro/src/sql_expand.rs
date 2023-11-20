@@ -165,10 +165,11 @@ impl SqlExpand {
         let dto_token = st.dto_info.gen_token();
         let execute = match dto_ident {
             Some(_) => quote!(
-                query.insert::<_, _, #ret_type>(#executor_token, &named_sql, Some(#dto_token)).await 
+                let insert_rst = query.insert::<_, _, #ret_type>(#executor_token, &named_sql, Some(#dto_token)).await;
+                
             ),
             None => quote!(
-                query.insert::<_, dysql::EmptyObject, #ret_type>(#executor_token, &named_sql, None).await 
+                let insert_rst = query.insert::<_, dysql::EmptyObject, #ret_type>(#executor_token, &named_sql, None).await;
             ),
         };
 
@@ -177,6 +178,17 @@ impl SqlExpand {
             #named_sql_declare  // let named_sql = ....;
             #query_declare      // let query = executor.create_query(....);
             #execute
+            
+            match insert_rst {
+                Ok(Some(insert_id)) => Ok(insert_id),
+                Ok(None) => {
+                    let query = tran.create_query();
+                    query.fetch_insert_id(#executor_token).await
+                }
+                Err(e) => {
+                    break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)), None)));
+                }
+            }
         });
 
         Ok(ret)

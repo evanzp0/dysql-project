@@ -1,8 +1,5 @@
+
 use std::{marker::PhantomData, any::TypeId};
-
-mod postgres_adapter;
-
-pub use postgres_adapter::*;
 
 use crate::SqlDialect;
 

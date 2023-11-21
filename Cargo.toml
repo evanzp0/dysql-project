@@ -51,7 +51,7 @@ dysql = { path = "./dysql" }
 sqlx = { version = "0.7", features = [ "runtime-tokio-native-tls", "chrono", "uuid" ], optional = true } 
 
 [features]
-default = [] #"sqlx-postgres", "sqlx-mysql", "sqlx-sqlite"
+default = ["sqlx-postgres", "sqlx-mysql", "sqlx-sqlite"] #
 sqlx-postgres = ["sqlx/postgres", "dysql/sqlx-postgres"]
 sqlx-mysql = ["sqlx/mysql", "dysql/sqlx-mysql"]
 sqlx-sqlite = ["sqlx/sqlite", "dysql/sqlx-sqlite"]

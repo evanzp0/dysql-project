@@ -7,7 +7,7 @@
 
 extern crate proc_macro;
 
-use bae::FromAttributes;
+use bae2::FromAttributes;
 use fnv::FnvHasher;
 use proc_macro::TokenStream;
 use proc_macro2::{Span, TokenStream as TokenStream2};

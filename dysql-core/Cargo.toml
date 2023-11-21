@@ -12,7 +12,13 @@ readme = "../README.md"
 
 [dependencies]
 dysql-tpl = { version = "2.0", features = ["chrono", "uuid"] } # path = "../dysql-tpl"
+# tokio-postgres family
+tokio-postgres = { version = "0.7", features = ["with-chrono-0_4"], optional = true }
+tokio-pg-mapper = { version = "0.2", optional = true }
+tokio-pg-mapper-derive = { version = "0.2", optional = true }
+# sqlx
 sqlx = { version = "0.7", features = ["uuid", "chrono"], optional = true}
+# others
 serde = { version = "1.0", features = ["derive"] }
 once_cell = "1.13"
 home = "0.5"
@@ -28,3 +34,4 @@ default=[]
 sqlx-postgres = ["sqlx/postgres"]
 sqlx-mysql = ["sqlx/mysql"]
 sqlx-sqlite = ["sqlx/sqlite"]
+tokio-postgres = ["dep:tokio-postgres", "tokio-pg-mapper", "tokio-pg-mapper-derive"]

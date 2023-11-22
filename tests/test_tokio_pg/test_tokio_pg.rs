@@ -3,24 +3,27 @@ mod common;
 use std::error::Error;
 
 use dysql::{PageDto, SortModel, sql, fetch_one, insert, fetch_scalar, execute, page, fetch_all, Value};
-use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
+use tokio_postgres::{NoTls, connect};
+use dysql::TokioPgExecutorAdatper;
 
 use crate::common::{UserDto, User};
 
-pub async fn connect_postgres_db() -> Pool<Postgres> {
-    dotenv::dotenv().ok();
+async fn connect_postgres_db() -> tokio_postgres::Client {
+    let (client, connection) = connect("host=127.0.0.1 user=root password=111111 dbname=my_database", NoTls).await.unwrap();
+    tokio::spawn(async move {
+        if let Err(e) = connection.await {
+            eprintln!("connection error: {}", e);
+        }
+    });
 
-    let conn = PgPoolOptions::new()
-        .max_connections(5)
-        .connect("postgres://root:111111@127.0.0.1/my_database").await.unwrap();
-
-    conn
+    client
 }
+    
 
 #[tokio::test]
 async fn test_fetch_all() {
     let conn = connect_postgres_db().await;
-
+    
     let dto = UserDto{ id: None, name: None, age: Some(13) , id_rng: None };
     let rst = fetch_all!(|&conn, &dto| -> User {
         r#"SELECT * FROM test_user 
@@ -76,11 +79,11 @@ async fn test_fetch_scalar() -> dysql::DySqlResult<()>{
 
 #[tokio::test]
 async fn test_execute() -> Result<(), Box<dyn Error>> {
-    let conn = connect_postgres_db().await;
-    let mut tran = conn.begin().await?;
+    let mut conn = connect_postgres_db().await;
+    let tran = conn.transaction().await?;
 
     let dto = UserDto{ id: Some(3), name: None, age: None, id_rng: None };
-    let affected_rows_num = execute!(|&mut *tran, dto| {
+    let affected_rows_num = execute!(|&tran, dto| {
         r#"delete from test_user where id = :id"#
     })?;
 
@@ -93,11 +96,11 @@ async fn test_execute() -> Result<(), Box<dyn Error>> {
 
 #[tokio::test]
 async fn test_insert() -> Result<(), Box<dyn Error>> {
-    let conn = connect_postgres_db().await;
-    let mut tran = conn.begin().await?;
+    let mut conn = connect_postgres_db().await;
+    let tran = conn.transaction().await?;
 
     let dto = UserDto{ id: None, name: Some("lisi".to_owned()), age: Some(50), id_rng: None };
-    let insert_id = insert!(|&mut *tran, dto| -> i64 {
+    let insert_id = insert!(|&tran, dto| -> i64 {
         r#"insert into test_user (name, age) values (:name, :age) returning id"#
     })?;
 

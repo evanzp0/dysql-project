@@ -4,7 +4,7 @@ use dysql_tpl::{Content, SimpleTemplate, SimpleValue};
 use tokio_postgres::{Statement, Error, types::{ToSql, FromSql}, Row, ToStatement};
 use tokio_pg_mapper::FromTokioPostgresRow;
 
-use crate::{TokioPgExecutorAdatper, TokioPgQuery, DySqlError, extract_params, ErrorInner, Kind, PageDto};
+use crate::{TokioPgExecutorAdatper, TokioPgQuery, DySqlError, extract_params, ErrorInner, Kind, PageDto, Pagination};
 
 impl TokioPgQuery
 {
@@ -254,7 +254,7 @@ impl TokioPgQuery
     }
 
     pub async fn page<E, D, U>(self, executor: &E, named_sql: &str, page_dto: &PageDto<D>)
-        -> Result<Vec<U>, DySqlError>
+        -> Result<Pagination<U>, DySqlError>
     where 
         E: TokioPgExecutorAdatper,
         D: Content + Send + Sync,
@@ -301,7 +301,9 @@ impl TokioPgQuery
             .map(|row| <U>::from_row_ref(row).expect("query unexpected error"))
             .collect::<Vec<U>>();
 
-        Ok(rst)
+        let pg_data = Pagination::from_dto(&page_dto, rst);
+
+        Ok(pg_data)
     }
 }
 

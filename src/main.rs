@@ -5,20 +5,17 @@ use dysql::*;
 
 #[tokio::main]
 async fn main() {
-    let mut conn = connect_db().await;
-    let tran = conn.transaction().await.unwrap();
+    let conn = connect_db().await;
+    // let tran = conn.transaction().await.unwrap();
 
     let dto = UserDto::new(Some(1), Some("a100".to_owned()), Some(10));
-    let sort_model = vec![
-        SortModel {field: "id".to_owned(), sort: "desc".to_owned()}
-    ];
-    let mut pg_dto = PageDto::new_with_sort(3, 10, Some(&dto), sort_model.clone());
 
-    let rst = page!(|&tran, pg_dto| -> User {
-        "select * from test_user"
-    });
+    let rst = fetch_scalar!(|&conn, dto| -> i64 {
+        r#"select count (*) from test_user where id = :value"#
+    }).unwrap();
+
     println!("{:#?}", rst);
-    tran.rollback().await.unwrap();
+    // tran.rollback().await.unwrap();
 }
 
 #[derive(Content)]

@@ -75,3 +75,8 @@ required-features = ["sqlx-mysql"]
 name = "test_sqlx_sqlite"
 path = "tests/test_sqlx/test_sqlx_sqlite.rs"
 required-features = ["sqlx-sqlite"]
+
+[[test]]
+name = "test_tokio_pg"
+path = "tests/test_tokio_pg/test_tokio_pg.rs"
+required-features = ["tokio-postgres"]

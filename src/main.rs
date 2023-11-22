@@ -9,14 +9,13 @@ async fn main() {
     let tran = conn.transaction().await.unwrap();
 
     let dto = UserDto::new(Some(1), Some("a100".to_owned()), Some(10));
+    let sort_model = vec![
+        SortModel {field: "id".to_owned(), sort: "desc".to_owned()}
+    ];
+    let mut pg_dto = PageDto::new_with_sort(3, 10, Some(&dto), sort_model.clone());
 
-    let rst = insert!(|&tran, dto| -> i64 {
-        "insert into test_user (name, age) values (:name, :age) returning id"
-    });
-    println!("{:#?}", rst);
-
-    let rst = fetch_all!(|&tran| -> User {
-        "select * from test_user order by id"
+    let rst = page!(|&tran, pg_dto| -> User {
+        "select * from test_user"
     });
     println!("{:#?}", rst);
     tran.rollback().await.unwrap();

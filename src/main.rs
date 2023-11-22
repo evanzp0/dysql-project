@@ -1,22 +1,22 @@
 
+// use dysql::{fetch_scalar, Content};
 // use tokio_pg_mapper_derive::PostgresMapper;
 // use tokio_postgres::{NoTls, connect};
-// use dysql::*;
 
-#[tokio::main]
-async fn main() {
-    // let conn = connect_db().await;
-    // // let tran = conn.transaction().await.unwrap();
+// #[tokio::main]
+// async fn main() {
+//     let conn = connect_db().await;
+//     // let tran = conn.transaction().await.unwrap();
 
-    // let dto = UserDto::new(Some(1), Some("a100".to_owned()), Some(10));
+//     let dto = UserDto::new(Some(1), Some("a100".to_owned()), Some(10));
 
-    // let rst = fetch_scalar!(|&conn, dto| -> i64 {
-    //     r#"select count (*) from test_user where id = :value"#
-    // }).unwrap();
+//     let rst = fetch_scalar!(|&conn, dto| -> i64 {
+//         r#"select count (*) from test_user where id = :id"#
+//     }).unwrap();
 
-    // println!("{:#?}", rst);
-    // tran.rollback().await.unwrap();
-}
+//     println!("{:#?}", rst);
+//     // tran.rollback().await.unwrap();
+// }
 
 // #[derive(Content)]
 // struct UserDto {
@@ -58,3 +58,5 @@ async fn main() {
 
 //     client
 // }
+
+fn main() {}

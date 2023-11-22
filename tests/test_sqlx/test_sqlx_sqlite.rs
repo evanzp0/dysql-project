@@ -4,7 +4,7 @@ use std::{error::Error, str::FromStr};
 
 use dysql::{PageDto, SortModel, sql, fetch_one, insert, fetch_scalar, execute, page, fetch_all, Value};
 
-use dysql::SqlxExecutorAdatper;
+// use dysql::SqlxExecutorAdatper;
 
 use sqlx::{Acquire, SqliteConnection, sqlite::{SqliteConnectOptions, SqliteJournalMode}, ConnectOptions};
 

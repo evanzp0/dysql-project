@@ -4,7 +4,6 @@ use std::error::Error;
 
 use dysql::{PageDto, SortModel, sql, fetch_one, insert, fetch_scalar, execute, page, fetch_all, Value};
 use tokio_postgres::{NoTls, connect};
-use dysql::TokioPgExecutorAdatper;
 
 use crate::common::{UserDto, User};
 

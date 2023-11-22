@@ -19,7 +19,7 @@ serde = { version = "1", features = ["derive"] }
 
 [features]
 default = []
-sqlx-postgres = ["dysql-core/sqlx-postgres"]
-sqlx-mysql = ["dysql-core/sqlx-mysql"]
-sqlx-sqlite = ["dysql-core/sqlx-sqlite"]
-tokio-postgres = ["dysql-core/tokio-postgres"]
+sqlx-postgres = ["dysql-core/sqlx-postgres", "dysql-macro/sqlx"]
+sqlx-mysql = ["dysql-core/sqlx-mysql", "dysql-macro/sqlx"]
+sqlx-sqlite = ["dysql-core/sqlx-sqlite", "dysql-macro/sqlx"]
+tokio-postgres = ["dysql-core/tokio-postgres", "dysql-macro/tokio-postgres"]

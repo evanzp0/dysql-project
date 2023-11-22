@@ -33,7 +33,12 @@ impl SqlExpand {
         };
         
         let ret = quote!('rst_block: {
-            // use dysql::SqlxExecutorAdatper;
+            #[cfg(feature = "tokio-postgres")]
+            use dysql::TokioPgExecutorAdatper;
+
+            #[cfg(feature="sqlx")]
+            use dysql::SqlxExecutorAdatper;
+
             #named_sql_declare  // let named_sql = ....;
             #query_declare      // let query = executor.create_query(....);
             #execute
@@ -67,7 +72,12 @@ impl SqlExpand {
         };
 
         let ret = quote!('rst_block: {
+            #[cfg(feature = "tokio-postgres")]
+            use dysql::TokioPgExecutorAdatper;
+
+            #[cfg(feature="sqlx")]
             use dysql::SqlxExecutorAdatper;
+
             #named_sql_declare  // let named_sql = ....;
             #query_declare      // let query = executor.create_query(....);
             #execute
@@ -101,7 +111,12 @@ impl SqlExpand {
         };
 
         let ret = quote!('rst_block: {
+            #[cfg(feature = "tokio-postgres")]
+            use dysql::TokioPgExecutorAdatper;
+
+            #[cfg(feature="sqlx")]
             use dysql::SqlxExecutorAdatper;
+            
             #named_sql_declare  // let named_sql = ....;
             #query_declare      // let query = executor.create_query(....);
             #execute
@@ -134,7 +149,12 @@ impl SqlExpand {
         };
 
         let ret = quote!('rst_block: {
+            #[cfg(feature = "tokio-postgres")]
+            use dysql::TokioPgExecutorAdatper;
+
+            #[cfg(feature="sqlx")]
             use dysql::SqlxExecutorAdatper;
+
             #named_sql_declare  // let named_sql = ....;
             #query_declare      // let query = executor.create_query(....);
             #execute
@@ -169,7 +189,12 @@ impl SqlExpand {
         };
 
         let ret = quote!('rst_block: {
+            #[cfg(feature = "tokio-postgres")]
+            use dysql::TokioPgExecutorAdatper;
+
+            #[cfg(feature="sqlx")]
             use dysql::SqlxExecutorAdatper;
+
             #named_sql_declare  // let named_sql = ....;
             #query_declare      // let query = executor.create_query(....);
             #execute
@@ -230,7 +255,12 @@ impl SqlExpand {
         };
 
         let ret = quote!('rst_block: {
+            #[cfg(feature = "tokio-postgres")]
+            use dysql::TokioPgExecutorAdatper;
+
+            #[cfg(feature="sqlx")]
             use dysql::SqlxExecutorAdatper;
+
             #named_sql_declare  // let named_sql = ....;
             #query_declare      // let query = executor.create_query(....);
 

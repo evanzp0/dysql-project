@@ -5,8 +5,9 @@ use std::error::Error;
 use dysql::{PageDto, SortModel, sql, fetch_one, insert, fetch_scalar, execute, page, fetch_all, Value};
 use sqlx::{Pool, MySql, mysql::MySqlPoolOptions};
 
-use crate::common::{UserDto, User};
+use dysql::SqlxExecutorAdatper;
 
+use crate::common::{UserDto, User};
 
 pub async fn connect_mysql_db() -> Pool<MySql> {
     let conn = MySqlPoolOptions::new()

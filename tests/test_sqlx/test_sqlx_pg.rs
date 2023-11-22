@@ -5,6 +5,8 @@ use std::error::Error;
 use dysql::{PageDto, SortModel, sql, fetch_one, insert, fetch_scalar, execute, page, fetch_all, Value};
 use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
 
+use dysql::SqlxExecutorAdatper;
+
 use crate::common::{UserDto, User};
 
 pub async fn connect_postgres_db() -> Pool<Postgres> {

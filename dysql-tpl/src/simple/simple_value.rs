@@ -8,6 +8,18 @@ use chrono::Utc;
 use super::SimpleError;
 use super::SimpleInnerError;
 
+#[derive(Debug)]
+pub struct RawStr(pub * const str);
+
+unsafe impl Send for RawStr {}
+unsafe impl Sync for RawStr {}
+
+#[derive(Debug)]
+pub struct RawString(pub * const String);
+
+unsafe impl Send for RawString {}
+unsafe impl Sync for RawString {}
+
 macro_rules! impl_simple_value_varaint {
     (
         $($vtype: ty),*
@@ -20,9 +32,9 @@ macro_rules! impl_simple_value_varaint {
                     [<t_ $vtype>]($vtype),
                     // [<option_ $vtype>](Option<$vtype>),
                 )*
-                t_str(*const str),
+                t_str(RawStr),
                 // option_str(Option<*const str>),
-                t_String(*const String),
+                t_String(RawString),
                 // option_String(Option<*const String>),
                 t_Utc(DateTime<Utc>),
                 // option_Utc(Option<DateTime<Utc>>),
@@ -39,7 +51,8 @@ impl SimpleValue {
     /// 指针转字符串切片
     pub fn as_str(&self) -> Result<&str, SimpleError> {
         if let SimpleValue::t_str(val) = self {
-            let val: &str = unsafe {&**val};
+            let val = val.0;
+            let val: &str = unsafe {&*val};
             Ok(val)
         } else {
             Err(SimpleInnerError(format!("value: '{:?}' convert to &str failed", self)).into())
@@ -49,7 +62,8 @@ impl SimpleValue {
     /// 指针转字符串引用
     pub fn as_string(&self) -> Result<&String, SimpleError> {
         if let SimpleValue::t_String(val) = self {
-            let val: &String = unsafe {&**val};
+            let val = val.0;
+            let val: &String = unsafe {&*val};
             Ok(val)
         } else {
             Err(SimpleInnerError(format!("value: '{:?}' convert to &String failed", self)).into())

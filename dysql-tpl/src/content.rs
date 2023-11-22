@@ -9,7 +9,7 @@
 
 use crate::encoding::Encoder;
 use crate::simple::simple_section::SimpleSection;
-use crate::simple::{SimpleValue, SimpleError, SimpleInnerError};
+use crate::simple::{SimpleValue, SimpleError, SimpleInnerError, RawStr, RawString};
 use crate::template::{Section, Template};
 use crate::traits::ContentSequence;
 
@@ -270,7 +270,7 @@ impl Content for str {
     #[inline]
     fn apply_unescaped(&self) -> Result<SimpleValue, SimpleError>
     {
-        Ok(SimpleValue::t_str(self as *const str))
+        Ok(SimpleValue::t_str(RawStr(self as *const str)))
     }
 }
 
@@ -298,7 +298,7 @@ impl Content for String {
     #[inline]
     fn apply_unescaped(&self) -> Result<SimpleValue, SimpleError>
     {
-        Ok(SimpleValue::t_String(self as *const String))
+        Ok(SimpleValue::t_String(RawString(self as *const String)))
     }
 }
 

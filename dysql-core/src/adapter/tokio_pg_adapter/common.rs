@@ -59,24 +59,8 @@ macro_rules! impl_bind_tokio_pg_param_value {
                 $(
                     dysql_tpl::SimpleValue::[<t_ $vtype>](val) => $param_values.push(val),
                 )*
-                dysql_tpl::SimpleValue::t_str(val) => {
-                    let tmp = unsafe { &**val};
-                    let len = tmp.len();
-                    
-                    fn ptr_to_str<'a>(ptr: *const str, len: usize) -> &'static str {
-                        let p = ptr as * const u8;
-                        unsafe {
-                            std::str::from_utf8_unchecked(
-                                std::slice::from_raw_parts(p, len)
-                            )
-                        }
-                    }
-                    // let a = ptr_to_str(*val, len);
-
-                    // $param_values.push(&a);
-
-                },
-                // dysql_tpl::SimpleValue::t_String(val) => $param_values.push((unsafe {&*val})),
+                dysql_tpl::SimpleValue::t_str(val) =>  $param_values.push(val),
+                dysql_tpl::SimpleValue::t_String(val) => $param_values.push(val),
                 dysql_tpl::SimpleValue::None(val) => $param_values.push(val),
                 _ => Err(DySqlError(ErrorInner::new(Kind::BindParamterError, None, Some(format!("the type of {:?} is not support", $p_val)))))?,
             }

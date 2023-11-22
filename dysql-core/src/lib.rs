@@ -1,4 +1,5 @@
 #![feature(return_position_impl_trait_in_trait)]
+#![feature(async_fn_in_trait)]
 #![feature(proc_macro_hygiene)]
 mod extract_sql;
 mod sql_dialect;

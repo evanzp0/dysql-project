@@ -2,17 +2,19 @@
 use async_trait::async_trait;
 use dysql_tpl::{Content, SimpleTemplate, SimpleValue};
 use tokio_postgres::{Statement, Error, types::ToSql, Row, ToStatement};
+use tokio_pg_mapper::FromTokioPostgresRow;
 
-use crate::{TokioPgExecutorAdatper, TokioPgQuery, DySqlError, extract_params, ErrorInner, Kind, impl_bind_sqlx_param_value, Value};
+use crate::{TokioPgExecutorAdatper, TokioPgQuery, DySqlError, extract_params, ErrorInner, Kind};
 
 impl TokioPgQuery
 {
     /// named_sql: 是已经代入 dto 进行模版 render 后的 named sql 
-    pub async fn fetch_one<E, D, U>(self, executor: E, named_sql: &str, dto: Option<D>)
+    pub async fn fetch_one<E, D, U>(self, executor: &E, named_sql: &str, dto: Option<D>)
         -> Result<U, DySqlError>
     where 
-        E: TokioPgExecutorAdatper,
+        E: TokioPgExecutorAdatper + 'static,
         D: Content + Send + Sync,
+        U: FromTokioPostgresRow,
     {
         let sql_and_params = extract_params(&named_sql, executor.get_dialect());
         let (sql, param_names) = match sql_and_params {
@@ -21,12 +23,11 @@ impl TokioPgQuery
                 DySqlError(ErrorInner::new(Kind::ExtractSqlParamterError, Some(Box::new(e)), None))
             )?,
         };
-        let stmt = executor
+        let stmt = (*executor)
             .prepare(&sql)
             .await
             .map_err(|e| DySqlError(ErrorInner::new(Kind::PrepareStamentError, Some(Box::new(e)), None)))?;
-        
-        // let mut param_values : Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = Vec::new(); 
+
         let mut param_values : Vec<SimpleValue> = Vec::new(); 
         if let Some(dto) = &dto {
             for param_name in &param_names {
@@ -40,29 +41,23 @@ impl TokioPgQuery
         }
         let mut tosql_values : Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = Vec::new(); 
         for param_value in &param_values {
-            // match param_value {
-            //     dysql_tpl::SimpleValue::t_i32(val) => {
-            //         tosql_values.push(val)
-            //     },
-            //     _ => todo!()
-            // }
             impl_bind_tokio_pg_param_value!(tosql_values, param_value, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
         }
 
         let params = tosql_values.into_iter();
         let params = params.as_slice();
-        let row = executor
-            .query_one(&stmt, params)
+        let row = (*executor)
+            .query_one(&stmt, &params)
             .await
             .map_err(|e| DySqlError(ErrorInner::new(Kind::PrepareStamentError, Some(Box::new(e)), None)))?;
+        let rst = <U>::from_row(row).unwrap();
 
-
-        todo!()
+        Ok(rst)
     }
 }
 
 macro_rules! impl_tokio_pg_executor_adapter {
-    ( $executor:path) => {
+    ( $executor:ty) => {
         #[async_trait]
         impl TokioPgExecutorAdatper for $executor {
             async fn prepare(&self, query: &str) -> Result<Statement, Error> {
@@ -102,8 +97,12 @@ macro_rules! impl_tokio_pg_executor_adapter {
                 self.execute(statement, params).await
             }
         }
-    };
+    }
 }
 
-impl_tokio_pg_executor_adapter!(tokio_postgres::Client);
-impl_tokio_pg_executor_adapter!(tokio_postgres::Transaction<'_>);
+impl_tokio_pg_executor_adapter!(::tokio_postgres::Client);
+impl_tokio_pg_executor_adapter!(&::tokio_postgres::Client);
+impl_tokio_pg_executor_adapter!(&mut::tokio_postgres::Client);
+impl_tokio_pg_executor_adapter!(::tokio_postgres::Transaction<'_>);
+impl_tokio_pg_executor_adapter!(&::tokio_postgres::Transaction<'_>);
+impl_tokio_pg_executor_adapter!(&mut::tokio_postgres::Transaction<'_>);

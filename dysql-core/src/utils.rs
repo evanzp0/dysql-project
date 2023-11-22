@@ -90,6 +90,15 @@ pub fn hash_str(name: &str) -> u64 {
     hasher.finish()
 }
 
+// fn ptr_to_str<'a>(ptr: *const str, len: usize) -> &'static str {
+//     let p = ptr as * const u8;
+//     unsafe {
+//         std::str::from_utf8_unchecked(
+//             std::slice::from_raw_parts(p, len)
+//         )
+//     }
+// }
+
 // use std::any::{Any, TypeId};
 // pub trait InstanceOf
 // where

@@ -1,5 +1,5 @@
 #[cfg(feature = "sqlx")]
-mod common;
+#[macro_use] mod common;
 
 #[cfg(feature = "sqlx")]
 pub use common::*;

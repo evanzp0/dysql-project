@@ -90,22 +90,20 @@ pub fn hash_str(name: &str) -> u64 {
     hasher.finish()
 }
 
-use std::any::{Any, TypeId};
+// use std::any::{Any, TypeId};
+// pub trait InstanceOf
+// where
+//     Self: Any,
+// {
+//     fn instance_of<U: ?Sized + Any>(&self) -> bool {
+//         TypeId::of::<Self>() == TypeId::of::<U>()
+//     }
 
-pub trait InstanceOf
-where
-    Self: Any,
-{
-    fn instance_of<U: ?Sized + Any>(&self) -> bool {
-        TypeId::of::<Self>() == TypeId::of::<U>()
-    }
-
-    fn instance_of_mut<U: ?Sized + Any>(&mut self) -> bool {
-        TypeId::of::<Self>() == TypeId::of::<U>()
-    }
-}
-
-impl<T: ?Sized + Any> InstanceOf for T {}
+//     fn instance_of_mut<U: ?Sized + Any>(&mut self) -> bool {
+//         TypeId::of::<Self>() == TypeId::of::<U>()
+//     }
+// }
+// impl<T: ?Sized + Any> InstanceOf for T {}
 
 // /// 包装出一个用于 SQL 参数绑定的闭包
 // pub fn wrap_binder_fn<V, Binder, F>(f: F) -> impl FnOnce(V, Binder) -> Binder

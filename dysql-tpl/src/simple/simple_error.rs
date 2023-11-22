@@ -1,7 +1,7 @@
 use std::{error::Error, fmt::{Display, self}};
 
 ///
-pub type SimpleError = Box<dyn Error>;
+pub type SimpleError = Box<dyn Error + Send + Sync>;
 
 #[derive(Debug)]
 pub struct SimpleInnerError(pub String);

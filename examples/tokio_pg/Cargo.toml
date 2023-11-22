@@ -1,0 +1,12 @@
+[package]
+name = "tokio_pg"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tokio = { version = "1.0", features = ["full"] }
+tokio-postgres = { version = "0.7", features = ["with-chrono-0_4"], optional = true }
+tokio-pg-mapper = { version = "0.2", optional = true }
+tokio-pg-mapper-derive = { version = "0.2", optional = true }

@@ -8,12 +8,10 @@ repository = "https://github.com/evanzp0/dysql-project"
 documentation = "https://docs.rs/dysql-core"
 readme = "../README.md"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 dysql-tpl = { version = "2.0", features = ["chrono", "uuid"] } # path = "../dysql-tpl"
 # tokio-postgres family
-tokio-postgres = { version = "0.7", features = ["with-chrono-0_4"], optional = true }
+tokio-postgres = { version = "0.7", features = ["with-chrono-0_4", "with-uuid-1"], optional = true }
 tokio-pg-mapper = { version = "0.2", optional = true }
 tokio-pg-mapper-derive = { version = "0.2", optional = true }
 # sqlx
@@ -28,6 +26,7 @@ cargo_metadata = "0.18"
 paste = "1"
 log = "0.4"
 uuid = "1"
+async-trait = "0.1"
 
 [features]
 default=[]

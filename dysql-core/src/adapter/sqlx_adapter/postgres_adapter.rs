@@ -1,8 +1,7 @@
 use dysql_tpl::{Content, SimpleTemplate};
 use sqlx::{Executor, FromRow};
-use paste::paste;
 
-use crate::{SqlxQuery, SqlxExecutorAdatper, impl_bind_param_value};
+use crate::{SqlxQuery, SqlxExecutorAdatper};
 use crate::{DySqlError, ErrorInner, Kind, Pagination, PageDto, extract_params};
 
 impl<'q> SqlxExecutorAdatper<sqlx::Postgres> for sqlx::Transaction<'q, sqlx::Postgres> {}
@@ -10,7 +9,6 @@ impl SqlxExecutorAdatper<sqlx::Postgres> for sqlx::Pool<sqlx::Postgres> {}
 impl SqlxExecutorAdatper<sqlx::Postgres> for &sqlx::Pool<sqlx::Postgres> {}
 impl SqlxExecutorAdatper<sqlx::Postgres> for sqlx::PgConnection {}
 impl SqlxExecutorAdatper<sqlx::Postgres> for &mut sqlx::PgConnection {}
-
 
 impl SqlxQuery <sqlx::Postgres>
 {
@@ -35,8 +33,12 @@ impl SqlxQuery <sqlx::Postgres>
                 let stpl = SimpleTemplate::new(param_name);
                 
                 let param_value = stpl.apply(dto);
-                if let Ok(param_value) = param_value {
-                    query = impl_bind_param_value!(query, param_value, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime]);
+                match param_value {
+                    Ok(param_value) => {
+                        
+                        query = impl_bind_sqlx_param_value!(query, param_value, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
+                    },
+                    Err(e) => Err(DySqlError(ErrorInner::new(Kind::BindParamterError, Some(e), None)))?,
                 }
             }
         }
@@ -66,8 +68,11 @@ impl SqlxQuery <sqlx::Postgres>
                 let stpl = SimpleTemplate::new(param_name);
                 
                 let param_value = stpl.apply(dto);
-                if let Ok(param_value) = param_value {
-                    query = impl_bind_param_value!(query, param_value, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime]);
+                match param_value {
+                    Ok(param_value) => {
+                        query = impl_bind_sqlx_param_value!(query, param_value, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
+                    },
+                    Err(e) => Err(DySqlError(ErrorInner::new(Kind::BindParamterError, Some(e), None)))?,
                 }
             }
         }
@@ -97,8 +102,11 @@ impl SqlxQuery <sqlx::Postgres>
                 let stpl = SimpleTemplate::new(param_name);
                 
                 let param_value = stpl.apply(dto);
-                if let Ok(param_value) = param_value {
-                    query = impl_bind_param_value!(query, param_value, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime]);
+                match param_value {
+                    Ok(param_value) => {
+                        query = impl_bind_sqlx_param_value!(query, param_value, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
+                    },
+                    Err(e) => Err(DySqlError(ErrorInner::new(Kind::BindParamterError, Some(e), None)))?,
                 }
             }
         }
@@ -127,8 +135,11 @@ impl SqlxQuery <sqlx::Postgres>
                 let stpl = SimpleTemplate::new(param_name);
                 
                 let param_value = stpl.apply(dto);
-                if let Ok(param_value) = param_value {
-                    query = impl_bind_param_value!(query, param_value, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime]);
+                match param_value {
+                    Ok(param_value) => {
+                        query = impl_bind_sqlx_param_value!(query, param_value, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
+                    },
+                    Err(e) => Err(DySqlError(ErrorInner::new(Kind::BindParamterError, Some(e), None)))?,
                 }
             }
         }
@@ -161,8 +172,11 @@ impl SqlxQuery <sqlx::Postgres>
                 let stpl = SimpleTemplate::new(param_name);
                 
                 let param_value = stpl.apply(dto);
-                if let Ok(param_value) = param_value {
-                    query = impl_bind_param_value!(query, param_value, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime]);
+                match param_value {
+                    Ok(param_value) => {
+                        query = impl_bind_sqlx_param_value!(query, param_value, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
+                    },
+                    Err(e) => Err(DySqlError(ErrorInner::new(Kind::BindParamterError, Some(e), None)))?,
                 }
             }
         }
@@ -198,8 +212,11 @@ impl SqlxQuery <sqlx::Postgres>
             let stpl = SimpleTemplate::new(param_name);
             
             let param_value = stpl.apply(&page_dto);
-            if let Ok(param_value) = param_value {
-                query = impl_bind_param_value!(query, param_value, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime]);
+            match param_value {
+                Ok(param_value) => {
+                    query = impl_bind_sqlx_param_value!(query, param_value, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
+                },
+                Err(e) => Err(DySqlError(ErrorInner::new(Kind::BindParamterError, Some(e), None)))?,
             }
         }
 

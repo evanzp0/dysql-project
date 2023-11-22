@@ -1,9 +1,8 @@
 use dysql_tpl::{Content, SimpleTemplate};
 use sqlx::{Executor, FromRow};
-use paste::paste;
 
 use crate::{SqlxQuery, SqlxExecutorAdatper};
-use crate::{DySqlError, ErrorInner, Kind, Pagination, PageDto, extract_params, impl_bind_param_value};
+use crate::{DySqlError, ErrorInner, Kind, Pagination, PageDto, extract_params};
 
 impl<'q> SqlxExecutorAdatper<sqlx::MySql> for sqlx::Transaction<'q, sqlx::MySql> {}
 impl SqlxExecutorAdatper<sqlx::MySql> for sqlx::Pool<sqlx::MySql> {}
@@ -35,7 +34,7 @@ impl SqlxQuery <sqlx::MySql>
                 
                 let param_value = stpl.apply(dto);
                 if let Ok(param_value) = param_value {
-                    query = impl_bind_param_value!(query, param_value, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime]);
+                    query = impl_bind_sqlx_param_value!(query, param_value, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
                 }
             }
         }
@@ -66,7 +65,7 @@ impl SqlxQuery <sqlx::MySql>
                 
                 let param_value = stpl.apply(dto);
                 if let Ok(param_value) = param_value {
-                    query = impl_bind_param_value!(query, param_value, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime]);
+                    query = impl_bind_sqlx_param_value!(query, param_value, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
                 }
             }
         }
@@ -97,7 +96,7 @@ impl SqlxQuery <sqlx::MySql>
                 
                 let param_value = stpl.apply(dto);
                 if let Ok(param_value) = param_value {
-                    query = impl_bind_param_value!(query, param_value, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime]);
+                    query = impl_bind_sqlx_param_value!(query, param_value, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
                 }
             }
         }
@@ -127,7 +126,7 @@ impl SqlxQuery <sqlx::MySql>
                 
                 let param_value = stpl.apply(dto);
                 if let Ok(param_value) = param_value {
-                    query = impl_bind_param_value!(query, param_value, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime]);
+                    query = impl_bind_sqlx_param_value!(query, param_value, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
                 }
             }
         }
@@ -159,7 +158,7 @@ impl SqlxQuery <sqlx::MySql>
                 
                 let param_value = stpl.apply(dto);
                 if let Ok(param_value) = param_value {
-                    query = impl_bind_param_value!(query, param_value, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime]);
+                    query = impl_bind_sqlx_param_value!(query, param_value, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
                 }
             }
         }
@@ -205,7 +204,7 @@ impl SqlxQuery <sqlx::MySql>
             
             let param_value = stpl.apply(&page_dto);
             if let Ok(param_value) = param_value {
-                query = impl_bind_param_value!(query, param_value, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime]);
+                query = impl_bind_sqlx_param_value!(query, param_value, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
             }
         }
 

@@ -21,72 +21,8 @@ async fn main() {
     let rst = User::from_row(row).unwrap();
 
     println!("{:#?}", rst);
-    tran.rollback().await.unwrap();
-    let a = "a中国";
-    let len = a.len();
-    let p = a as * const str;
-    let tmp = unsafe { &*p};
-    
-    println!("{}", tmp.len());
-    // println!("{}", ptr_to_str(p, len));
-
-    // meth(&Sa);
-    // meth(&Sb);
+    // tran.rollback();
 }
-
-fn ptr_to_str<'a>(ptr: *const str, len: usize) -> &'a str {
-    let p = ptr as * const u8;
-    unsafe {
-        std::str::from_utf8_unchecked(
-            std::slice::from_raw_parts(p, len)
-        )
-    }
-}
-
-unsafe fn ptr_to_string(ptr: *const u8, len: usize) -> String {
-    std::str::from_utf8_unchecked(std::slice::from_raw_parts(ptr, len)).to_owned()
-}
-
-// fn meth(p: &dyn Meth1) {
-//     Meth1::hello(p, 1);
-// }
-
-// trait Meth1 : Sync {
-//     fn hello(&self, i: i32) {
-//         println!("foo {i}");
-//     }
-// }
-
-// // struct Sa;
-
-// // struct Sb;
-
-// // impl Sa {
-// //     fn hello(&self) {
-// //         println!("Sa foo");
-// //     }
-// // }
-
-// // impl Sb {
-// //     fn hello(&self, i: i32) {
-// //         println!("Sb bar {i}")
-// //     }
-// // }
-
-// // impl Meth1 for Sa {
-// //     fn hello(&self, i: i32) {
-// //         self.hello();
-// //     }
-// // }
-
-
-// // impl Meth1 for Sb {
-// //     fn hello(&self, i: i32) {
-// //         self.hello(i);
-// //     }
-// // }
-
-
 
 #[derive(Content)]
 struct UserDto {

@@ -6,16 +6,20 @@ use dysql::*;
 #[tokio::main]
 async fn main() {
     let mut conn = connect_db().await;
-    // let tran = conn.transaction().await.unwrap();
+    let tran = conn.transaction().await.unwrap();
 
-    let dto = UserDto::new(Some(1), None, None);
+    let dto = UserDto::new(Some(1), Some("a100".to_owned()), Some(10));
 
-    let rst = fetch_one!(|&conn, dto| -> User {
-        "select * from test_user where id = :id"
+    let rst = insert!(|&tran, dto| -> i64 {
+        "insert into test_user (name, age) values (:name, :age) returning id"
     });
-
     println!("{:#?}", rst);
-    // tran.rollback().await.unwrap();
+
+    let rst = fetch_all!(|&tran| -> User {
+        "select * from test_user order by id"
+    });
+    println!("{:#?}", rst);
+    tran.rollback().await.unwrap();
 }
 
 #[derive(Content)]

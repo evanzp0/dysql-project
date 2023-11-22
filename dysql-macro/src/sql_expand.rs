@@ -11,7 +11,6 @@ impl SqlExpand {
     /// expend fetch_one
     pub fn fetch_one(&self, st: &DyClosure) -> syn::Result<proc_macro2::TokenStream>{
         let dto_ident = &st.dto_info.src;
-        let executor_ident = &st.executor_info.src;
         let executor_token = st.executor_info.gen_token();
         let ret_type = &st.ret_type;
         
@@ -20,7 +19,7 @@ impl SqlExpand {
 
         // 生成 QueryAdapter 对象
         let query_declare = quote!(
-            let query = #executor_ident.create_query();
+            let query = (#executor_token).create_query();
         );
 
         let dto_token = st.dto_info.gen_token();
@@ -46,7 +45,6 @@ impl SqlExpand {
     /// expend fetch_all
     pub fn fetch_all(&self, st: &DyClosure) -> syn::Result<proc_macro2::TokenStream>{
         let dto_ident = &st.dto_info.src;
-        let executor_ident = &st.executor_info.src;
         let executor_token = st.executor_info.gen_token();
         let ret_type = &st.ret_type;
 
@@ -55,7 +53,7 @@ impl SqlExpand {
 
         // 生成 QueryAdapter 对象
         let query_declare = quote!(
-            let query = #executor_ident.create_query();
+            let query = (#executor_token).create_query();
         );
 
         let dto_token = st.dto_info.gen_token();
@@ -81,7 +79,6 @@ impl SqlExpand {
     /// expend fetch_scalar
     pub fn fetch_scalar(&self, st: &DyClosure) -> syn::Result<proc_macro2::TokenStream>{
         let dto_ident = &st.dto_info.src;
-        let executor_ident = &st.executor_info.src;
         let executor_token = st.executor_info.gen_token();
         let ret_type = &st.ret_type;
 
@@ -90,7 +87,7 @@ impl SqlExpand {
 
         // 生成 QueryAdapter 对象
         let query_declare = quote!(
-            let query = #executor_ident.create_query();
+            let query = (#executor_token).create_query();
         );
 
         let dto_token = st.dto_info.gen_token();
@@ -116,7 +113,6 @@ impl SqlExpand {
     /// expend execute
     pub fn execute(&self, st: &DyClosure) -> syn::Result<proc_macro2::TokenStream>{
         let dto_ident = &st.dto_info.src;
-        let executor_ident = &st.executor_info.src;
         let executor_token = st.executor_info.gen_token();
 
         // declare named_sql at runtime
@@ -124,7 +120,7 @@ impl SqlExpand {
 
         // 生成 QueryAdapter 对象
         let query_declare = quote!(
-            let query = #executor_ident.create_query();
+            let query = (#executor_token).create_query();
         );
 
         let dto_token = st.dto_info.gen_token();
@@ -150,7 +146,6 @@ impl SqlExpand {
     /// expend insert
     pub fn insert(&self, st: &DyClosure) -> syn::Result<proc_macro2::TokenStream>{
         let dto_ident = &st.dto_info.src;
-        let executor_ident = &st.executor_info.src;
         let executor_token = st.executor_info.gen_token();
         let ret_type = &st.ret_type;
 
@@ -159,7 +154,7 @@ impl SqlExpand {
 
         // 生成 QueryAdapter 对象
         let query_declare = quote!(
-            let query = #executor_ident.create_query();
+            let query = (#executor_token).create_query();
         );
 
         let dto_token = st.dto_info.gen_token();
@@ -199,7 +194,6 @@ impl SqlExpand {
     /// expend page query
     pub fn page(&self, st: &DyClosure) -> syn::Result<proc_macro2::TokenStream>{
         let dto_ident = &st.dto_info.src;
-        let executor_ident = &st.executor_info.src;
         let executor_token = st.executor_info.gen_token();
         let ret_type = &st.ret_type;
 
@@ -208,7 +202,7 @@ impl SqlExpand {
 
         // page_dto 通过 QueryAdapter.page() 方法传递，所以这里只要生成没有 dto 的 QueryAdapter 对象就可以了
         let query_declare = quote!(
-            let query = #executor_ident.create_query();
+            let query = (#executor_token).create_query();
         );
 
         let buf_count_named_sql_declare = quote!(

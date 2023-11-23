@@ -31,7 +31,7 @@ impl TokioPgQuery
             .await
             .map_err(|e| DySqlError(ErrorInner::new(Kind::PrepareStamentError, Some(Box::new(e)), None)))?;
 
-        let mut param_values : Vec<SimpleValue> = Vec::new(); 
+        let mut param_values : Vec<SimpleValue> = Vec::with_capacity(param_names.len());
         if let Some(dto) = &dto {
             for param_name in &param_names {
                 let stpl = SimpleTemplate::new(param_name);
@@ -42,7 +42,7 @@ impl TokioPgQuery
                 param_values.push(param_value);
             }
         }
-        let mut tosql_values : Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = Vec::new(); 
+        let mut tosql_values : Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = Vec::with_capacity(param_names.len());
         for param_value in &param_values {
             impl_bind_tokio_pg_param_value!(tosql_values, param_value, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
         }
@@ -79,7 +79,7 @@ impl TokioPgQuery
             .await
             .map_err(|e| DySqlError(ErrorInner::new(Kind::PrepareStamentError, Some(Box::new(e)), None)))?;
 
-        let mut param_values : Vec<SimpleValue> = Vec::new(); 
+        let mut param_values : Vec<SimpleValue> = Vec::with_capacity(param_names.len());
         if let Some(dto) = &dto {
             for param_name in &param_names {
                 let stpl = SimpleTemplate::new(param_name);
@@ -90,7 +90,7 @@ impl TokioPgQuery
                 param_values.push(param_value);
             }
         }
-        let mut tosql_values : Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = Vec::new(); 
+        let mut tosql_values : Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = Vec::with_capacity(param_names.len());
         for param_value in &param_values {
             impl_bind_tokio_pg_param_value!(tosql_values, param_value, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
         }
@@ -132,7 +132,7 @@ impl TokioPgQuery
             .await
             .map_err(|e| DySqlError(ErrorInner::new(Kind::PrepareStamentError, Some(Box::new(e)), None)))?;
 
-        let mut param_values : Vec<SimpleValue> = Vec::new(); 
+        let mut param_values : Vec<SimpleValue> = Vec::with_capacity(param_names.len());
         if let Some(dto) = &dto {
             for param_name in &param_names {
                 let stpl = SimpleTemplate::new(param_name);
@@ -143,7 +143,7 @@ impl TokioPgQuery
                 param_values.push(param_value);
             }
         }
-        let mut tosql_values : Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = Vec::new(); 
+        let mut tosql_values : Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = Vec::with_capacity(param_names.len());
         for param_value in &param_values {
             impl_bind_tokio_pg_param_value!(tosql_values, param_value, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
         }
@@ -180,7 +180,7 @@ impl TokioPgQuery
             .await
             .map_err(|e| DySqlError(ErrorInner::new(Kind::PrepareStamentError, Some(Box::new(e)), None)))?;
 
-        let mut param_values : Vec<SimpleValue> = Vec::new(); 
+        let mut param_values : Vec<SimpleValue> = Vec::with_capacity(param_names.len());
         if let Some(dto) = &dto {
             for param_name in &param_names {
                 let stpl = SimpleTemplate::new(param_name);
@@ -191,7 +191,7 @@ impl TokioPgQuery
                 param_values.push(param_value);
             }
         }
-        let mut tosql_values : Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = Vec::new(); 
+        let mut tosql_values : Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = Vec::with_capacity(param_names.len());
         for param_value in &param_values {
             impl_bind_tokio_pg_param_value!(tosql_values, param_value, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
         }
@@ -227,7 +227,7 @@ impl TokioPgQuery
             .await
             .map_err(|e| DySqlError(ErrorInner::new(Kind::PrepareStamentError, Some(Box::new(e)), None)))?;
 
-        let mut param_values : Vec<SimpleValue> = Vec::new(); 
+        let mut param_values : Vec<SimpleValue> = Vec::with_capacity(param_names.len());
         if let Some(dto) = &dto {
             for param_name in &param_names {
                 let stpl = SimpleTemplate::new(param_name);
@@ -238,7 +238,7 @@ impl TokioPgQuery
                 param_values.push(param_value);
             }
         }
-        let mut tosql_values : Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = Vec::new(); 
+        let mut tosql_values : Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = Vec::with_capacity(param_names.len());
         for param_value in &param_values {
             impl_bind_tokio_pg_param_value!(tosql_values, param_value, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
         }
@@ -290,7 +290,7 @@ impl TokioPgQuery
             .await
             .map_err(|e| DySqlError(ErrorInner::new(Kind::PrepareStamentError, Some(Box::new(e)), None)))?;
 
-        let mut param_values : Vec<SimpleValue> = Vec::new(); 
+        let mut param_values : Vec<SimpleValue> = Vec::with_capacity(param_names.len());
         if let Some(dto) = &dto {
             for param_name in &param_names {
                 let stpl = SimpleTemplate::new(param_name);
@@ -301,7 +301,7 @@ impl TokioPgQuery
                 param_values.push(param_value);
             }
         }
-        let mut tosql_values : Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = Vec::new(); 
+        let mut tosql_values : Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = Vec::with_capacity(param_names.len());
         for param_value in &param_values {
             impl_bind_tokio_pg_param_value!(tosql_values, param_value, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
         }
@@ -363,7 +363,7 @@ impl TokioPgQuery
             .await
             .map_err(|e| DySqlError(ErrorInner::new(Kind::PrepareStamentError, Some(Box::new(e)), None)))?;
 
-        let mut param_values : Vec<SimpleValue> = Vec::new();
+        let mut param_values : Vec<SimpleValue> = Vec::with_capacity(param_names.len());
         for param_name in &param_names {
             let stpl = SimpleTemplate::new(param_name);
             

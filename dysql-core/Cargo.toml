@@ -16,6 +16,13 @@ tokio-pg-mapper = { version = "0.2", optional = true }
 tokio-pg-mapper-derive = { version = "0.2", optional = true }
 # sqlx
 sqlx = { version = "0.7", features = ["uuid", "chrono"], optional = true}
+# rbatis family
+rbs = { version = "4.5", optional = true }
+rbatis = { version = "4.5", optional = true }
+rbdc-pg = {  version = "4.5", optional = true }
+rbdc-mysql = { version ="4.5", optional = true }
+rbdc-sqlite = { version = "4.5", optional = true }
+rbdc-mssql = { version ="4.5", optional = true }
 # others
 serde = { version = "1.0", features = ["derive"] }
 once_cell = "1.13"
@@ -29,8 +36,12 @@ uuid = "1"
 async-trait = "0.1"
 
 [features]
-default=[]
+default=["rbatis-sqlite", "rbatis-pg"]
 sqlx-postgres = ["sqlx/postgres"]
 sqlx-mysql = ["sqlx/mysql"]
 sqlx-sqlite = ["sqlx/sqlite"]
 tokio-postgres = ["dep:tokio-postgres", "tokio-pg-mapper", "tokio-pg-mapper-derive", "dysql-tpl/postgres"]
+rbatis-pg = ["rbs", "rbatis", "rbdc-pg"]
+rbatis-mysql = ["rbs", "rbatis", "rbdc-mysql"]
+rbatis-sqlite = ["rbs", "rbatis", "rbdc-sqlite"]
+rbatis-mssql = ["rbs", "rbatis", "rbdc-mssql"]

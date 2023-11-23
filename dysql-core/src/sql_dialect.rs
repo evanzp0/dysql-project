@@ -6,6 +6,7 @@ pub enum SqlDialect {
     postgres,
     mysql,
     sqlite,
+    mssql,
 }
 
 impl Display for SqlDialect {
@@ -14,14 +15,16 @@ impl Display for SqlDialect {
     }
 }
 
-impl From<String> for SqlDialect {
-    fn from(source: String) -> Self {
+impl From<&str> for SqlDialect {
+    fn from(source: &str) -> Self {
         if source == SqlDialect::postgres.to_string() {
             SqlDialect::postgres
         } else if source == SqlDialect::mysql.to_string() {
             SqlDialect::mysql
         } else if source == SqlDialect::sqlite.to_string() {
             SqlDialect::sqlite
+        } else if source == SqlDialect::sqlite.to_string() {
+            SqlDialect::mssql
         } else {
             panic!("{} dialect is not support", source);
         }

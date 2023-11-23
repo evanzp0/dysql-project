@@ -14,11 +14,29 @@ pub struct RawStr(pub * const str);
 unsafe impl Send for RawStr {}
 unsafe impl Sync for RawStr {}
 
+impl RawStr {
+    /// 指针转字符串切片
+    pub fn as_str(&self) -> Result<&str, SimpleError> {
+        let val = self.0;
+        let val: &str = unsafe {&*val};
+        Ok(val)
+    }
+}
+
 #[derive(Debug)]
 pub struct RawString(pub * const String);
 
 unsafe impl Send for RawString {}
 unsafe impl Sync for RawString {}
+
+impl RawString {
+    /// 指针转字符串引用
+    pub fn as_string(&self) -> Result<&String, SimpleError> {
+        let val = self.0;
+        let val: &String = unsafe {&*val};
+        Ok(val)
+    }
+}
 
 macro_rules! impl_simple_value_varaint {
     (
@@ -69,22 +87,4 @@ impl SimpleValue {
             Err(SimpleInnerError(format!("value: '{:?}' convert to &String failed", self)).into())
         }
     }
-
-    // pub fn as_option_str(&self) -> Result<Option<&str>, SimpleError> {
-    //     if let SimpleValue::option_str(val) = self {
-    //         let val = val.map(|t| unsafe { (&*t) as &str });
-    //         Ok(val)
-    //     } else {
-    //         Err(SimpleInnerError(format!("value: '{:?}' convert to Option<&str> failed", self)).into())
-    //     }
-    // }
-
-    // pub fn as_option_string(&self) -> Result<Option<&String>, SimpleError> {
-    //     if let SimpleValue::option_String(val) = self {
-    //         let val = val.map(|t| unsafe { (&*t) as &String });
-    //         Ok(val)
-    //     } else {
-    //         Err(SimpleInnerError(format!("value: '{:?}' convert to Option<&String> failed", self)).into())
-    //     }
-    // }
 }

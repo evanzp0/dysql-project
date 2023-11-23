@@ -28,6 +28,7 @@ pub enum Kind {
     ExtractSqlParamterError,
     QueryError,
     ObjectMappingError,
+    RecordNotFound,
 }
 
 #[derive(Debug, Serialize)]
@@ -75,6 +76,7 @@ impl fmt::Display for DySqlError {
                 Kind::QueryError => fmt.write_str("sql error: error db query"),
                 Kind::ObjectMappingError => fmt.write_str("sql error: error object mapping"),
                 Kind::ExtractSqlParamterError => fmt.write_str("sql error: error extract sql parameter"),
+                Kind::RecordNotFound => fmt.write_str("sql error: error record is not found"),
             }
         };
         

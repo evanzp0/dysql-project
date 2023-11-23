@@ -52,9 +52,15 @@ impl TokioPgQuery
         let row = (*executor)
             .query_one(&stmt, &params)
             .await
-            .map_err(|e| DySqlError(ErrorInner::new(Kind::QueryError, Some(Box::new(e)), None)))?;
+            .map_err(|e| {
+                if e.to_string().contains("number of rows") {
+                    DySqlError(ErrorInner::new(Kind::RecordNotFound, Some(Box::new(e)), None))
+                } else {
+                    DySqlError(ErrorInner::new(Kind::QueryError, Some(Box::new(e)), None))
+                }
+            })?;
         let rst = <U>::from_row(row)
-            .map_err(|e| DySqlError(ErrorInner::new(Kind::QueryError, Some(Box::new(e)), None)))?;
+            .map_err(|e| DySqlError(ErrorInner::new(Kind::ObjectMappingError, Some(Box::new(e)), None)))?;
 
         Ok(rst)
     }

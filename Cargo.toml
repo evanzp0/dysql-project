@@ -53,13 +53,24 @@ sqlx = { version = "0.7", features = [ "runtime-tokio-native-tls", "chrono", "uu
 tokio-postgres = { version = "0.7", features = ["with-chrono-0_4"], optional = true }
 tokio-pg-mapper = { version = "0.2", optional = true }
 tokio-pg-mapper-derive = { version = "0.2", optional = true }
+# rbatis family
+rbs = { version = "4.5", optional = true }
+rbatis = { version = "4.5", optional = true }
+rbdc-pg = {  version = "4.5", optional = true }
+rbdc-mysql = { version ="4.5", optional = true }
+rbdc-sqlite = { version = "4.5", optional = true }
+rbdc-mssql = { version ="4.5", optional = true }
 
 [features]
-default = ["sqlx-postgres", "sqlx-mysql", "sqlx-sqlite", "tokio-postgres"] #  
+default = ["sqlx-postgres", "sqlx-mysql", "sqlx-sqlite", "tokio-postgres", "rbatis-sqlite"] #  
 sqlx-postgres = ["dysql/sqlx-postgres", "sqlx/postgres"]
 sqlx-mysql = ["dysql/sqlx-mysql", "sqlx/mysql"]
 sqlx-sqlite = ["dysql/sqlx-sqlite", "sqlx/sqlite"]
 tokio-postgres = ["dysql/tokio-postgres", "dep:tokio-postgres", "tokio-pg-mapper", "tokio-pg-mapper-derive"]
+rbatis-pg = ["rbs", "rbatis", "rbdc-pg", "dysql/rbatis-pg"]
+rbatis-mysql = ["rbs", "rbatis", "rbdc-mysql", "dysql/rbatis-mysql"]
+rbatis-sqlite = ["rbs", "rbatis", "rbdc-sqlite", "dysql/rbatis-sqlite"]
+rbatis-mssql = ["rbs", "rbatis", "rbdc-mssql", "dysql/rbatis-mssql"]
 
 [[test]]
 name = "test_sqlx_postgres"
@@ -80,3 +91,8 @@ required-features = ["sqlx-sqlite"]
 name = "test_tokio_pg"
 path = "tests/test_tokio_pg/test_tokio_pg.rs"
 required-features = ["tokio-postgres"]
+
+[[test]]
+name = "test_rbatis_sqlite"
+path = "tests/test_rbatis/test_rbatis_sqlite.rs"
+required-features = ["rbatis-sqlite"]

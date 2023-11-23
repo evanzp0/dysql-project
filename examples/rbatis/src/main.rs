@@ -6,20 +6,30 @@ use serde::{Serialize, Deserialize};
 async fn main() {
     let rb = RBatis::new();
     rb.init(PgDriver{},"postgres://root:111111@localhost:5432/my_database").unwrap();
+    let driver_type = rb.driver_type().unwrap();
+    println!("{}", driver_type);
     let dto = UserDto{ id: Some(2), name: Some("ab".to_owned()), age: Some(13) , id_rng: None };
     let sql = "select * from test_user where name = $1";
 
     let rb_args = vec![rbs::to_value!(&dto.name)];
 
-    // let rst: Option<User> = rb
-    //     .query_decode(sql, rb_args.clone())
-    //     .await
-    //     .unwrap();
+    let rst: Option<User> = rb
+        .query_decode(sql, rb_args.clone())
+        .await
+        .unwrap();
+    println!("{:#?}", rst);
 
-    let r = rb.query(&sql, rb_args).await.unwrap();
-    let rst = rbatis::decode::decode::<Option<User>>(r);
+    let mut tran = rb.acquire_begin().await.unwrap();
+    let insert_sql = "insert into test_user (name, age) values ('ab', 1) returning id";
 
-    println!("{:?}", rst)
+    let r = tran.exec(&insert_sql, vec![]).await.unwrap();
+    println!("r = {:#?}", r);
+    let sql = "select * from test_user order by id";
+    let r = tran.query(&sql, vec![]).await.unwrap();
+    let rst = rbatis::decode::decode::<Option<Vec<User>>>(r);
+
+    println!("{:#?}", rst);
+    tran.rollback().await.ok();
 }
 
 

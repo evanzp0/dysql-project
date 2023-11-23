@@ -24,6 +24,7 @@ dotenv = "0.15"
 default = []
 sqlx = []
 tokio-postgres = []
+rbatis = []
 
 [dev-dependencies]
 tokio = { version = "1.0", features = ["full"] }

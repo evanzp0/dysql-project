@@ -18,7 +18,6 @@ async fn connect_postgres_db() -> tokio_postgres::Client {
     client
 }
     
-
 #[tokio::test]
 async fn test_fetch_all() {
     let conn = connect_postgres_db().await;

@@ -1,0 +1,16 @@
+[package]
+name = "rbatis-example"
+version = "0.1.0"
+edition = "2021"
+
+[workspace]
+
+[dependencies]
+rbs = { version = "4.5"}
+rbatis = { version = "4.5"}
+rbdc-pg={version="4.5"}
+#rbdc-mysql={version="4.5"}
+# rbdc-sqlite = { version = "4.5" }
+#rbdc-mssql={version="4.5"}
+serde = { version = "1", features = ["derive"] }
+tokio = { version = "1", features = ["full"] }

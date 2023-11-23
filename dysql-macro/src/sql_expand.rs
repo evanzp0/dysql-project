@@ -14,21 +14,16 @@ impl SqlExpand {
         let executor_token = st.executor_info.gen_token();
         let ret_type = &st.ret_type;
         
-        // declare named_sql at runtime
-        let named_sql_declare = self.gen_named_sql_declare(st)?;
-
-        // 生成 QueryAdapter 对象
-        let query_declare = quote!(
-            let query = (#executor_token).create_query();
-        );
+        // declare named_template at runtime
+        let named_template_declare = self.gen_named_template_declare(st)?;
 
         let dto_token = st.dto_info.gen_token();
-        let execute = match dto_ident {
+        let execute_query = match dto_ident {
             Some(_) => quote!(
-                query.fetch_one::<_, _, #ret_type>(#executor_token, &named_sql, Some(#dto_token)).await 
+                query.fetch_one::<_, _, #ret_type>(#executor_token, named_template, Some(#dto_token)).await 
             ),
             None => quote!(
-                query.fetch_one::<_, dysql::EmptyObject, #ret_type>(#executor_token, &named_sql, None).await 
+                query.fetch_one::<_, dysql::EmptyObject, #ret_type>(#executor_token, named_template, None).await 
             ),
         };
         
@@ -39,9 +34,9 @@ impl SqlExpand {
             #[cfg(feature="sqlx")]
             use dysql::SqlxExecutorAdatper;
 
-            #named_sql_declare  // let named_sql = ....;
-            #query_declare      // let query = executor.create_query(....);
-            #execute
+            #named_template_declare  // let named_template = ....;
+            let query = (#executor_token).create_query();
+            #execute_query
         });
 
         Ok(ret)
@@ -53,21 +48,16 @@ impl SqlExpand {
         let executor_token = st.executor_info.gen_token();
         let ret_type = &st.ret_type;
 
-        // declare named_sql at runtime
-        let named_sql_declare = self.gen_named_sql_declare(st)?;
-
-        // 生成 QueryAdapter 对象
-        let query_declare = quote!(
-            let query = (#executor_token).create_query();
-        );
+        // declare named_template at runtime
+        let named_template_declare = self.gen_named_template_declare(st)?;
 
         let dto_token = st.dto_info.gen_token();
-        let execute = match dto_ident {
+        let execute_query = match dto_ident {
             Some(_) => quote!(
-                query.fetch_all::<_, _, #ret_type>(#executor_token, &named_sql, Some(#dto_token)).await 
+                query.fetch_all::<_, _, #ret_type>(#executor_token, named_template, Some(#dto_token)).await 
             ),
             None => quote!(
-                query.fetch_all::<_, dysql::EmptyObject, #ret_type>(#executor_token, &named_sql, None).await 
+                query.fetch_all::<_, dysql::EmptyObject, #ret_type>(#executor_token, named_template, None).await 
             ),
         };
 
@@ -78,9 +68,9 @@ impl SqlExpand {
             #[cfg(feature="sqlx")]
             use dysql::SqlxExecutorAdatper;
 
-            #named_sql_declare  // let named_sql = ....;
-            #query_declare      // let query = executor.create_query(....);
-            #execute
+            #named_template_declare  // let named_sql = ....;
+            let query = (#executor_token).create_query();
+            #execute_query
         });
 
         Ok(ret)
@@ -92,21 +82,16 @@ impl SqlExpand {
         let executor_token = st.executor_info.gen_token();
         let ret_type = &st.ret_type;
 
-        // declare named_sql at runtime
-        let named_sql_declare = self.gen_named_sql_declare(st)?;
-
-        // 生成 QueryAdapter 对象
-        let query_declare = quote!(
-            let query = (#executor_token).create_query();
-        );
+        // declare named_template at runtime
+        let named_template_declare = self.gen_named_template_declare(st)?;
 
         let dto_token = st.dto_info.gen_token();
-        let execute = match dto_ident {
+        let execute_query = match dto_ident {
             Some(_) => quote!(
-                query.fetch_scalar::<_, _, #ret_type>(#executor_token, &named_sql, Some(#dto_token)).await 
+                query.fetch_scalar::<_, _, #ret_type>(#executor_token, named_template, Some(#dto_token)).await 
             ),
             None => quote!(
-                query.fetch_scalar::<_, dysql::EmptyObject, #ret_type>(#executor_token, &named_sql, None).await 
+                query.fetch_scalar::<_, dysql::EmptyObject, #ret_type>(#executor_token, named_template, None).await 
             ),
         };
 
@@ -117,9 +102,9 @@ impl SqlExpand {
             #[cfg(feature="sqlx")]
             use dysql::SqlxExecutorAdatper;
             
-            #named_sql_declare  // let named_sql = ....;
-            #query_declare      // let query = executor.create_query(....);
-            #execute
+            #named_template_declare  // let named_sql = ....;
+            let query = (#executor_token).create_query();
+            #execute_query
         });
 
         Ok(ret)
@@ -130,21 +115,16 @@ impl SqlExpand {
         let dto_ident = &st.dto_info.src;
         let executor_token = st.executor_info.gen_token();
 
-        // declare named_sql at runtime
-        let named_sql_declare = self.gen_named_sql_declare(st)?;
-
-        // 生成 QueryAdapter 对象
-        let query_declare = quote!(
-            let query = (#executor_token).create_query();
-        );
+        // declare named_template at runtime
+        let named_template_declare = self.gen_named_template_declare(st)?;
 
         let dto_token = st.dto_info.gen_token();
-        let execute = match dto_ident {
+        let execute_query = match dto_ident {
             Some(_) => quote!(
-                query.execute(#executor_token, &named_sql, Some(#dto_token)).await
+                query.execute(#executor_token, named_template, Some(#dto_token)).await
             ),
             None => quote!(
-                query.execute::<_, dysql::EmptyObject>(#executor_token, &named_sql, None).await 
+                query.execute::<_, dysql::EmptyObject>(#executor_token, named_template, None).await 
             ),
         };
 
@@ -155,9 +135,9 @@ impl SqlExpand {
             #[cfg(feature="sqlx")]
             use dysql::SqlxExecutorAdatper;
 
-            #named_sql_declare  // let named_sql = ....;
-            #query_declare      // let query = executor.create_query(....);
-            #execute
+            #named_template_declare  // let named_sql = ....;
+            let query = (#executor_token).create_query();
+            #execute_query
         });
 
         Ok(ret)
@@ -169,22 +149,16 @@ impl SqlExpand {
         let executor_token = st.executor_info.gen_token();
         let ret_type = &st.ret_type;
 
-        // declare named_sql at runtime
-        let named_sql_declare = self.gen_named_sql_declare(st)?;
-
-        // 生成 QueryAdapter 对象
-        let query_declare = quote!(
-            let query = (#executor_token).create_query();
-        );
+        // declare named_template at runtime
+        let named_template_declare = self.gen_named_template_declare(st)?;
 
         let dto_token = st.dto_info.gen_token();
-        let execute = match dto_ident {
+        let execute_query = match dto_ident {
             Some(_) => quote!(
-                let insert_rst = query.insert::<_, _, #ret_type>(#executor_token, &named_sql, Some(#dto_token)).await;
-                
+                let insert_rst = query.insert::<_, _, #ret_type>(#executor_token, named_template, Some(#dto_token)).await;
             ),
             None => quote!(
-                let insert_rst = query.insert::<_, dysql::EmptyObject, #ret_type>(#executor_token, &named_sql, None).await;
+                let insert_rst = query.insert::<_, dysql::EmptyObject, #ret_type>(#executor_token, named_template, None).await;
             ),
         };
 
@@ -195,9 +169,9 @@ impl SqlExpand {
             #[cfg(feature="sqlx")]
             use dysql::SqlxExecutorAdatper;
 
-            #named_sql_declare  // let named_sql = ....;
-            #query_declare      // let query = executor.create_query(....);
-            #execute
+            #named_template_declare  // let named_sql = ....;
+            let query = (#executor_token).create_query();
+            #execute_query
             
             let rst = match insert_rst {
                 Ok(Some(insert_id)) => Ok(insert_id),
@@ -221,36 +195,18 @@ impl SqlExpand {
         let dto_ident = &st.dto_info.src;
         let executor_token = st.executor_info.gen_token();
         let ret_type = &st.ret_type;
-
-        // declare named_sql whith template at runtime 
-        let named_sql_declare = self.gen_named_sql_declare(st)?;
-
-        // page_dto 通过 QueryAdapter.page() 方法传递，所以这里只要生成没有 dto 的 QueryAdapter 对象就可以了
-        let query_declare = quote!(
-            let query = (#executor_token).create_query();
-        );
-
-        let buf_count_named_sql_declare = quote!(
-            let buffer_size = named_sql.len() + 200;
-            let mut sql_buf = Vec::<u8>::with_capacity(buffer_size);
-    
-            // count query
-            let count_named_sql = {
-                use std::io::Write;
-                write!(sql_buf, "SELECT count(*) FROM ({}) as _tmp", named_sql).unwrap();
-                std::str::from_utf8(&sql_buf).unwrap()
-            };
-        );
-
         let dto_token = st.dto_info.gen_token();
-        let count_exexute = match dto_ident {
+
+        // declare named_template at runtime
+        let named_template_declare = self.gen_named_template_declare(st)?;
+
+        // 生成 count 查询的调用
+        let execute_count_query = match dto_ident {
             Some(_) => quote!(
-                #buf_count_named_sql_declare
-                let count_rst = query.fetch_scalar::<_, _, i64>(#executor_token, &count_named_sql, Some(&#dto_token)).await;
+                let count_rst = query.page_count::<_, _, i64>(#executor_token, named_template.clone(), Some(&#dto_token)).await;
             ),
             None => quote!(
-                #buf_count_named_sql_declare
-                let count_rst = query.fetch_scalar::<_, dysql::EmptyObject, i64>(#executor_token, &count_named_sql, None).await;
+                let count_rst = query.page_count::<_, dysql::EmptyObject, i64>(#executor_token, named_template.clone(), None).await;
             ),
         };
 
@@ -261,43 +217,28 @@ impl SqlExpand {
             #[cfg(feature="sqlx")]
             use dysql::SqlxExecutorAdatper;
 
-            #named_sql_declare  // let named_sql = ....;
-            #query_declare      // let query = executor.create_query(....);
+            #named_template_declare  // let named_sql = ....;
+            let query = (#executor_token).create_query();
 
-            #count_exexute
+            #execute_count_query
             if let Err(e) = count_rst {
                 break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)), None)))
             }
             let count = count_rst.expect("Unexpected error");
             #dto_ident.init(count as u64);
 
-            let page_named_sql = {
-                use std::io::Write;
-    
-                sql_buf.clear();
-                
-                let sort_fragment = "{{#is_sort}} ORDER BY {{#sort_model}} {{field}} {{sort}}, {{/sort_model}} ![B_DEL(,)] {{/is_sort}} LIMIT {{page_size}} OFFSET {{start}}";
-                let template = dysql::Template::new(sort_fragment).expect("unexpected error: generate template from sql failed");
-                let sort_fragment = template.render(&#dto_token);
-                let sort_fragment = dysql::SqlNodeLinkList::new(&sort_fragment).trim().to_string();
-                
-                write!(sql_buf, "{} {} ", named_sql, sort_fragment).unwrap();
-                std::str::from_utf8(&sql_buf).unwrap()
-            };
-
-            #query_declare
-            query.page::<_, _, #ret_type>(#executor_token, &page_named_sql, &#dto_token).await 
+            // execute page_all query
+            let query = (#executor_token).create_query();
+            query.page_all::<_, _, #ret_type>(#executor_token, named_template, &#dto_token).await 
         });
 
         Ok(ret)
     }
 
-    /// 在编译时生成运行时根据 dto 进行 render 后得到的 named_sql
+    /// 在编译时生成运行时根据 dto 进行 render 后得到的 named_template
     /// 
     /// st: 在编译时生成的包含 sql 的结构体;
-    fn gen_named_sql_declare(&self, st: &crate::DyClosure) -> syn::Result<proc_macro2::TokenStream> {
-        let dto_ident = &st.dto_info.src;
-
+    fn gen_named_template_declare(&self, st: &crate::DyClosure) -> syn::Result<proc_macro2::TokenStream> {
         // 根据 sql body 生成唯一 hash 标识
         let template_id = hash_str(&st.body);
         
@@ -321,27 +262,15 @@ impl SqlExpand {
         let serd_template = template.serialize();
 
         // 生成 TokenStream
-        let mut rst = quote!(
+        let rst = quote!(
             // 优先从 cache 中加载 sql 模板，如果 cache 中没有，则直接从序列化的二进制变量中加载并缓存 sql 模板
-            let sql_tpl = match dysql::get_sql_template(#template_id) {
+            let named_template = match dysql::get_sql_template(#template_id) {
                 Some(tpl) => tpl,
                 None => {
                     let serd_template =  [#(#serd_template,)*];
                     dysql::put_sql_template(#template_id, &serd_template).expect("Unexpected error when put_sql_template")
                 },
             };
-        );
-        if let Some(dto_ident) = dto_ident {
-            rst.extend(quote!( let named_sql: String = sql_tpl.render(&#dto_ident); ));
-        } else {
-            rst.extend(quote!( let named_sql: String = sql_tpl.source().to_owned(); ));
-        }
-        rst.extend(
-            quote!(
-                // 格式化 sql 并解析 BDEL 和 FDEL 指令
-                let named_sql = dysql::SqlNodeLinkList::new(&named_sql).trim().to_string();
-                // println!("!!! {}", named_sql);
-            )
         );
         Ok(rst)
     }

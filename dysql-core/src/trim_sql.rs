@@ -18,6 +18,7 @@ pub enum SqlNodeData<'a> {
     BDel{literal: &'a str, data: &'a str},
 }
 
+/// 仅用于模版渲染后的 SQL 的格式化，去除多余的空白和 BDEL / FDEL 控制符
 #[derive(Debug)]
 pub struct SqlNodeLinkList<'a> {
     pub sql: &'a str,

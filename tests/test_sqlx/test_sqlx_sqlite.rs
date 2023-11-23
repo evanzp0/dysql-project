@@ -120,7 +120,7 @@ async fn test_insert() -> Result<(), Box<dyn Error>> {
     let mut tran = conn.begin().await?;
 
     let dto = UserDto{ id: None, name: Some("lisi".to_owned()), age: Some(50), id_rng: None };
-    let insert_id = insert!(|&mut *tran, dto| -> u64 {
+    let insert_id = insert!(|&mut *tran, dto| -> i32 {
         r#"insert into test_user (name, age) values (:name, :age)"#
     })?;
 

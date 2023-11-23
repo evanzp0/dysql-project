@@ -5,8 +5,6 @@ use std::error::Error;
 use dysql::{PageDto, SortModel, sql, fetch_one, insert, fetch_scalar, execute, page, fetch_all, Value};
 use sqlx::{Pool, MySql, mysql::MySqlPoolOptions};
 
-// use dysql::SqlxExecutorAdatper;
-
 use crate::common::{UserDto, User};
 
 pub async fn connect_mysql_db() -> Pool<MySql> {
@@ -89,7 +87,6 @@ async fn test_execute() -> Result<(), Box<dyn Error>> {
 
     Ok(())
 }
-
 
 #[tokio::test]
 async fn test_insert() -> Result<(), Box<dyn Error>> {

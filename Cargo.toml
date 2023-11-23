@@ -55,7 +55,7 @@ tokio-pg-mapper = { version = "0.2", optional = true }
 tokio-pg-mapper-derive = { version = "0.2", optional = true }
 
 [features]
-default = ["sqlx-postgres"] # , "sqlx-mysql", "sqlx-sqlite", "tokio-postgres"
+default = ["sqlx-postgres", "sqlx-mysql", "sqlx-sqlite", "tokio-postgres"] #  
 sqlx-postgres = ["dysql/sqlx-postgres", "sqlx/postgres"]
 sqlx-mysql = ["dysql/sqlx-mysql", "sqlx/mysql"]
 sqlx-sqlite = ["dysql/sqlx-sqlite", "sqlx/sqlite"]

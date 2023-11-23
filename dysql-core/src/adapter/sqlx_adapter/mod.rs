@@ -13,3 +13,4 @@ mod mysql_adapter;
 #[cfg(feature = "sqlx-sqlite")]
 mod sqlite_adapter;
 
+#[macro_use] pub mod adapter_macro;

@@ -1,4 +1,5 @@
 #![feature(test)]
+#![allow(unused_imports, unused)]
 extern crate test;
 
 use test::{Bencher, black_box};
@@ -224,3 +225,5 @@ fn xe_parse_handlebars(b: &mut Bencher) {
         black_box(handlebars.register_template_string("t1", SOURCE).unwrap());
     });
 }
+
+fn main() {}

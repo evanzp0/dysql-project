@@ -3,28 +3,35 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use rbatis::{RBatis, sql::PageRequest, dark_std::sync::SyncVec, intercept::{Intercept, ResultType}, executor::Executor, rbdc::db::ExecResult, Error};
 
-use rbdc_mysql::Driver;
+use rbdc_sqlite::Driver;
 use rbs::Value;
 use serde::{Serialize, Deserialize};
 
 #[tokio::main]
 async fn main() {
-    let mut rb = RBatis::new();
-    let queue = Arc::new(SyncVec::new());
-    rb.set_intercepts(vec![Arc::new(MockIntercept::new(queue.clone()))]);
-    rb.init(Driver{},"mysql://root:111111@localhost:3306/my_database").unwrap();
+    // let mut rb = RBatis::new();
+    // let queue = Arc::new(SyncVec::new());
+    // rb.set_intercepts(vec![Arc::new(MockIntercept::new(queue.clone()))]);
+    // rb.init(Driver{},"mysql://root:111111@localhost:3306/my_database").unwrap();
     // let driver_type = rb.driver_type().unwrap();
     // println!("{}", driver_type);
-    // let dto = UserDto{ id: Some(2), name: Some("ab".to_owned()), age: Some(13) , id_rng: None };
-    // let sql = "select * from test_user where name = $1";
+    // let runtime = tokio::runtime::Runtime::new().unwrap();
+    // let rb = runtime.block_on(connect_db());
+    let rb = connect_db();
 
-    // let rb_args = vec![rbs::to_value!(&dto.name)];
+    let dto = UserDto{ id: Some(2), name: Some("a4".to_owned()), age: Some(13) , id_rng: None };
+    let sql = "select * from test_user where name = $1";
 
-    // let rst: Option<User> = rb
-    //     .query_decode(sql, rb_args.clone())
-    //     .await
-    //     .unwrap();
-    // println!("{:#?}", rst);
+    let rb_args = vec![rbs::to_value!(&dto.name)];
+    // let rst = runtime.block_on(
+    //     rb.query_decode::<User>(sql, rb_args.clone())
+    // );
+    let rst: Option<User> = rb
+        .await
+        .query_decode(sql, rb_args.clone())
+        .await
+        .unwrap();
+    println!("{:#?}", rst);
 
     // let mut tran = rb.acquire_begin().await.unwrap();
     // let insert_sql = "insert into test_user (name, age) values ('ab', 1) returning id";
@@ -43,11 +50,11 @@ async fn main() {
     // println!("{:#?}", rst);
     // tran.rollback().await.ok();
     
-    let rst = pysql_select_page(&mut rb, &PageRequest::new(1, 10), "a4").await;
-    let (sql, args) = queue.pop().unwrap();
-    println!("{}", sql);
+    // let rst = pysql_select_page(&mut rb, &PageRequest::new(1, 10), "a4").await;
+    // let (sql, args) = queue.pop().unwrap();
+    // println!("{}", sql);
 
-    println!("{:#?}", rst);
+    // println!("{:#?}", rst);
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
@@ -89,27 +96,53 @@ pub struct User {
 }
 
 #[derive(Debug)]
-    pub struct MockIntercept {
-        pub sql_args: Arc<SyncVec<(String, Vec<Value>)>>,
-    }
+pub struct MockIntercept {
+    pub sql_args: Arc<SyncVec<(String, Vec<Value>)>>,
+}
 
-    impl MockIntercept {
-        fn new(inner: Arc<SyncVec<(String, Vec<Value>)>>) -> Self {
-            Self { sql_args: inner }
-        }
+impl MockIntercept {
+    fn new(inner: Arc<SyncVec<(String, Vec<Value>)>>) -> Self {
+        Self { sql_args: inner }
     }
+}
 
-    #[async_trait]
-    impl Intercept for MockIntercept {
-        async fn before(
-            &self,
-            task_id: i64,
-            rb: &dyn Executor,
-            sql: &mut String,
-            args: &mut Vec<Value>,
-            _result: ResultType<&mut Result<ExecResult, Error>, &mut Result<Vec<Value>, Error>>,
-        ) -> Result<bool, Error> {
-            self.sql_args.push((sql.to_string(), args.clone()));
-            Ok(true)
-        }
+#[async_trait]
+impl Intercept for MockIntercept {
+    async fn before(
+        &self,
+        task_id: i64,
+        rb: &dyn Executor,
+        sql: &mut String,
+        args: &mut Vec<Value>,
+        _result: ResultType<&mut Result<ExecResult, Error>, &mut Result<Vec<Value>, Error>>,
+    ) -> Result<bool, Error> {
+        self.sql_args.push((sql.to_string(), args.clone()));
+        Ok(true)
     }
+}
+
+async fn connect_db() -> RBatis {
+    let rb = RBatis::new();
+    rb.init(Driver{},"sqlite::memory:").unwrap();
+
+    rb.exec(r#"
+        CREATE TABLE test_user (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name VARCHAR(255) NULL,
+            age INT NULL
+        )"#,
+        vec![]
+    ).await.unwrap();
+
+    rb.exec("INSERT INTO test_user (name, age) VALUES ('huanglan', 10)", vec![]).await.unwrap();
+    rb.exec("INSERT INTO test_user (name, age) VALUES ('zhanglan', 21)", vec![]).await.unwrap();
+    rb.exec("INSERT INTO test_user (name, age) VALUES ('zhangsan', 35)", vec![]).await.unwrap();
+    rb.exec("INSERT INTO test_user (name, age) VALUES ('a4', 12)", vec![]).await.unwrap();
+    rb.exec("INSERT INTO test_user (name, age) VALUES ('a5', 21)", vec![]).await.unwrap();
+    rb.exec("INSERT INTO test_user (name, age) VALUES ('a6', 22)", vec![]).await.unwrap();
+    rb.exec("INSERT INTO test_user (name, age) VALUES ('a7', 24)", vec![]).await.unwrap();
+    rb.exec("INSERT INTO test_user (name, age) VALUES ('a8', 31)", vec![]).await.unwrap();
+    rb.exec("INSERT INTO test_user (name, age) VALUES ('a9', 33)", vec![]).await.unwrap();
+
+    rb
+}

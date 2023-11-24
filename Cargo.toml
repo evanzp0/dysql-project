@@ -28,17 +28,6 @@ dysql-macro = { path = "./dysql-macro" }
 lto = "fat"
 codegen-units = 1
 
-[dev-dependencies]
-# test_sql dependence
-
-# test_tpl dependence
-askama = "0.12"
-handlebars = "4.4"
-serde = "1.0"
-serde_derive = "1.0"
-mustache = "0.9"
-tera = "1.2.0"
-ahash = "0.8"
 
 [package.metadata.scripts]
 test_sqlx = "cargo clean -p dysql-core && cargo test"
@@ -46,7 +35,7 @@ test_sqlx = "cargo clean -p dysql-core && cargo test"
 [dependencies]
 env_logger = "0.10"
 dotenv = "0.15"
-tokio = { version = "1.0", features = ["full"] }
+tokio = { version = "1.34", features = ["full"] }
 dysql = { path = "./dysql" }
 # sql
 sqlx = { version = "0.7", features = [ "runtime-tokio-native-tls", "chrono", "uuid" ], optional = true } 
@@ -63,6 +52,16 @@ rbdc-mysql = { version ="4.5", optional = true }
 rbdc-sqlite = { version = "4.5", optional = true }
 # rbdc-mssql = { version ="4.5", optional = true }
 
+[dev-dependencies]
+askama = "0.12"
+handlebars = "4.4"
+serde = "1.0"
+serde_derive = "1.0"
+mustache = "0.9"
+tera = "1.2.0"
+ahash = "0.8"
+criterion = { version = "0.4", features = ["async_tokio"] }
+
 [features]
 default = ["sqlx-postgres", "sqlx-mysql", "sqlx-sqlite", "tokio-postgres", "rbatis-mysql", "rbatis-sqlite", "rbatis-pg"] # 
 sqlx-postgres = ["dysql/sqlx-postgres", "sqlx/postgres"]
@@ -73,6 +72,7 @@ rbatis-pg = ["serde", "rbs", "rbatis", "rbdc-pg", "dysql/rbatis-pg"]
 rbatis-mysql = ["serde", "rbs", "rbatis", "rbdc-mysql", "dysql/rbatis-mysql"]
 rbatis-sqlite = ["serde", "rbs", "rbatis", "rbdc-sqlite", "dysql/rbatis-sqlite"]
 # rbatis-mssql = ["serde", "rbs", "rbatis", "rbdc-mssql", "dysql/rbatis-mssql"]
+
 
 [[test]]
 name = "test_sqlx_postgres"
@@ -109,3 +109,12 @@ name = "test_rbatis_mysql"
 path = "tests/test_rbatis/test_rbatis_mysql.rs"
 required-features = ["rbatis-mysql"]
 
+[[test]]
+name = "bench_sql"
+path = "benches/bench_sql.rs"
+required-features = ["rbatis-sqlite"]
+
+[[bench]]
+name = "bench_tpl"
+path = "benches/bench_tpl.rs"
+harness = true

@@ -8,7 +8,7 @@ use sqlx::{Acquire, SqliteConnection, sqlite::{SqliteConnectOptions, SqliteJourn
 
 use crate::common::{UserDto, User};
 
-pub async fn connect_sqlite_db() -> SqliteConnection {
+pub async fn connect_db() -> SqliteConnection {
     let mut conn = SqliteConnectOptions::from_str("sqlite::memory:")
         .unwrap()
         .journal_mode(SqliteJournalMode::Wal)
@@ -40,7 +40,7 @@ pub async fn connect_sqlite_db() -> SqliteConnection {
 
 #[tokio::test]
 async fn test_fetch_all() {
-    let mut conn = connect_sqlite_db().await;
+    let mut conn = connect_db().await;
 
     let dto = UserDto{ id: None, name: None, age: Some(13) , id_rng: None };
     let rst = fetch_all!(|&mut conn, &dto| -> User {
@@ -61,7 +61,7 @@ async fn test_fetch_all() {
 sql!("select_sql","select * from test_user ");
 #[tokio::test]
 async fn test_fetch_one() {
-    let mut conn = connect_sqlite_db().await;
+    let mut conn = connect_db().await;
     // let dto = UserDto{ id: Some(2), name: None, age: None, id_rng: None };
     let dto = dysql::Value::new(2_i64);
 
@@ -78,7 +78,7 @@ async fn test_fetch_one() {
 
 #[tokio::test]
 async fn test_fetch_scalar() -> dysql::DySqlResult<()>{
-    let mut conn = connect_sqlite_db().await;
+    let mut conn = connect_db().await;
 
     let value = Value::new(1);
 
@@ -97,7 +97,7 @@ async fn test_fetch_scalar() -> dysql::DySqlResult<()>{
 
 #[tokio::test]
 async fn test_execute() -> Result<(), Box<dyn Error>> {
-    let mut conn = connect_sqlite_db().await;
+    let mut conn = connect_db().await;
     let mut tran = conn.begin().await?;
 
     let dto = UserDto{ id: Some(3), name: None, age: None, id_rng: None };
@@ -114,7 +114,7 @@ async fn test_execute() -> Result<(), Box<dyn Error>> {
 
 #[tokio::test]
 async fn test_insert() -> Result<(), Box<dyn Error>> {
-    let mut conn = connect_sqlite_db().await;
+    let mut conn = connect_db().await;
     let mut tran = conn.begin().await?;
 
     let dto = UserDto{ id: None, name: Some("lisi".to_owned()), age: Some(50), id_rng: None };
@@ -129,7 +129,7 @@ async fn test_insert() -> Result<(), Box<dyn Error>> {
 
 #[tokio::test]
 async fn test_page() {
-    let mut conn = connect_sqlite_db().await;
+    let mut conn = connect_db().await;
 
     let dto = UserDto{ id: None, name: Some("a".to_owned()), age: Some(13), id_rng: None };
     let sort_model = vec![
@@ -155,7 +155,7 @@ async fn test_page() {
 
 #[tokio::test]
 async fn test_trim_sql() {
-    let mut conn = connect_sqlite_db().await;
+    let mut conn = connect_db().await;
     let dto = UserDto::new(None, Some("z".to_owned()), Some(13), Some(vec![1, 2, 3,]));
     let sort_model = vec![
         SortModel {field: "id".to_owned(), sort: "desc".to_owned()}

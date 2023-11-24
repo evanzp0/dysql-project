@@ -47,11 +47,12 @@ impl crate::SqlxQuery <sqlx::MySql>
         }
     }
 
-    pub async fn fetch_insert_id<'e, 'c: 'e, E>(self, executor: E) -> Result<u64, crate::DySqlError>
+    pub async fn fetch_insert_id<'e, 'c: 'e, E, U>(self, executor: E) -> Result<U, crate::DySqlError>
     where
-        E: 'e + sqlx::Executor<'c, Database = sqlx::MySql> + crate::SqlxExecutorAdatper<sqlx::MySql> ,
+        E: 'e + sqlx::Executor<'c, Database = sqlx::MySql> + crate::SqlxExecutorAdatper<sqlx::MySql>,
+        for<'r> U: sqlx::Decode<'r, sqlx::MySql> + sqlx::Type<sqlx::MySql> + Send + Unpin,
     {
-        let insert_id = sqlx::query_as::<_, (u64,)>("SELECT LAST_INSERT_ID();")
+        let insert_id = sqlx::query_as::<_, (U,)>("SELECT LAST_INSERT_ID();")
             .fetch_one(executor)
             .await;
 

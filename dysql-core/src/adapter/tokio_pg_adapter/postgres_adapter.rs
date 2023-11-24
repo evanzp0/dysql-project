@@ -1,44 +1,36 @@
-
-use std::sync::Arc;
-
 use async_trait::async_trait;
-use dysql_tpl::{Content, SimpleTemplate, SimpleValue, Template};
-use tokio_postgres::{Statement, Error, types::{ToSql, FromSql}, Row, ToStatement};
-use tokio_pg_mapper::FromTokioPostgresRow;
 
-use crate::{TokioPgExecutorAdatper, TokioPgQuery, DySqlError, extract_params, ErrorInner, Kind, PageDto, Pagination};
-
-impl TokioPgQuery
+impl crate::TokioPgQuery
 {
     /// named_sql: 是已经代入 dto 进行模版 render 后的 named sql 
-    pub async fn fetch_one<E, D, U>(self, executor: &E, named_template: Arc<Template>, dto: Option<D>)
-        -> Result<U, DySqlError>
+    pub async fn fetch_one<E, D, U>(self, executor: &E, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>)
+        -> Result<U, crate::DySqlError>
     where 
-        E: TokioPgExecutorAdatper,
-        D: Content + Send + Sync,
-        U: FromTokioPostgresRow,
+        E: crate::TokioPgExecutorAdatper,
+        D: dysql_tpl::Content + Send + Sync,
+        U: tokio_pg_mapper::FromTokioPostgresRow,
     {
         let named_sql = crate::gen_named_sql(named_template, &dto);
-        let sql_and_params = extract_params(&named_sql, executor.get_dialect());
+        let sql_and_params = crate::extract_params(&named_sql, executor.get_dialect());
         let (sql, param_names) = match sql_and_params {
             Ok(val) => val,
             Err(e) => Err(
-                DySqlError(ErrorInner::new(Kind::ExtractSqlParamterError, Some(Box::new(e)), None))
+                crate::DySqlError(crate::ErrorInner::new(crate::Kind::ExtractSqlParamterError, Some(Box::new(e)), None))
             )?,
         };
         let stmt = (*executor)
             .prepare(&sql)
             .await
-            .map_err(|e| DySqlError(ErrorInner::new(Kind::PrepareStamentError, Some(Box::new(e)), None)))?;
+            .map_err(|e| crate::DySqlError(crate::ErrorInner::new(crate::Kind::PrepareStamentError, Some(Box::new(e)), None)))?;
 
-        let mut param_values : Vec<SimpleValue> = Vec::with_capacity(param_names.len());
+        let mut param_values : Vec<dysql_tpl::SimpleValue> = Vec::with_capacity(param_names.len());
         if let Some(dto) = &dto {
             for param_name in &param_names {
-                let stpl = SimpleTemplate::new(param_name);
+                let stpl = dysql_tpl::SimpleTemplate::new(param_name);
                 
                 let param_value = stpl
                     .apply(dto)
-                    .map_err(|e| DySqlError(ErrorInner::new(Kind::BindParamterError, Some(e), None)))?;
+                    .map_err(|e| crate::DySqlError(crate::ErrorInner::new(crate::Kind::BindParamterError, Some(e), None)))?;
                 param_values.push(param_value);
             }
         }
@@ -54,45 +46,45 @@ impl TokioPgQuery
             .await
             .map_err(|e| {
                 if e.to_string().contains("number of rows") {
-                    DySqlError(ErrorInner::new(Kind::RecordNotFound, Some(Box::new(e)), None))
+                    crate::DySqlError(crate::ErrorInner::new(crate::Kind::RecordNotFound, Some(Box::new(e)), None))
                 } else {
-                    DySqlError(ErrorInner::new(Kind::QueryError, Some(Box::new(e)), None))
+                    crate::DySqlError(crate::ErrorInner::new(crate::Kind::QueryError, Some(Box::new(e)), None))
                 }
             })?;
         let rst = <U>::from_row(row)
-            .map_err(|e| DySqlError(ErrorInner::new(Kind::ObjectMappingError, Some(Box::new(e)), None)))?;
+            .map_err(|e| crate::DySqlError(crate::ErrorInner::new(crate::Kind::ObjectMappingError, Some(Box::new(e)), None)))?;
 
         Ok(rst)
     }
 
-    pub async fn fetch_all<E, D, U>(self, executor: &E, named_template: Arc<Template>, dto: Option<D>)
-        -> Result<Vec<U>, DySqlError>
+    pub async fn fetch_all<E, D, U>(self, executor: &E, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>)
+        -> Result<Vec<U>, crate::DySqlError>
     where 
-        E: TokioPgExecutorAdatper,
-        D: Content + Send + Sync,
-        U: FromTokioPostgresRow,
+        E: crate::TokioPgExecutorAdatper,
+        D: dysql_tpl::Content + Send + Sync,
+        U: tokio_pg_mapper::FromTokioPostgresRow,
     {
         let named_sql = crate::gen_named_sql(named_template, &dto);
-        let sql_and_params = extract_params(&named_sql, executor.get_dialect());
+        let sql_and_params = crate::extract_params(&named_sql, executor.get_dialect());
         let (sql, param_names) = match sql_and_params {
             Ok(val) => val,
             Err(e) => Err(
-                DySqlError(ErrorInner::new(Kind::ExtractSqlParamterError, Some(Box::new(e)), None))
+                crate::DySqlError(crate::ErrorInner::new(crate::Kind::ExtractSqlParamterError, Some(Box::new(e)), None))
             )?,
         };
         let stmt = (*executor)
             .prepare(&sql)
             .await
-            .map_err(|e| DySqlError(ErrorInner::new(Kind::PrepareStamentError, Some(Box::new(e)), None)))?;
+            .map_err(|e| crate::DySqlError(crate::ErrorInner::new(crate::Kind::PrepareStamentError, Some(Box::new(e)), None)))?;
 
-        let mut param_values : Vec<SimpleValue> = Vec::with_capacity(param_names.len());
+        let mut param_values : Vec<dysql_tpl::SimpleValue> = Vec::with_capacity(param_names.len());
         if let Some(dto) = &dto {
             for param_name in &param_names {
-                let stpl = SimpleTemplate::new(param_name);
+                let stpl = dysql_tpl::SimpleTemplate::new(param_name);
                 
                 let param_value = stpl
                     .apply(dto)
-                    .map_err(|e| DySqlError(ErrorInner::new(Kind::BindParamterError, Some(e), None)))?;
+                    .map_err(|e| crate::DySqlError(crate::ErrorInner::new(crate::Kind::BindParamterError, Some(e), None)))?;
                 param_values.push(param_value);
             }
         }
@@ -108,7 +100,7 @@ impl TokioPgQuery
         let rows = (*executor)
             .query(&stmt, &params)
             .await
-            .map_err(|e| DySqlError(ErrorInner::new(Kind::QueryError, Some(Box::new(e)), None)))?;
+            .map_err(|e| crate::DySqlError(crate::ErrorInner::new(crate::Kind::QueryError, Some(Box::new(e)), None)))?;
 
         let rst = rows
             .iter()
@@ -118,34 +110,34 @@ impl TokioPgQuery
         Ok(rst)
     }
 
-    pub async fn fetch_scalar<E, D, U>(self, executor: &E, named_template: Arc<Template>, dto: Option<D>)
-        -> Result<U, DySqlError>
+    pub async fn fetch_scalar<E, D, U>(self, executor: &E, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>)
+        -> Result<U, crate::DySqlError>
     where 
-        E: TokioPgExecutorAdatper,
-        D: Content + Send + Sync,
-        for<'a> U: FromSql<'a>,
+        E: crate::TokioPgExecutorAdatper,
+        D: dysql_tpl::Content + Send + Sync,
+        for<'a> U: tokio_postgres::types::FromSql<'a>,
     {
         let named_sql = crate::gen_named_sql(named_template, &dto);
-        let sql_and_params = extract_params(&named_sql, executor.get_dialect());
+        let sql_and_params = crate::extract_params(&named_sql, executor.get_dialect());
         let (sql, param_names) = match sql_and_params {
             Ok(val) => val,
             Err(e) => Err(
-                DySqlError(ErrorInner::new(Kind::ExtractSqlParamterError, Some(Box::new(e)), None))
+                crate::DySqlError(crate::ErrorInner::new(crate::Kind::ExtractSqlParamterError, Some(Box::new(e)), None))
             )?,
         };
         let stmt = (*executor)
             .prepare(&sql)
             .await
-            .map_err(|e| DySqlError(ErrorInner::new(Kind::PrepareStamentError, Some(Box::new(e)), None)))?;
+            .map_err(|e| crate::DySqlError(crate::ErrorInner::new(crate::Kind::PrepareStamentError, Some(Box::new(e)), None)))?;
 
-        let mut param_values : Vec<SimpleValue> = Vec::with_capacity(param_names.len());
+        let mut param_values : Vec<dysql_tpl::SimpleValue> = Vec::with_capacity(param_names.len());
         if let Some(dto) = &dto {
             for param_name in &param_names {
-                let stpl = SimpleTemplate::new(param_name);
+                let stpl = dysql_tpl::SimpleTemplate::new(param_name);
                 
                 let param_value = stpl
                     .apply(dto)
-                    .map_err(|e| DySqlError(ErrorInner::new(Kind::BindParamterError, Some(e), None)))?;
+                    .map_err(|e| crate::DySqlError(crate::ErrorInner::new(crate::Kind::BindParamterError, Some(e), None)))?;
                 param_values.push(param_value);
             }
         }
@@ -160,40 +152,40 @@ impl TokioPgQuery
         let row = (*executor)
             .query_one(&stmt, &params)
             .await
-            .map_err(|e| DySqlError(ErrorInner::new(Kind::QueryError, Some(Box::new(e)), None)))?;
+            .map_err(|e| crate::DySqlError(crate::ErrorInner::new(crate::Kind::QueryError, Some(Box::new(e)), None)))?;
 
         let rst: U = row.get(0);
 
         Ok(rst)
     }
     
-    pub async fn execute<E, D>(self, executor: &E, named_template: Arc<Template>, dto: Option<D>)
-        -> Result<u64, DySqlError>
+    pub async fn execute<E, D>(self, executor: &E, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>)
+        -> Result<u64, crate::DySqlError>
     where 
-        E: TokioPgExecutorAdatper,
-        D: Content + Send + Sync,
+        E: crate::TokioPgExecutorAdatper,
+        D: dysql_tpl::Content + Send + Sync,
     {
         let named_sql = crate::gen_named_sql(named_template, &dto);
-        let sql_and_params = extract_params(&named_sql, executor.get_dialect());
+        let sql_and_params = crate::extract_params(&named_sql, executor.get_dialect());
         let (sql, param_names) = match sql_and_params {
             Ok(val) => val,
             Err(e) => Err(
-                DySqlError(ErrorInner::new(Kind::ExtractSqlParamterError, Some(Box::new(e)), None))
+                crate::DySqlError(crate::ErrorInner::new(crate::Kind::ExtractSqlParamterError, Some(Box::new(e)), None))
             )?,
         };
         let stmt = (*executor)
             .prepare(&sql)
             .await
-            .map_err(|e| DySqlError(ErrorInner::new(Kind::PrepareStamentError, Some(Box::new(e)), None)))?;
+            .map_err(|e| crate::DySqlError(crate::ErrorInner::new(crate::Kind::PrepareStamentError, Some(Box::new(e)), None)))?;
 
-        let mut param_values : Vec<SimpleValue> = Vec::with_capacity(param_names.len());
+        let mut param_values : Vec<dysql_tpl::SimpleValue> = Vec::with_capacity(param_names.len());
         if let Some(dto) = &dto {
             for param_name in &param_names {
-                let stpl = SimpleTemplate::new(param_name);
+                let stpl = dysql_tpl::SimpleTemplate::new(param_name);
                 
                 let param_value = stpl
                     .apply(dto)
-                    .map_err(|e| DySqlError(ErrorInner::new(Kind::BindParamterError, Some(e), None)))?;
+                    .map_err(|e| crate::DySqlError(crate::ErrorInner::new(crate::Kind::BindParamterError, Some(e), None)))?;
                 param_values.push(param_value);
             }
         }
@@ -208,39 +200,39 @@ impl TokioPgQuery
         let affect_count = (*executor)
             .execute(&stmt, &params)
             .await
-            .map_err(|e| DySqlError(ErrorInner::new(Kind::QueryError, Some(Box::new(e)), None)))?;
+            .map_err(|e| crate::DySqlError(crate::ErrorInner::new(crate::Kind::QueryError, Some(Box::new(e)), None)))?;
 
         Ok(affect_count)
     }
 
-    pub async fn insert<E, D, U>(self, executor: &E, named_template: Arc<Template>, dto: Option<D>)
-        -> Result<Option<U>, DySqlError>
+    pub async fn insert<E, D, U>(self, executor: &E, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>)
+        -> Result<Option<U>, crate::DySqlError>
     where 
-        E: TokioPgExecutorAdatper,
-        D: Content + Send + Sync,
-        for<'a> U: FromSql<'a>,
+        E: crate::TokioPgExecutorAdatper,
+        D: dysql_tpl::Content + Send + Sync,
+        for<'a> U: tokio_postgres::types::FromSql<'a>,
     {
         let named_sql = crate::gen_named_sql(named_template, &dto);
-        let sql_and_params = extract_params(&named_sql, executor.get_dialect());
+        let sql_and_params = crate::extract_params(&named_sql, executor.get_dialect());
         let (sql, param_names) = match sql_and_params {
             Ok(val) => val,
             Err(e) => Err(
-                DySqlError(ErrorInner::new(Kind::ExtractSqlParamterError, Some(Box::new(e)), None))
+                crate::DySqlError(crate::ErrorInner::new(crate::Kind::ExtractSqlParamterError, Some(Box::new(e)), None))
             )?,
         };
         let stmt = (*executor)
             .prepare(&sql)
             .await
-            .map_err(|e| DySqlError(ErrorInner::new(Kind::PrepareStamentError, Some(Box::new(e)), None)))?;
+            .map_err(|e| crate::DySqlError(crate::ErrorInner::new(crate::Kind::PrepareStamentError, Some(Box::new(e)), None)))?;
 
-        let mut param_values : Vec<SimpleValue> = Vec::with_capacity(param_names.len());
+        let mut param_values : Vec<dysql_tpl::SimpleValue> = Vec::with_capacity(param_names.len());
         if let Some(dto) = &dto {
             for param_name in &param_names {
-                let stpl = SimpleTemplate::new(param_name);
+                let stpl = dysql_tpl::SimpleTemplate::new(param_name);
                 
                 let param_value = stpl
                     .apply(dto)
-                    .map_err(|e| DySqlError(ErrorInner::new(Kind::BindParamterError, Some(e), None)))?;
+                    .map_err(|e| crate::DySqlError(crate::ErrorInner::new(crate::Kind::BindParamterError, Some(e), None)))?;
                 param_values.push(param_value);
             }
         }
@@ -260,26 +252,26 @@ impl TokioPgQuery
         Ok(Some(rst))
     }
 
-    pub async fn fetch_insert_id<'e, 'c: 'e, E>(self, _executor: E) -> Result<i64, DySqlError>
+    pub async fn fetch_insert_id<E>(self, _executor: E) -> Result<i64, crate::DySqlError>
     {
         Ok(-1)
     }
 
-    pub async fn page_count<E, D, U>(self, executor: &E, named_template: Arc<Template>, dto: Option<D>)
-        -> Result<U, DySqlError>
+    pub async fn page_count<E, D, U>(self, executor: &E, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>)
+        -> Result<U, crate::DySqlError>
     where 
-        E: TokioPgExecutorAdatper,
-        D: Content + Send + Sync,
-        for<'a> U: FromSql<'a>,
+        E: crate::TokioPgExecutorAdatper,
+        D: dysql_tpl::Content + Send + Sync,
+        for<'a> U: tokio_postgres::types::FromSql<'a>,
     {
         use std::io::Write;
 
         let named_sql = crate::gen_named_sql(named_template, &dto);
-        let sql_and_params = extract_params(&named_sql, executor.get_dialect());
+        let sql_and_params = crate::extract_params(&named_sql, executor.get_dialect());
         let (sql, param_names) = match sql_and_params {
             Ok(val) => val,
             Err(e) => Err(
-                DySqlError(ErrorInner::new(Kind::ExtractSqlParamterError, Some(Box::new(e)), None))
+                crate::DySqlError(crate::ErrorInner::new(crate::Kind::ExtractSqlParamterError, Some(Box::new(e)), None))
             )?,
         };
 
@@ -294,16 +286,16 @@ impl TokioPgQuery
         let stmt = (*executor)
             .prepare(count_sql)
             .await
-            .map_err(|e| DySqlError(ErrorInner::new(Kind::PrepareStamentError, Some(Box::new(e)), None)))?;
+            .map_err(|e| crate::DySqlError(crate::ErrorInner::new(crate::Kind::PrepareStamentError, Some(Box::new(e)), None)))?;
 
-        let mut param_values : Vec<SimpleValue> = Vec::with_capacity(param_names.len());
+        let mut param_values : Vec<dysql_tpl::SimpleValue> = Vec::with_capacity(param_names.len());
         if let Some(dto) = &dto {
             for param_name in &param_names {
-                let stpl = SimpleTemplate::new(param_name);
+                let stpl = dysql_tpl::SimpleTemplate::new(param_name);
                 
                 let param_value = stpl
                     .apply(dto)
-                    .map_err(|e| DySqlError(ErrorInner::new(Kind::BindParamterError, Some(e), None)))?;
+                    .map_err(|e| crate::DySqlError(crate::ErrorInner::new(crate::Kind::BindParamterError, Some(e), None)))?;
                 param_values.push(param_value);
             }
         }
@@ -318,19 +310,19 @@ impl TokioPgQuery
         let row = (*executor)
             .query_one(&stmt, &params)
             .await
-            .map_err(|e| DySqlError(ErrorInner::new(Kind::QueryError, Some(Box::new(e)), None)))?;
+            .map_err(|e| crate::DySqlError(crate::ErrorInner::new(crate::Kind::QueryError, Some(Box::new(e)), None)))?;
 
         let rst: U = row.get(0);
 
         Ok(rst)
     }
 
-    pub async fn page_all<E, D, U>(self, executor: &E, named_template: Arc<Template>, page_dto: &PageDto<D>)
-        -> Result<Pagination<U>, DySqlError>
+    pub async fn page_all<E, D, U>(self, executor: &E, named_template: std::sync::Arc<dysql_tpl::Template>, page_dto: &crate::PageDto<D>)
+        -> Result<crate::Pagination<U>, crate::DySqlError>
     where 
-        E: TokioPgExecutorAdatper,
-        D: Content + Send + Sync,
-        U: FromTokioPostgresRow,
+        E: crate::TokioPgExecutorAdatper,
+        D: dysql_tpl::Content + Send + Sync,
+        U: tokio_pg_mapper::FromTokioPostgresRow,
     {   
         use std::io::Write;
 
@@ -339,11 +331,11 @@ impl TokioPgQuery
             // 格式化 sql 并解析 BDEL 和 FDEL 指令
             crate::SqlNodeLinkList::new(&named_sql).trim().to_string()
         };
-        let sql_and_params = extract_params(&named_sql, executor.get_dialect());
+        let sql_and_params = crate::extract_params(&named_sql, executor.get_dialect());
         let (sql, param_names) = match sql_and_params {
             Ok(val) => val,
             Err(e) => Err(
-                DySqlError(ErrorInner::new(Kind::ExtractSqlParamterError, Some(Box::new(e)), None))
+                crate::DySqlError(crate::ErrorInner::new(crate::Kind::ExtractSqlParamterError, Some(Box::new(e)), None))
             )?,
         };
 
@@ -367,15 +359,15 @@ impl TokioPgQuery
         let stmt = (*executor)
             .prepare(page_sql)
             .await
-            .map_err(|e| DySqlError(ErrorInner::new(Kind::PrepareStamentError, Some(Box::new(e)), None)))?;
+            .map_err(|e| crate::DySqlError(crate::ErrorInner::new(crate::Kind::PrepareStamentError, Some(Box::new(e)), None)))?;
 
-        let mut param_values : Vec<SimpleValue> = Vec::with_capacity(param_names.len());
+        let mut param_values : Vec<dysql_tpl::SimpleValue> = Vec::with_capacity(param_names.len());
         for param_name in &param_names {
-            let stpl = SimpleTemplate::new(param_name);
+            let stpl = dysql_tpl::SimpleTemplate::new(param_name);
             
             let param_value = stpl
                 .apply(page_dto)
-                .map_err(|e| DySqlError(ErrorInner::new(Kind::BindParamterError, Some(e), None)))?;
+                .map_err(|e| crate::DySqlError(crate::ErrorInner::new(crate::Kind::BindParamterError, Some(e), None)))?;
             param_values.push(param_value);
         }
 
@@ -391,14 +383,14 @@ impl TokioPgQuery
         let rows = (*executor)
             .query(&stmt, &params)
             .await
-            .map_err(|e| DySqlError(ErrorInner::new(Kind::QueryError, Some(Box::new(e)), None)))?;
+            .map_err(|e| crate::DySqlError(crate::ErrorInner::new(crate::Kind::QueryError, Some(Box::new(e)), None)))?;
 
         let rst = rows
             .iter()
             .map(|row| <U>::from_row_ref(row).expect("query unexpected error"))
             .collect::<Vec<U>>();
 
-        let pg_data = Pagination::from_dto(&page_dto, rst);
+        let pg_data = crate::Pagination::from_dto(&page_dto, rst);
 
         Ok(pg_data)
     }
@@ -407,18 +399,18 @@ impl TokioPgQuery
 macro_rules! impl_tokio_pg_executor_adapter {
     ( $executor:ty) => {
         #[async_trait]
-        impl TokioPgExecutorAdatper for $executor {
-            async fn prepare(&self, query: &str) -> Result<Statement, Error> {
+        impl crate::TokioPgExecutorAdatper for $executor {
+            async fn prepare(&self, query: &str) -> Result<tokio_postgres::Statement, tokio_postgres::Error> {
                 self.prepare(query).await
             }
         
             async fn query<T>(
                 &self, 
                 statement: &T, 
-                params: &[&(dyn ToSql + Sync)]
-            ) -> Result<Vec<Row>, Error> 
+                params: &[&(dyn tokio_postgres::types::ToSql + Sync)]
+            ) -> Result<Vec<tokio_postgres::Row>, tokio_postgres::Error> 
             where
-                T: ?Sized + ToStatement + Sync,
+                T: ?Sized + tokio_postgres::ToStatement + Sync,
             {
                 self.query(statement, params).await
             }
@@ -426,10 +418,10 @@ macro_rules! impl_tokio_pg_executor_adapter {
             async fn query_one<T>(
                 &self,
                 statement: &T,
-                params: &[&(dyn ToSql + Sync)],
-            ) -> Result<Row, Error>
+                params: &[&(dyn tokio_postgres::types::ToSql + Sync)],
+            ) -> Result<tokio_postgres::Row, tokio_postgres::Error>
             where
-                T: ?Sized + ToStatement + Sync
+                T: ?Sized + tokio_postgres::ToStatement + Sync
             {
                 self.query_one(statement, params).await
             }
@@ -437,10 +429,10 @@ macro_rules! impl_tokio_pg_executor_adapter {
             async fn execute<T>(
                 &self,
                 statement: &T,
-                params: &[&(dyn ToSql + Sync)],
-            ) -> Result<u64, Error>
+                params: &[&(dyn tokio_postgres::types::ToSql + Sync)],
+            ) -> Result<u64, tokio_postgres::Error>
             where
-                T: ?Sized + ToStatement + Sync
+                T: ?Sized + tokio_postgres::ToStatement + Sync
             {
                 self.execute(statement, params).await
             }

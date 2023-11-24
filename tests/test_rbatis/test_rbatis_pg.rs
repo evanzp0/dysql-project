@@ -1,6 +1,6 @@
 use dysql::{sql, fetch_one, fetch_all, Value, fetch_scalar, execute, DySqlError, ErrorInner, Kind, insert, SortModel, PageDto, page};
 use rbatis::RBatis;
-use rbdc_sqlite::Driver;
+use rbdc_pg::Driver;
 
 use crate::common::{User, UserDto};
 
@@ -8,27 +8,7 @@ mod common;
 
 async fn connect_db() -> RBatis {
     let rb = RBatis::new();
-    rb.init(Driver{},"sqlite::memory:").unwrap();
-
-    rb.exec(r#"
-        CREATE TABLE test_user (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name VARCHAR(255) NULL,
-            age INT NULL
-        )"#,
-        vec![]
-    ).await.unwrap();
-
-    rb.exec("INSERT INTO test_user (name, age) VALUES ('huanglan', 10)", vec![]).await.unwrap();
-    rb.exec("INSERT INTO test_user (name, age) VALUES ('zhanglan', 21)", vec![]).await.unwrap();
-    rb.exec("INSERT INTO test_user (name, age) VALUES ('zhangsan', 35)", vec![]).await.unwrap();
-    rb.exec("INSERT INTO test_user (name, age) VALUES ('a4', 12)", vec![]).await.unwrap();
-    rb.exec("INSERT INTO test_user (name, age) VALUES ('a5', 21)", vec![]).await.unwrap();
-    rb.exec("INSERT INTO test_user (name, age) VALUES ('a6', 22)", vec![]).await.unwrap();
-    rb.exec("INSERT INTO test_user (name, age) VALUES ('a7', 24)", vec![]).await.unwrap();
-    rb.exec("INSERT INTO test_user (name, age) VALUES ('a8', 31)", vec![]).await.unwrap();
-    rb.exec("INSERT INTO test_user (name, age) VALUES ('a9', 33)", vec![]).await.unwrap();
-
+    rb.init(Driver{},"postgres://root:111111@localhost:5432/my_database").unwrap();
     rb
 }
 
@@ -117,7 +97,7 @@ async fn test_insert() -> Result<(), DySqlError> {
 
     let dto = UserDto{ id: None, name: Some("lisi".to_owned()), age: Some(50), id_rng: None };
     let insert_id = insert!(|&mut tran, dto| -> i64 {
-        r#"insert into test_user (name, age) values (:name, :age)"#
+        r#"insert into test_user (name, age) values (:name, :age) returning id"#
     })?;
 
     assert!(insert_id > 9);

@@ -1,15 +1,15 @@
 
-pub struct RbatisSqliteQuery{
+pub struct RbatisMysqlQuery1 {
     dialect: crate::SqlDialect
 }
 
-impl RbatisSqliteQuery {
+impl RbatisMysqlQuery1 {
     pub fn new(dialect: crate::SqlDialect) -> Self {
         Self { dialect }
     }
 }
 
-impl RbatisSqliteQuery {
+impl RbatisMysqlQuery1 {
     crate::impl_rbatis_adapter_fetch_one!();
     crate::impl_rbatis_adapter_fetch_all!();
     crate::impl_rbatis_adapter_fetch_scalar!();

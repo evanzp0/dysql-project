@@ -1,6 +1,4 @@
 use async_trait::async_trait;
-use tokio_postgres::{Statement, Error, types::ToSql, Row, ToStatement};
-use crate::SqlDialect;
 
 pub struct TokioPgQuery;
 
@@ -17,36 +15,36 @@ pub trait TokioPgExecutorAdatper
         TokioPgQuery
     }
 
-    fn get_dialect(&self) -> SqlDialect 
+    fn get_dialect(&self) -> crate::SqlDialect 
     {
-        return SqlDialect::postgres
+        return crate::SqlDialect::postgres
     }
 
-    async fn prepare(&self, query: &str) -> Result<Statement, Error>;
+    async fn prepare(&self, query: &str) -> Result<tokio_postgres::Statement, tokio_postgres::Error>;
 
     async fn query<T>(
         &self, 
         statement: &T, 
-        params: &[&(dyn ToSql + Sync)]
-    ) -> Result<Vec<Row>, Error> 
+        params: &[&(dyn tokio_postgres::types::ToSql + Sync)]
+    ) -> Result<Vec<tokio_postgres::Row>, tokio_postgres::Error> 
     where
-        T: ?Sized + ToStatement + Sync;
+        T: ?Sized + tokio_postgres::ToStatement + Sync;
 
     async fn query_one<T>(
         &self,
         statement: &T,
-        params: &[&(dyn ToSql + Sync)],
-    ) -> Result<Row, Error>
+        params: &[&(dyn tokio_postgres::types::ToSql + Sync)],
+    ) -> Result<tokio_postgres::Row, tokio_postgres::Error>
     where
-        T: ?Sized + ToStatement + Sync;
+        T: ?Sized + tokio_postgres::ToStatement + Sync;
 
     async fn execute<T>(
         &self,
         statement: &T,
-        params: &[&(dyn ToSql + Sync)],
-    ) -> Result<u64, Error>
+        params: &[&(dyn tokio_postgres::types::ToSql + Sync)],
+    ) -> Result<u64, tokio_postgres::Error>
     where
-        T: ?Sized + ToStatement + Sync;
+        T: ?Sized + tokio_postgres::ToStatement + Sync;
 }
 
 #[macro_export]
@@ -62,7 +60,7 @@ macro_rules! impl_bind_tokio_pg_param_value {
                 dysql_tpl::SimpleValue::t_str(val) =>  $param_values.push(val),
                 dysql_tpl::SimpleValue::t_String(val) => $param_values.push(val),
                 dysql_tpl::SimpleValue::None(val) => $param_values.push(val),
-                _ => Err(DySqlError(ErrorInner::new(Kind::BindParamterError, None, Some(format!("the type of {:?} is not support", $p_val)))))?,
+                _ => Err(crate::DySqlError(crate::ErrorInner::new(crate::Kind::BindParamterError, None, Some(format!("the type of {:?} is not support", $p_val)))))?,
             }
         }
     };

@@ -46,11 +46,12 @@ impl crate::SqlxQuery <sqlx::Sqlite>
         }
     }
 
-    pub async fn fetch_insert_id<'e, 'c: 'e, E>(self, executor: E) -> Result<i32, crate::DySqlError>
+    pub async fn fetch_insert_id<'e, 'c: 'e, E, U>(self, executor: E) -> Result<U, crate::DySqlError>
     where
-        E: 'e + sqlx::Executor<'c, Database = sqlx::Sqlite> + crate::SqlxExecutorAdatper<sqlx::Sqlite> ,
+        E: 'e + sqlx::Executor<'c, Database = sqlx::Sqlite> + crate::SqlxExecutorAdatper<sqlx::Sqlite>,
+        for<'r> U: sqlx::Decode<'r, sqlx::Sqlite> + sqlx::Type<sqlx::Sqlite> + Send + Unpin,
     {
-        let insert_id = sqlx::query_as::<_, (i32,)>("SELECT last_insert_rowid();")
+        let insert_id = sqlx::query_as::<_, (U,)>("SELECT last_insert_rowid();")
             .fetch_one(executor)
             .await;
 

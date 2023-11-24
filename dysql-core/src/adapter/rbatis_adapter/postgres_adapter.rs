@@ -1,15 +1,15 @@
 
-pub struct RbatisSqliteQuery{
+pub struct RbatisPostgresQuery{
     dialect: crate::SqlDialect
 }
 
-impl RbatisSqliteQuery {
+impl RbatisPostgresQuery {
     pub fn new(dialect: crate::SqlDialect) -> Self {
         Self { dialect }
     }
 }
 
-impl RbatisSqliteQuery {
+impl RbatisPostgresQuery {
     crate::impl_rbatis_adapter_fetch_one!();
     crate::impl_rbatis_adapter_fetch_all!();
     crate::impl_rbatis_adapter_fetch_scalar!();
@@ -47,31 +47,29 @@ impl RbatisSqliteQuery {
         }
 
         let rst = executor
-            .exec(&sql, param_values)
+            .query(&sql, param_values)
             .await
             .map_err(|e| 
                 crate::DySqlError(crate::ErrorInner::new(crate::Kind::QueryError, Some(e.into()), None))
             )?;
 
-        Ok(None)
+        let insert_id = rbatis::decode(rst)
+            .map_err(|e| crate::DySqlError(crate::ErrorInner::new(crate::Kind::ObjectMappingError, Some(e.into()), None)))?;
+
+        Ok(Some(insert_id))
     }
 
+    /// dummy method stub
+    /// 该方法不会被执行
     pub async fn fetch_insert_id<E, U>(self, executor: &mut E) 
         -> Result<U, crate::DySqlError>
-    where
+    where 
         E: rbatis::executor::Executor,
         U: serde::de::DeserializeOwned,
     {
-        let insert_id = executor
-            .query("SELECT last_insert_rowid();", vec![])
-            .await
-            .map_err(|e| 
-                crate::DySqlError(crate::ErrorInner::new(crate::Kind::QueryError, Some(e.into()), None))
-            )?;
-
+        let insert_id = rbs::Value::I64(-1);
         let insert_id = rbatis::decode(insert_id)
             .map_err(|e| crate::DySqlError(crate::ErrorInner::new(crate::Kind::ObjectMappingError, Some(e.into()), None)))?;
-
         Ok(insert_id)
     }
 }

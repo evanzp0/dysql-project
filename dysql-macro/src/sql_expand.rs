@@ -71,6 +71,9 @@ impl SqlExpand {
             #[cfg(feature="sqlx")]
             use dysql::SqlxExecutorAdatper;
 
+            #[cfg(feature="rbatis")]
+            use dysql::RbatisExecutorAdatper;
+
             #named_template_declare  // let named_sql = ....;
             let query = (#executor_token).create_query();
             #execute_query
@@ -104,6 +107,9 @@ impl SqlExpand {
 
             #[cfg(feature="sqlx")]
             use dysql::SqlxExecutorAdatper;
+
+            #[cfg(feature="rbatis")]
+            use dysql::RbatisExecutorAdatper;
             
             #named_template_declare  // let named_sql = ....;
             let query = (#executor_token).create_query();
@@ -138,6 +144,9 @@ impl SqlExpand {
             #[cfg(feature="sqlx")]
             use dysql::SqlxExecutorAdatper;
 
+            #[cfg(feature="rbatis")]
+            use dysql::RbatisExecutorAdatper;
+
             #named_template_declare  // let named_sql = ....;
             let query = (#executor_token).create_query();
             #execute_query
@@ -171,6 +180,9 @@ impl SqlExpand {
 
             #[cfg(feature="sqlx")]
             use dysql::SqlxExecutorAdatper;
+
+            #[cfg(feature="rbatis")]
+            use dysql::RbatisExecutorAdatper;
 
             #named_template_declare  // let named_sql = ....;
             let query = (#executor_token).create_query();
@@ -219,6 +231,9 @@ impl SqlExpand {
 
             #[cfg(feature="sqlx")]
             use dysql::SqlxExecutorAdatper;
+
+            #[cfg(feature="rbatis")]
+            use dysql::RbatisExecutorAdatper;
 
             #named_template_declare  // let named_sql = ....;
             let query = (#executor_token).create_query();

@@ -24,11 +24,17 @@ async fn main() {
 
     let r = tran.exec(&insert_sql, vec![]).await.unwrap();
     println!("r = {:#?}", r);
+
     let sql = "select * from test_user order by id";
     let r = tran.query(&sql, vec![]).await.unwrap();
     let rst = rbatis::decode::decode::<Option<Vec<User>>>(r);
-
     println!("{:#?}", rst);
+
+    let sql = "select count(*) from test_user";
+    let r = tran.query(&sql, vec![]).await.unwrap();
+    let rst = rbatis::decode::decode::<i64>(r);
+    println!("{:#?}", rst);
+    
     tran.rollback().await.ok();
 }
 

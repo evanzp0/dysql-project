@@ -11,8 +11,10 @@ macro_rules! impl_rbatis_adapter_fetch_one {
         {
             let named_sql = crate::gen_named_sql(named_template, &dto);
                 
-            let sql_and_params = crate::extract_params(&named_sql, self.dialect);
-            let (sql, param_names) = match sql_and_params {
+            let mut buf = Vec::<u8>::with_capacity(named_sql.len());
+            let sql_and_params = crate::extract_params_buf(&named_sql, &mut buf, self.dialect);
+            let sql = unsafe{std::str::from_utf8_unchecked(&buf)};
+            let param_names = match sql_and_params {
                 Ok(val) => val,
                 Err(e) => Err(
                     crate::DySqlError(crate::ErrorInner::new(crate::Kind::ExtractSqlParamterError, Some(Box::new(e)), None))
@@ -58,37 +60,39 @@ macro_rules! impl_rbatis_adapter_fetch_all {
         {
             let named_sql = crate::gen_named_sql(named_template, &dto);
                     
-                let sql_and_params = crate::extract_params(&named_sql, self.dialect);
-                let (sql, param_names) = match sql_and_params {
-                    Ok(val) => val,
-                    Err(e) => Err(
-                        crate::DySqlError(crate::ErrorInner::new(crate::Kind::ExtractSqlParamterError, Some(Box::new(e)), None))
-                    )?,
-                };
+            let mut buf = Vec::<u8>::with_capacity(named_sql.len());
+            let sql_and_params = crate::extract_params_buf(&named_sql, &mut buf, self.dialect);
+            let sql = unsafe{std::str::from_utf8_unchecked(&buf)};
+            let param_names = match sql_and_params {
+                Ok(val) => val,
+                Err(e) => Err(
+                    crate::DySqlError(crate::ErrorInner::new(crate::Kind::ExtractSqlParamterError, Some(Box::new(e)), None))
+                )?,
+            };
 
-                let mut param_values : Vec<rbs::Value> = Vec::with_capacity(param_names.len());
-                if let Some(dto) = &dto {
-                    for param_name in &param_names {
-                        let stpl = dysql_tpl::SimpleTemplate::new(param_name);
-                        
-                        let param_value = stpl
-                            .apply(dto)
-                            .map_err(|e| crate::DySqlError(crate::ErrorInner::new(crate::Kind::BindParamterError, Some(e), None)))?;
-                        param_values.push(crate::simple_2_value(param_value));
-                    }
+            let mut param_values : Vec<rbs::Value> = Vec::with_capacity(param_names.len());
+            if let Some(dto) = &dto {
+                for param_name in &param_names {
+                    let stpl = dysql_tpl::SimpleTemplate::new(param_name);
+                    
+                    let param_value = stpl
+                        .apply(dto)
+                        .map_err(|e| crate::DySqlError(crate::ErrorInner::new(crate::Kind::BindParamterError, Some(e), None)))?;
+                    param_values.push(crate::simple_2_value(param_value));
                 }
+            }
 
-                let rst = executor
-                    .query(&sql, param_values)
-                    .await
-                    .map_err(|e| 
-                        crate::DySqlError(crate::ErrorInner::new(crate::Kind::QueryError, Some(e.into()), None))
-                    )?;
+            let rst = executor
+                .query(&sql, param_values)
+                .await
+                .map_err(|e| 
+                    crate::DySqlError(crate::ErrorInner::new(crate::Kind::QueryError, Some(e.into()), None))
+                )?;
 
-                let rst = rbatis::decode(rst)
-                    .map_err(|e| crate::DySqlError(crate::ErrorInner::new(crate::Kind::ObjectMappingError, Some(e.into()), None)))?;
+            let rst = rbatis::decode(rst)
+                .map_err(|e| crate::DySqlError(crate::ErrorInner::new(crate::Kind::ObjectMappingError, Some(e.into()), None)))?;
 
-                Ok(rst)
+            Ok(rst)
         }
     };
 }
@@ -105,8 +109,10 @@ macro_rules! impl_rbatis_adapter_fetch_scalar {
         {
             let named_sql = crate::gen_named_sql(named_template, &dto);
                 
-            let sql_and_params = crate::extract_params(&named_sql, self.dialect);
-            let (sql, param_names) = match sql_and_params {
+            let mut buf = Vec::<u8>::with_capacity(named_sql.len());
+            let sql_and_params = crate::extract_params_buf(&named_sql, &mut buf, self.dialect);
+            let sql = unsafe{std::str::from_utf8_unchecked(&buf)};
+            let param_names = match sql_and_params {
                 Ok(val) => val,
                 Err(e) => Err(
                     crate::DySqlError(crate::ErrorInner::new(crate::Kind::ExtractSqlParamterError, Some(Box::new(e)), None))
@@ -151,8 +157,10 @@ macro_rules! impl_rbatis_adapter_execute {
         {
             let named_sql = crate::gen_named_sql(named_template, &dto);
                 
-            let sql_and_params = crate::extract_params(&named_sql, self.dialect);
-            let (sql, param_names) = match sql_and_params {
+            let mut buf = Vec::<u8>::with_capacity(named_sql.len());
+            let sql_and_params = crate::extract_params_buf(&named_sql, &mut buf, self.dialect);
+            let sql = unsafe{std::str::from_utf8_unchecked(&buf)};
+            let param_names = match sql_and_params {
                 Ok(val) => val,
                 Err(e) => Err(
                     crate::DySqlError(crate::ErrorInner::new(crate::Kind::ExtractSqlParamterError, Some(Box::new(e)), None))
@@ -197,8 +205,10 @@ macro_rules! impl_rbatis_adapter_page_count {
 
             let named_sql = crate::gen_named_sql(named_template, &dto);
                 
-            let sql_and_params = crate::extract_params(&named_sql, self.dialect);
-            let (sql, param_names) = match sql_and_params {
+            let mut buf = Vec::<u8>::with_capacity(named_sql.len());
+            let sql_and_params = crate::extract_params_buf(&named_sql, &mut buf, self.dialect);
+            let sql = unsafe{std::str::from_utf8_unchecked(&buf)};
+            let param_names = match sql_and_params {
                 Ok(val) => val,
                 Err(e) => Err(
                     crate::DySqlError(crate::ErrorInner::new(crate::Kind::ExtractSqlParamterError, Some(Box::new(e)), None))
@@ -257,8 +267,10 @@ macro_rules! impl_rbatis_adapter_page_all {
                 crate::SqlNodeLinkList::new(&named_sql).trim().to_string()
             };
 
-            let sql_and_params = crate::extract_params(&named_sql, self.dialect);
-            let (sql, param_names) = match sql_and_params {
+            let mut buf = Vec::<u8>::with_capacity(named_sql.len());
+            let sql_and_params = crate::extract_params_buf(&named_sql, &mut buf, self.dialect);
+            let sql = unsafe{std::str::from_utf8_unchecked(&buf)};
+            let param_names = match sql_and_params {
                 Ok(val) => val,
                 Err(e) => Err(
                     crate::DySqlError(crate::ErrorInner::new(crate::Kind::ExtractSqlParamterError, Some(Box::new(e)), None))

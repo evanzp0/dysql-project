@@ -7,6 +7,7 @@ macro_rules! impl_sql_adapter {
         impl crate::SqlxExecutorAdatper<$db> for &sqlx::Pool<$db> {}
         impl crate::SqlxExecutorAdatper<$db> for $conn {}
         impl crate::SqlxExecutorAdatper<$db> for &mut $conn {}
+        // impl crate::SqlxExecutorAdatper<$db> for &std::cell::RefCell<$conn> {}
     };
 }
 
@@ -28,8 +29,10 @@ macro_rules! impl_sqlx_adapter_page_all {
                 crate::SqlNodeLinkList::new(&named_sql).trim().to_string()
             };
         
-            let sql_and_params = crate::extract_params(&named_sql, executor.get_dialect());
-            let (sql, param_names) = match sql_and_params {
+            let mut buf = Vec::<u8>::with_capacity(named_sql.len());
+            let sql_and_params = crate::extract_params_buf(&named_sql, &mut buf, executor.get_dialect());
+            let sql = unsafe{std::str::from_utf8_unchecked(&buf)};
+            let param_names = match sql_and_params {
                 Ok(val) => val,
                 Err(e) => Err(
                     crate::DySqlError(crate::ErrorInner::new(crate::Kind::ExtractSqlParamterError, Some(Box::new(e)), None))
@@ -94,8 +97,10 @@ macro_rules! impl_sqlx_adapter_page_count {
 
             let named_sql = crate::gen_named_sql(named_template, &dto);
             
-            let sql_and_params = crate::extract_params(&named_sql, executor.get_dialect());
-            let (sql, param_names) = match sql_and_params {
+            let mut buf = Vec::<u8>::with_capacity(named_sql.len());
+            let sql_and_params = crate::extract_params_buf(&named_sql, &mut buf, executor.get_dialect());
+            let sql = unsafe{std::str::from_utf8_unchecked(&buf)};
+            let param_names = match sql_and_params {
                 Ok(val) => val,
                 Err(e) => Err(
                     crate::DySqlError(crate::ErrorInner::new(crate::Kind::ExtractSqlParamterError, Some(Box::new(e)), None))
@@ -142,8 +147,10 @@ macro_rules! impl_sqlx_adapter_execute {
             D: dysql_tpl::Content + Send + Sync,
         {
             let named_sql = crate::gen_named_sql(named_template, &dto);
-            let sql_and_params = crate::extract_params(&named_sql, executor.get_dialect());
-            let (sql, param_names) = match sql_and_params {
+            let mut buf = Vec::<u8>::with_capacity(named_sql.len());
+            let sql_and_params = crate::extract_params_buf(&named_sql, &mut buf, executor.get_dialect());
+            let sql = unsafe{std::str::from_utf8_unchecked(&buf)};
+            let param_names = match sql_and_params {
                 Ok(val) => val,
                 Err(e) => Err(
                     crate::DySqlError(crate::ErrorInner::new(crate::Kind::ExtractSqlParamterError, Some(Box::new(e)), None))
@@ -188,8 +195,10 @@ macro_rules! impl_sqlx_adapter_fetch_scalar {
             for<'r> U: sqlx::Decode<'r, $db> + sqlx::Type<$db> + Send + Unpin,
         {
             let named_sql = crate::gen_named_sql(named_template, &dto);
-            let sql_and_params = crate::extract_params(&named_sql, executor.get_dialect());
-            let (sql, param_names) = match sql_and_params {
+            let mut buf = Vec::<u8>::with_capacity(named_sql.len());
+            let sql_and_params = crate::extract_params_buf(&named_sql, &mut buf, executor.get_dialect());
+            let sql = unsafe{std::str::from_utf8_unchecked(&buf)};
+            let param_names = match sql_and_params {
                 Ok(val) => val,
                 Err(e) => Err(
                     crate::DySqlError(crate::ErrorInner::new(crate::Kind::ExtractSqlParamterError, Some(Box::new(e)), None))
@@ -230,8 +239,10 @@ macro_rules! impl_sqlx_adapter_fetch_one {
         {
             let named_sql = crate::gen_named_sql(named_template, &dto);
             
-            let sql_and_params = crate::extract_params(&named_sql, executor.get_dialect());
-            let (sql, param_names) = match sql_and_params {
+            let mut buf = Vec::<u8>::with_capacity(named_sql.len());
+            let sql_and_params = crate::extract_params_buf(&named_sql, &mut buf, executor.get_dialect());
+            let sql = unsafe{std::str::from_utf8_unchecked(&buf)};
+            let param_names = match sql_and_params {
                 Ok(val) => val,
                 Err(e) => Err(
                     crate::DySqlError(crate::ErrorInner::new(crate::Kind::ExtractSqlParamterError, Some(Box::new(e)), None))
@@ -272,15 +283,17 @@ macro_rules! impl_sqlx_adapter_fetch_all {
             for<'r> U: sqlx::FromRow<'r, $row> + Send + Unpin,
         {
             let named_sql = crate::gen_named_sql(named_template, &dto);
-            let sql_and_params = crate::extract_params(&named_sql, executor.get_dialect());
-            let (sql, param_names) = match sql_and_params {
+            let mut buf = Vec::<u8>::with_capacity(named_sql.len());
+            let sql_and_params = crate::extract_params_buf(&named_sql, &mut buf, executor.get_dialect());
+            let sql = unsafe{std::str::from_utf8_unchecked(&buf)};
+            let param_names = match sql_and_params {
                 Ok(val) => val,
                 Err(e) => Err(
                     crate::DySqlError(crate::ErrorInner::new(crate::Kind::ExtractSqlParamterError, Some(Box::new(e)), None))
                 )?,
             };
 
-            let mut query = sqlx::query_as::<_, U>(&sql);
+            let mut query = sqlx::query_as::<_, U>(sql);
             if let Some(dto) = &dto {
                 for param_name in &param_names {
                     let stpl = dysql_tpl::SimpleTemplate::new(param_name);

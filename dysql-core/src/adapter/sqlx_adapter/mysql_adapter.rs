@@ -18,8 +18,10 @@ impl crate::SqlxQuery <sqlx::MySql>
         for<'r> U: sqlx::Decode<'r, sqlx::MySql> + sqlx::Type<sqlx::MySql> + Send + Unpin,
     {
         let named_sql = crate::gen_named_sql(named_template, &dto);
-        let sql_and_params = crate::extract_params(&named_sql, executor.get_dialect());
-        let (sql, param_names) = match sql_and_params {
+        let mut buf = Vec::<u8>::with_capacity(named_sql.len());
+        let sql_and_params = crate::extract_params_buf(&named_sql, &mut buf, executor.get_dialect());
+        let sql = unsafe{std::str::from_utf8_unchecked(&buf)};
+        let param_names = match sql_and_params {
             Ok(val) => val,
             Err(e) => Err(
                 crate::DySqlError(crate::ErrorInner::new(crate::Kind::ExtractSqlParamterError, Some(Box::new(e)), None))

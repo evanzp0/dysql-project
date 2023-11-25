@@ -27,10 +27,11 @@ dysql-macro = { path = "./dysql-macro" }
 [profile.bench]
 lto = "fat"
 codegen-units = 1
-
+debug = true
 
 [package.metadata.scripts]
 test_sqlx = "cargo clean -p dysql-core && cargo test"
+flamegraph = "cargo flamegraph --bench bench_ctri_pg -o find-baseline.svg -- --benc"
 
 [dependencies]
 env_logger = "0.10"
@@ -73,7 +74,6 @@ rbatis-mysql = ["serde", "rbs", "rbatis", "rbdc-mysql", "dysql/rbatis-mysql"]
 rbatis-sqlite = ["serde", "rbs", "rbatis", "rbdc-sqlite", "dysql/rbatis-sqlite"]
 # rbatis-mssql = ["serde", "rbs", "rbatis", "rbdc-mssql", "dysql/rbatis-mssql"]
 
-
 [[test]]
 name = "test_sqlx_postgres"
 path = "tests/test_sqlx/test_sqlx_pg.rs"
@@ -109,12 +109,22 @@ name = "test_rbatis_mysql"
 path = "tests/test_rbatis/test_rbatis_mysql.rs"
 required-features = ["rbatis-mysql"]
 
-[[test]]
-name = "bench_sql"
-path = "benches/bench_sql.rs"
+[[bench]]
+name = "bench_raw"
+path = "benches/bench_raw.rs"
 required-features = ["rbatis-sqlite"]
 
 [[bench]]
 name = "bench_tpl"
 path = "benches/bench_tpl.rs"
 harness = true
+
+[[bench]]
+name = "bench_ctri_pg"
+path = "benches/bench_ctri_pg.rs"
+harness = false
+
+[[bench]]
+name = "bench_ctri_sqlite"
+path = "benches/bench_ctri_sqlite.rs"
+harness = false

@@ -1,5 +1,7 @@
 //! Extract name paramters and sql statement from the named sql template.
 
+use std::io::Cursor;
+
 use crate::{sql_dialect::SqlDialect, error::{ParseSqlResult, ParseSqlError}};
 
 ///
@@ -12,22 +14,17 @@ use crate::{sql_dialect::SqlDialect, error::{ParseSqlResult, ParseSqlError}};
 /// ```ignore
 ///
 /// let sql = "select * from abc where id=:id and name=:name order by id";
-/// let rst = extract_params(sql, SqlDialect::postgres);
+/// let mut buf = Vec::<u8>::with_capacity(sql.len());
+/// let rst = extract_params_buf(sql, &mut buf, SqlDialect::postgres);
 /// assert_eq!(
 ///     ("select * from abc where id=$1 and name=$2 order by id".to_owned(), vec!["id".to_owned(), "name".to_owned()]),
 ///     rst.unwrap()
 /// );
-/// 
-/// let sql = "select * from abc where id=:id and name=:name order by id";
-/// let rst = extract_params(sql, SqlDialect::mysql);
-/// assert_eq!(
-///     ("select * from abc where id=? and name=? order by id".to_owned(), vec!["id".to_owned(), "name".to_owned()]),
-///     rst.unwrap()
-/// );
 /// ```
-pub fn extract_params<'a>(o_sql: &'a str, sql_dial: SqlDialect) -> ParseSqlResult<(String, Vec<&'a str>)> {
-    // eprintln!("o_sql = {:#?}", o_sql);
-    let mut r_sql = String::new();
+pub fn extract_params_buf<'a>(o_sql: &'a str, sql_buf: &mut Vec<u8>, sql_dial: SqlDialect) -> ParseSqlResult<Vec<&'a str>> {
+    use std::io::Write;
+
+    let mut sql_buf = Cursor::new(sql_buf);
     let mut params: Vec<&'a str> = vec![];
 
     let mut count = 0;
@@ -36,18 +33,16 @@ pub fn extract_params<'a>(o_sql: &'a str, sql_dial: SqlDialect) -> ParseSqlResul
     let end = o_sql.len();
 
     while cur < end {
-        let (found, current_cursor) = char_index(o_sql, cur, vec![':']);
+        let (found, current_cursor) = char_index(o_sql, cur, &[b':']);
 
         if found {
             cur = current_cursor;
             count += 1;
             match sql_dial {
                 SqlDialect::postgres => {
-                    r_sql.push_str(&o_sql[start..cur]);
-                    r_sql.push('$');
-                    r_sql.push_str(&count.to_string());
+                    write!(&mut sql_buf, "{}{}{}", &o_sql[start..cur], "$", &count).unwrap();
                 },
-                _ => r_sql.push_str(&format!("{}?", &o_sql[start..cur])),
+                _ => write!(&mut sql_buf, "{}?",&o_sql[start..cur]).unwrap(),
             }
             
             // skip ":" char
@@ -59,7 +54,7 @@ pub fn extract_params<'a>(o_sql: &'a str, sql_dial: SqlDialect) -> ParseSqlResul
             if cur == end {
                 return Err(ParseSqlError(err_msg))
             } else {
-                let (found, current_cursor) = char_index(o_sql, cur, vec![' ', '\n', '\t', ',', ';', '{', ')', '|']);
+                let (found, current_cursor) = char_index(o_sql, cur, &[b' ', b'\n', b'\t', b',', b';', b'{', b')', b'|']);
                 if found && current_cursor == cur {
                     return Err(ParseSqlError(err_msg))
                 }
@@ -70,25 +65,78 @@ pub fn extract_params<'a>(o_sql: &'a str, sql_dial: SqlDialect) -> ParseSqlResul
                 start = cur;
             }
         } else {
-            let rail_sql = &o_sql[start..end];
-            r_sql.push_str(rail_sql);
+            write!(&mut sql_buf, "{}", &o_sql[start..end]).unwrap();
             break;
         }
     }
 
-    Ok((r_sql, params))
+    Ok(params)
 }
+
+// pub fn extract_params<'a>(o_sql: &'a str, sql_dial: SqlDialect) -> ParseSqlResult<(String, Vec<&'a str>)> {
+//     // eprintln!("o_sql = {:#?}", o_sql);
+//     let mut r_sql = String::new();
+//     let mut params: Vec<&'a str> = vec![];
+
+//     let mut count = 0;
+//     let mut start: usize = 0;
+//     let mut cur = start;
+//     let end = o_sql.len();
+
+//     while cur < end {
+//         let (found, current_cursor) = char_index(o_sql, cur, &[b':']);
+
+//         if found {
+//             cur = current_cursor;
+//             count += 1;
+//             match sql_dial {
+//                 SqlDialect::postgres => {
+//                     r_sql.push_str(&o_sql[start..cur]);
+//                     r_sql.push('$');
+//                     r_sql.push_str(&count.to_string());
+//                 },
+//                 _ => r_sql.push_str(&format!("{}?", &o_sql[start..cur])),
+//             }
+            
+//             // skip ":" char
+//             cur += 1;
+//             start = cur;
+
+//             // get named parameter end index
+//             let err_msg = "not found named parameter after ':'".to_owned();
+//             if cur == end {
+//                 return Err(ParseSqlError(err_msg))
+//             } else {
+//                 let (found, current_cursor) = char_index(o_sql, cur, &[b' ', b'\n', b'\t', b',', b';', b'{', b')', b'|']);
+//                 if found && current_cursor == cur {
+//                     return Err(ParseSqlError(err_msg))
+//                 }
+
+//                 cur = current_cursor;
+//                 let p = &o_sql[start..cur];
+//                 params.push(p);
+//                 start = cur;
+//             }
+//         } else {
+//             let rail_sql = &o_sql[start..end];
+//             r_sql.push_str(rail_sql);
+//             break;
+//         }
+//     }
+
+//     Ok((r_sql, params))
+// }
 
 ///
 /// get the index for specified chars in the string slice from begin pos
 /// 
-fn char_index(s: &str, begin: usize, search_chars:Vec<char>) -> (bool, usize) {
+fn char_index(s: &str, begin: usize, search_chars: &[u8]) -> (bool, usize) {
     let end = s.len();
     for i in begin..end {
         let c = &s[i..i+1];
         for j in 0..search_chars.len() {
-            let a = &search_chars[j].to_string();
-            if c == a {
+            let a = search_chars[j];
+            if c.as_bytes()[0] == a {
                 return (true, i)
             }
         }
@@ -104,21 +152,25 @@ mod tests {
     #[test]
     fn test_extract_sql() {
         let sql = "select * from abc where id=:id and name=:name";
-        let rst = extract_params(sql, SqlDialect::postgres);
-        assert_eq!(("select * from abc where id=$1 and name=$2".to_owned(), vec!["id", "name"]), rst.unwrap());
+        let mut buf = Vec::with_capacity(sql.len());
+        let rst = extract_params_buf(sql, &mut buf, SqlDialect::postgres);
+        assert_eq!("select * from abc where id=$1 and name=$2", std::str::from_utf8(&buf).unwrap());
+        assert_eq!(vec!["id", "name"], rst.unwrap());
     }
 
     #[test]
     fn test_extract_wrong_parameter() {
         let sql = "select * from abc where id=: id and name=:name order by id";
-        let rst = extract_params(sql, SqlDialect::postgres);
+        let mut buf = Vec::with_capacity(sql.len());
+        let rst = extract_params_buf(sql, &mut buf, SqlDialect::postgres);
         match rst {
             Ok(_) => panic!("Unexpected error"),
             Err(_) => (),
         };
 
         let sql = "select * from abc where id=:id and name=:";
-        let rst = extract_params(sql, SqlDialect::postgres);
+        let mut buf = Vec::with_capacity(sql.len());
+        let rst = extract_params_buf(sql, &mut buf, SqlDialect::postgres);
         match rst {
             Ok(_) => panic!("Unexpected error"),
             Err(_) => (),

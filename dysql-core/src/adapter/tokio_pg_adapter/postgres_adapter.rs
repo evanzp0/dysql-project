@@ -11,8 +11,10 @@ impl crate::TokioPgQuery
         U: tokio_pg_mapper::FromTokioPostgresRow,
     {
         let named_sql = crate::gen_named_sql(named_template, &dto);
-        let sql_and_params = crate::extract_params(&named_sql, executor.get_dialect());
-        let (sql, param_names) = match sql_and_params {
+        let mut buf = Vec::<u8>::with_capacity(named_sql.len());
+        let sql_and_params = crate::extract_params_buf(&named_sql, &mut buf, executor.get_dialect());
+        let sql = unsafe{std::str::from_utf8_unchecked(&buf)};
+        let param_names = match sql_and_params {
             Ok(val) => val,
             Err(e) => Err(
                 crate::DySqlError(crate::ErrorInner::new(crate::Kind::ExtractSqlParamterError, Some(Box::new(e)), None))
@@ -65,8 +67,10 @@ impl crate::TokioPgQuery
         U: tokio_pg_mapper::FromTokioPostgresRow,
     {
         let named_sql = crate::gen_named_sql(named_template, &dto);
-        let sql_and_params = crate::extract_params(&named_sql, executor.get_dialect());
-        let (sql, param_names) = match sql_and_params {
+        let mut buf = Vec::<u8>::with_capacity(named_sql.len());
+        let sql_and_params = crate::extract_params_buf(&named_sql, &mut buf, executor.get_dialect());
+        let sql = unsafe{std::str::from_utf8_unchecked(&buf)};
+        let param_names = match sql_and_params {
             Ok(val) => val,
             Err(e) => Err(
                 crate::DySqlError(crate::ErrorInner::new(crate::Kind::ExtractSqlParamterError, Some(Box::new(e)), None))
@@ -118,8 +122,10 @@ impl crate::TokioPgQuery
         for<'a> U: tokio_postgres::types::FromSql<'a>,
     {
         let named_sql = crate::gen_named_sql(named_template, &dto);
-        let sql_and_params = crate::extract_params(&named_sql, executor.get_dialect());
-        let (sql, param_names) = match sql_and_params {
+        let mut buf = Vec::<u8>::with_capacity(named_sql.len());
+        let sql_and_params = crate::extract_params_buf(&named_sql, &mut buf, executor.get_dialect());
+        let sql = unsafe{std::str::from_utf8_unchecked(&buf)};
+        let param_names = match sql_and_params {
             Ok(val) => val,
             Err(e) => Err(
                 crate::DySqlError(crate::ErrorInner::new(crate::Kind::ExtractSqlParamterError, Some(Box::new(e)), None))
@@ -166,8 +172,10 @@ impl crate::TokioPgQuery
         D: dysql_tpl::Content + Send + Sync,
     {
         let named_sql = crate::gen_named_sql(named_template, &dto);
-        let sql_and_params = crate::extract_params(&named_sql, executor.get_dialect());
-        let (sql, param_names) = match sql_and_params {
+        let mut buf = Vec::<u8>::with_capacity(named_sql.len());
+        let sql_and_params = crate::extract_params_buf(&named_sql, &mut buf, executor.get_dialect());
+        let sql = unsafe{std::str::from_utf8_unchecked(&buf)};
+        let param_names = match sql_and_params {
             Ok(val) => val,
             Err(e) => Err(
                 crate::DySqlError(crate::ErrorInner::new(crate::Kind::ExtractSqlParamterError, Some(Box::new(e)), None))
@@ -213,8 +221,10 @@ impl crate::TokioPgQuery
         for<'a> U: tokio_postgres::types::FromSql<'a>,
     {
         let named_sql = crate::gen_named_sql(named_template, &dto);
-        let sql_and_params = crate::extract_params(&named_sql, executor.get_dialect());
-        let (sql, param_names) = match sql_and_params {
+        let mut buf = Vec::<u8>::with_capacity(named_sql.len());
+        let sql_and_params = crate::extract_params_buf(&named_sql, &mut buf, executor.get_dialect());
+        let sql = unsafe{std::str::from_utf8_unchecked(&buf)};
+        let param_names = match sql_and_params {
             Ok(val) => val,
             Err(e) => Err(
                 crate::DySqlError(crate::ErrorInner::new(crate::Kind::ExtractSqlParamterError, Some(Box::new(e)), None))
@@ -267,8 +277,10 @@ impl crate::TokioPgQuery
         use std::io::Write;
 
         let named_sql = crate::gen_named_sql(named_template, &dto);
-        let sql_and_params = crate::extract_params(&named_sql, executor.get_dialect());
-        let (sql, param_names) = match sql_and_params {
+        let mut buf = Vec::<u8>::with_capacity(named_sql.len());
+        let sql_and_params = crate::extract_params_buf(&named_sql, &mut buf, executor.get_dialect());
+        let sql = unsafe{std::str::from_utf8_unchecked(&buf)};
+        let param_names = match sql_and_params {
             Ok(val) => val,
             Err(e) => Err(
                 crate::DySqlError(crate::ErrorInner::new(crate::Kind::ExtractSqlParamterError, Some(Box::new(e)), None))
@@ -331,8 +343,10 @@ impl crate::TokioPgQuery
             // 格式化 sql 并解析 BDEL 和 FDEL 指令
             crate::SqlNodeLinkList::new(&named_sql).trim().to_string()
         };
-        let sql_and_params = crate::extract_params(&named_sql, executor.get_dialect());
-        let (sql, param_names) = match sql_and_params {
+        let mut buf = Vec::<u8>::with_capacity(named_sql.len());
+        let sql_and_params = crate::extract_params_buf(&named_sql, &mut buf, executor.get_dialect());
+        let sql = unsafe{std::str::from_utf8_unchecked(&buf)};
+        let param_names = match sql_and_params {
             Ok(val) => val,
             Err(e) => Err(
                 crate::DySqlError(crate::ErrorInner::new(crate::Kind::ExtractSqlParamterError, Some(Box::new(e)), None))

@@ -147,12 +147,12 @@ async fn test_trim_sql() {
         "select * from test_user 
         where
         {{#data}}
-            ![F_DEL(and)]
+            ![DEL(and)]
             {{#name}}and name like '%' || :data.name || '%'{{/name}}
             {{#age}}and age > :data.age{{/age}}
             {{?id_rng}}
                 and id in (
-                    {{#id_rng}} {{$value}}, {{/id_rng}} ![B_DEL(,)]
+                    ![DEL(,)] {{#id_rng}} , {{$value}} {{/id_rng}} 
                 )
             {{/id_rng}}
         {{/data}}"

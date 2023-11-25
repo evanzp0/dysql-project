@@ -16,7 +16,10 @@ impl crate::SqlxQuery <sqlx::Sqlite>
             D: dysql_tpl::Content + Send + Sync,
             for<'r> U: sqlx::Decode<'r, sqlx::Sqlite> + sqlx::Type<sqlx::Sqlite> + Send + Unpin,
     {
-        let named_sql = crate::gen_named_sql(named_template, &dto);
+        let mut named_sql_buf = Vec::<u8>::with_capacity(named_template.source().len());
+        let named_sql_buf = crate::gen_named_sql_buf(named_template, named_sql_buf, &dto)?;
+        let named_sql = unsafe{std::str::from_utf8_unchecked(&named_sql_buf)};
+        
         let mut buf = Vec::<u8>::with_capacity(named_sql.len());
         let sql_and_params = crate::extract_params_buf(&named_sql, &mut buf, executor.get_dialect());
         let sql = unsafe{std::str::from_utf8_unchecked(&buf)};

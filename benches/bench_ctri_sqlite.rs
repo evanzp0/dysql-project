@@ -32,14 +32,6 @@ async fn init_connection() -> RBatisConnExecutor {
     a
 }
 
-async fn init() -> i32 {
-    1
-}
-
-// Here we have an async function to benchmark
-async fn do_describe_trivial(db: &RBatis) {
-    
-}
 
 fn describe_trivial(c: &mut Criterion) {
     // let runtime = tokio::runtime::Builder::new_multi_thread()
@@ -47,12 +39,12 @@ fn describe_trivial(c: &mut Criterion) {
     //         .build()
     //         .expect("tokio block_on fail");
     let runtime = tokio::runtime::Runtime::new().unwrap();
-    let db = runtime.block_on(init_connection());
+    let _db = runtime.block_on(init_connection());
     let size = 1;
     c.bench_with_input(
         BenchmarkId::new("select", "trivial"),
         &size,
-        move |b, db_ref| {
+        move |b, _db_ref| {
             // Insert a call to `to_async` to convert the bencher to async mode.
             // The timing loops are the same as with the normal bencher.
             b.to_async(&runtime).iter(|| 

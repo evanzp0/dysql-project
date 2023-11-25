@@ -109,7 +109,7 @@ name = "test_rbatis_mysql"
 path = "tests/test_rbatis/test_rbatis_mysql.rs"
 required-features = ["rbatis-mysql"]
 
-[[bench]]
+[[test]]
 name = "bench_raw"
 path = "benches/bench_raw.rs"
 required-features = ["rbatis-sqlite"]

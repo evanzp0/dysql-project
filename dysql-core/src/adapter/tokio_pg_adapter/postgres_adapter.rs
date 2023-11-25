@@ -10,7 +10,10 @@ impl crate::TokioPgQuery
         D: dysql_tpl::Content + Send + Sync,
         U: tokio_pg_mapper::FromTokioPostgresRow,
     {
-        let named_sql = crate::gen_named_sql(named_template, &dto);
+        let mut named_sql_buf = Vec::<u8>::with_capacity(named_template.source().len());
+        let named_sql_buf = crate::gen_named_sql_buf(named_template, named_sql_buf, &dto)?;
+        let named_sql = unsafe{std::str::from_utf8_unchecked(&named_sql_buf)};
+
         let mut buf = Vec::<u8>::with_capacity(named_sql.len());
         let sql_and_params = crate::extract_params_buf(&named_sql, &mut buf, executor.get_dialect());
         let sql = unsafe{std::str::from_utf8_unchecked(&buf)};
@@ -66,7 +69,10 @@ impl crate::TokioPgQuery
         D: dysql_tpl::Content + Send + Sync,
         U: tokio_pg_mapper::FromTokioPostgresRow,
     {
-        let named_sql = crate::gen_named_sql(named_template, &dto);
+        let mut named_sql_buf = Vec::<u8>::with_capacity(named_template.source().len());
+        let named_sql_buf = crate::gen_named_sql_buf(named_template, named_sql_buf, &dto)?;
+        let named_sql = unsafe{std::str::from_utf8_unchecked(&named_sql_buf)};
+
         let mut buf = Vec::<u8>::with_capacity(named_sql.len());
         let sql_and_params = crate::extract_params_buf(&named_sql, &mut buf, executor.get_dialect());
         let sql = unsafe{std::str::from_utf8_unchecked(&buf)};
@@ -121,7 +127,10 @@ impl crate::TokioPgQuery
         D: dysql_tpl::Content + Send + Sync,
         for<'a> U: tokio_postgres::types::FromSql<'a>,
     {
-        let named_sql = crate::gen_named_sql(named_template, &dto);
+        let mut named_sql_buf = Vec::<u8>::with_capacity(named_template.source().len());
+        let named_sql_buf = crate::gen_named_sql_buf(named_template, named_sql_buf, &dto)?;
+        let named_sql = unsafe{std::str::from_utf8_unchecked(&named_sql_buf)};
+        
         let mut buf = Vec::<u8>::with_capacity(named_sql.len());
         let sql_and_params = crate::extract_params_buf(&named_sql, &mut buf, executor.get_dialect());
         let sql = unsafe{std::str::from_utf8_unchecked(&buf)};
@@ -171,7 +180,10 @@ impl crate::TokioPgQuery
         E: crate::TokioPgExecutorAdatper,
         D: dysql_tpl::Content + Send + Sync,
     {
-        let named_sql = crate::gen_named_sql(named_template, &dto);
+        let mut named_sql_buf = Vec::<u8>::with_capacity(named_template.source().len());
+        let named_sql_buf = crate::gen_named_sql_buf(named_template, named_sql_buf, &dto)?;
+        let named_sql = unsafe{std::str::from_utf8_unchecked(&named_sql_buf)};
+
         let mut buf = Vec::<u8>::with_capacity(named_sql.len());
         let sql_and_params = crate::extract_params_buf(&named_sql, &mut buf, executor.get_dialect());
         let sql = unsafe{std::str::from_utf8_unchecked(&buf)};
@@ -220,7 +232,10 @@ impl crate::TokioPgQuery
         D: dysql_tpl::Content + Send + Sync,
         for<'a> U: tokio_postgres::types::FromSql<'a>,
     {
-        let named_sql = crate::gen_named_sql(named_template, &dto);
+        let mut named_sql_buf = Vec::<u8>::with_capacity(named_template.source().len());
+        let named_sql_buf = crate::gen_named_sql_buf(named_template, named_sql_buf, &dto)?;
+        let named_sql = unsafe{std::str::from_utf8_unchecked(&named_sql_buf)};
+
         let mut buf = Vec::<u8>::with_capacity(named_sql.len());
         let sql_and_params = crate::extract_params_buf(&named_sql, &mut buf, executor.get_dialect());
         let sql = unsafe{std::str::from_utf8_unchecked(&buf)};
@@ -276,7 +291,10 @@ impl crate::TokioPgQuery
     {
         use std::io::Write;
 
-        let named_sql = crate::gen_named_sql(named_template, &dto);
+        let mut named_sql_buf = Vec::<u8>::with_capacity(named_template.source().len());
+        let named_sql_buf = crate::gen_named_sql_buf(named_template, named_sql_buf, &dto)?;
+        let named_sql = unsafe{std::str::from_utf8_unchecked(&named_sql_buf)};
+        
         let mut buf = Vec::<u8>::with_capacity(named_sql.len());
         let sql_and_params = crate::extract_params_buf(&named_sql, &mut buf, executor.get_dialect());
         let sql = unsafe{std::str::from_utf8_unchecked(&buf)};
@@ -338,11 +356,11 @@ impl crate::TokioPgQuery
     {   
         use std::io::Write;
 
-        let named_sql = {
-            let named_sql= named_template.render(page_dto);
-            // 格式化 sql 并解析 BDEL 和 FDEL 指令
-            crate::SqlNodeLinkList::new(&named_sql).trim().to_string()
-        };
+        let named_sql= named_template.render(page_dto);
+        let sql_buf: Vec<u8> = Vec::with_capacity(named_sql.len());
+        let sql_buf = crate::trim_sql(&named_sql, sql_buf).unwrap();
+        let named_sql = unsafe { std::str::from_utf8_unchecked(&sql_buf) };
+        
         let mut buf = Vec::<u8>::with_capacity(named_sql.len());
         let sql_and_params = crate::extract_params_buf(&named_sql, &mut buf, executor.get_dialect());
         let sql = unsafe{std::str::from_utf8_unchecked(&buf)};
@@ -356,13 +374,16 @@ impl crate::TokioPgQuery
         let buffer_size = sql.len() + 200;
         let mut sql_buf = Vec::<u8>::with_capacity(buffer_size);
         let page_sql = {
-            let sort_fragment = "{{#is_sort}} ORDER BY {{#sort_model}} {{field}} {{sort}}, {{/sort_model}} ![B_DEL(,)] {{/is_sort}} LIMIT {{page_size}} OFFSET {{start}}";
+            let sort_fragment = "{{#is_sort}} ORDER BY ![DEL(,)] {{#sort_model}} , {{field}} {{sort}} {{/sort_model}} {{/is_sort}} LIMIT {{page_size}} OFFSET {{start}}";
             let template = dysql_tpl::Template::new(sort_fragment)
                 .map_err(|e| 
                     crate::DySqlError(crate::ErrorInner::new(crate::Kind::TemplateParseError, Some(e.into()), None))
                 )?;
             let sort_fragment = template.render(page_dto);
-            let sort_fragment = crate::SqlNodeLinkList::new(&sort_fragment).trim().to_string();
+
+            let sort_fragment_buf: Vec<u8> = Vec::with_capacity(sort_fragment.len());
+            let sort_fragment_buf = crate::trim_sql(&sort_fragment, sort_fragment_buf).unwrap();
+            let sort_fragment = unsafe { std::str::from_utf8_unchecked(&sort_fragment_buf) };
             
             write!(sql_buf, "{} {} ", sql, sort_fragment).unwrap();
             std::str::from_utf8(&sql_buf)

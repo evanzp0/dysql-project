@@ -289,6 +289,11 @@ impl SqlExpand {
                     dysql::put_sql_template(#template_id, &serd_template).expect("Unexpected error when put_sql_template")
                 },
             };
+            // let named_template = {
+            //     let serd_template = [#(#serd_template,)*];
+            //     let template = dysql::Template::deserialize(&serd_template);
+            //     std::sync::Arc::new(template)
+            // };
         );
         Ok(rst)
     }

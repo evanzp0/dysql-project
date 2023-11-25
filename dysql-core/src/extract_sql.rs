@@ -73,60 +73,6 @@ pub fn extract_params_buf<'a>(o_sql: &'a str, sql_buf: &mut Vec<u8>, sql_dial: S
     Ok(params)
 }
 
-// pub fn extract_params<'a>(o_sql: &'a str, sql_dial: SqlDialect) -> ParseSqlResult<(String, Vec<&'a str>)> {
-//     // eprintln!("o_sql = {:#?}", o_sql);
-//     let mut r_sql = String::new();
-//     let mut params: Vec<&'a str> = vec![];
-
-//     let mut count = 0;
-//     let mut start: usize = 0;
-//     let mut cur = start;
-//     let end = o_sql.len();
-
-//     while cur < end {
-//         let (found, current_cursor) = char_index(o_sql, cur, &[b':']);
-
-//         if found {
-//             cur = current_cursor;
-//             count += 1;
-//             match sql_dial {
-//                 SqlDialect::postgres => {
-//                     r_sql.push_str(&o_sql[start..cur]);
-//                     r_sql.push('$');
-//                     r_sql.push_str(&count.to_string());
-//                 },
-//                 _ => r_sql.push_str(&format!("{}?", &o_sql[start..cur])),
-//             }
-            
-//             // skip ":" char
-//             cur += 1;
-//             start = cur;
-
-//             // get named parameter end index
-//             let err_msg = "not found named parameter after ':'".to_owned();
-//             if cur == end {
-//                 return Err(ParseSqlError(err_msg))
-//             } else {
-//                 let (found, current_cursor) = char_index(o_sql, cur, &[b' ', b'\n', b'\t', b',', b';', b'{', b')', b'|']);
-//                 if found && current_cursor == cur {
-//                     return Err(ParseSqlError(err_msg))
-//                 }
-
-//                 cur = current_cursor;
-//                 let p = &o_sql[start..cur];
-//                 params.push(p);
-//                 start = cur;
-//             }
-//         } else {
-//             let rail_sql = &o_sql[start..end];
-//             r_sql.push_str(rail_sql);
-//             break;
-//         }
-//     }
-
-//     Ok((r_sql, params))
-// }
-
 ///
 /// get the index for specified chars in the string slice from begin pos
 /// 

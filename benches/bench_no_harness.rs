@@ -62,8 +62,8 @@ macro_rules! rbench {
     }};
 }
 
-//cargo test --release --package dysql --bench bench_sql_raw --no-fail-fast -- --exact -Z unstable-options --show-output
-//cargo test --release --bench bench_raw  --no-fail-fast -- --exact -Z unstable-options --show-output
+//cargo test --release --package dysql --bench bench_no_harness--no-fail-fast -- --exact -Z unstable-options --show-output
+//cargo test --release --bench bench_no_harness --no-fail-fast -- --exact -Z unstable-options --show-output
 // ---- bench_raw_rbatis stdout ----
 // use Time: 11.698437954s ,each:116984 ns/op
 // use QPS: 8548 QPS/s

@@ -72,7 +72,7 @@ fn fetch_all_dysql_sqlx(c: &mut Criterion) {
     let db = std::cell::RefCell::new(runtime.block_on(connect_db()));
     let dto = Value::new(1);
     c.bench_with_input(
-        BenchmarkId::new("sqlx-sqlite + dysql", "fetch_all"),
+        BenchmarkId::new("dysql sqlx-sqlite", "fetch_all"),
         &(&db, &dto),
         move |b, param_ref| {
             let &(db, dto) = param_ref;
@@ -96,7 +96,7 @@ fn fetch_all_raw_sqlx(c: &mut Criterion) {
     let db = std::cell::RefCell::new(runtime.block_on(connect_db()));
     let dto = Value::new(1);
     c.bench_with_input(
-        BenchmarkId::new("sqlx-sqlite (raw)", "fetch_all"),
+        BenchmarkId::new("raw sqlx-sqlite", "fetch_all"),
         &(&db, &dto),
         move |b, param_ref| {
             let &(db, dto) = param_ref;

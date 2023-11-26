@@ -121,7 +121,7 @@ harness = true
 
 [[bench]]
 name = "bench_ctri"
-path = "benches1/bench_ctri.rs"
+path = "benches/bench_ctri.rs"
 harness = false
 
 [[bench]]

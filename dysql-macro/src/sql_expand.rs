@@ -192,7 +192,7 @@ impl SqlExpand {
             
             let rst = match insert_rst {
                 Ok(Some(insert_id)) => Ok(insert_id),
-                Ok(None) => match #executor_token.dy_fetch_insert_id().await {
+                Ok(None) => match #executor_token.dy_fetch_insert_id::<#ret_type>().await {
                     Ok(Some(insert_id)) => Ok(insert_id),
                     Ok(None) => {
                         break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, None, None)));

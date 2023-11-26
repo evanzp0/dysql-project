@@ -1,16 +1,4 @@
 
-// #[macro_export]
-// macro_rules! impl_sql_adapter {
-//     ($db:path, $conn:path) => {
-//         // impl<'q> crate::SqlxExecutorAdatper<$db> for sqlx::Transaction<'q, $db> {}
-//         // impl crate::SqlxExecutorAdatper<$db> for sqlx::Pool<$db> {}
-//         // impl crate::SqlxExecutorAdatper<$db> for &sqlx::Pool<$db> {}
-//         // impl crate::SqlxExecutorAdatper<$db> for $conn {}
-//         // impl crate::SqlxExecutorAdatper<$db> for &mut $conn {}
-//         // impl crate::SqlxExecutorAdatper<$db> for &std::cell::RefCell<$conn> {}
-//     };
-// }
-
 #[macro_export]
 macro_rules! impl_sqlx_adapter_fetch_all {
     ($row:path, [$($vtype:ty),+]) => 

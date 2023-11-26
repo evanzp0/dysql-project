@@ -8,43 +8,6 @@ pub(crate) struct SqlExpand;
 
 impl SqlExpand {
 
-    /// expend fetch_one
-    pub fn fetch_one(&self, st: &DyClosure) -> syn::Result<proc_macro2::TokenStream>{
-        let dto_ident = &st.dto_info.src;
-        let executor_token = st.executor_info.gen_token();
-        let ret_type = &st.ret_type;
-        
-        // declare named_template at runtime
-        let named_template_declare = self.gen_named_template_declare(st)?;
-
-        let dto_token = st.dto_info.gen_token();
-        let execute_query = match dto_ident {
-            Some(_) => quote!(
-                #executor_token.fetch_one::<_, #ret_type>(named_template, Some(#dto_token)).await 
-            ),
-            None => quote!(
-                #executor_token.fetch_one::<dysql::EmptyObject, #ret_type>(named_template, None).await 
-            ),
-        };
-        
-        let ret = quote!('rst_block: {
-            #[cfg(feature = "tokio-postgres")]
-            use dysql::TokioPgExecutorAdatper;
-
-            #[cfg(feature="sqlx")]
-            use dysql::SqlxExecutorAdatper;
-
-            #[cfg(feature="rbatis")]
-            use dysql::RbatisExecutorAdatper;
-
-            #named_template_declare  // let named_template = ....;
-            
-            #execute_query
-        });
-
-        Ok(ret)
-    }
-
     /// expend fetch_all
     pub fn fetch_all(&self, st: &DyClosure) -> syn::Result<proc_macro2::TokenStream>{
         let dto_ident = &st.dto_info.src;
@@ -58,11 +21,11 @@ impl SqlExpand {
         let execute_query = match dto_ident {
             Some(_) => quote!(
                 // query.fetch_all::<_, _, #ret_type>(#executor_token, named_template, Some(#dto_token)).await 
-                #executor_token.fetch_all::<_, #ret_type>(named_template, Some(#dto_token)).await 
+                #executor_token.dy_fetch_all::<_, #ret_type>(named_template, Some(#dto_token)).await 
             ),
             None => quote!(
                 // query.fetch_all::<_, dysql::EmptyObject, #ret_type>(#executor_token, named_template, None).await 
-                #executor_token.fetch_all::<dysql::EmptyObject, #ret_type>(named_template, None).await 
+                #executor_token.dy_fetch_all::<dysql::EmptyObject, #ret_type>(named_template, None).await 
             ),
         };
 
@@ -84,6 +47,43 @@ impl SqlExpand {
         Ok(ret)
     }
 
+    /// expend fetch_one
+    pub fn fetch_one(&self, st: &DyClosure) -> syn::Result<proc_macro2::TokenStream>{
+        let dto_ident = &st.dto_info.src;
+        let executor_token = st.executor_info.gen_token();
+        let ret_type = &st.ret_type;
+        
+        // declare named_template at runtime
+        let named_template_declare = self.gen_named_template_declare(st)?;
+
+        let dto_token = st.dto_info.gen_token();
+        let execute_query = match dto_ident {
+            Some(_) => quote!(
+                #executor_token.dy_fetch_one::<_, #ret_type>(named_template, Some(#dto_token)).await 
+            ),
+            None => quote!(
+                #executor_token.dy_fetch_one::<dysql::EmptyObject, #ret_type>(named_template, None).await 
+            ),
+        };
+        
+        let ret = quote!('rst_block: {
+            #[cfg(feature = "tokio-postgres")]
+            use dysql::TokioPgExecutorAdatper;
+
+            #[cfg(feature="sqlx")]
+            use dysql::SqlxExecutorAdatper;
+
+            #[cfg(feature="rbatis")]
+            use dysql::RbatisExecutorAdatper;
+
+            #named_template_declare  // let named_template = ....;
+            
+            #execute_query
+        });
+
+        Ok(ret)
+    }
+
     /// expend fetch_scalar
     pub fn fetch_scalar(&self, st: &DyClosure) -> syn::Result<proc_macro2::TokenStream>{
         let dto_ident = &st.dto_info.src;
@@ -96,10 +96,10 @@ impl SqlExpand {
         let dto_token = st.dto_info.gen_token();
         let execute_query = match dto_ident {
             Some(_) => quote!(
-                #executor_token.fetch_scalar::< _, #ret_type>(named_template, Some(#dto_token)).await 
+                #executor_token.dy_fetch_scalar::< _, #ret_type>(named_template, Some(#dto_token)).await 
             ),
             None => quote!(
-                #executor_token.fetch_scalar::<dysql::EmptyObject, #ret_type>(named_template, None).await 
+                #executor_token.dy_fetch_scalar::<dysql::EmptyObject, #ret_type>(named_template, None).await 
             ),
         };
 
@@ -132,10 +132,10 @@ impl SqlExpand {
         let dto_token = st.dto_info.gen_token();
         let execute_query = match dto_ident {
             Some(_) => quote!(
-                #executor_token.execute(named_template, Some(#dto_token)).await
+                #executor_token.dy_execute(named_template, Some(#dto_token)).await
             ),
             None => quote!(
-                #executor_token.execute::<_, dysql::EmptyObject>(named_template, None).await 
+                #executor_token.dy_execute::<_, dysql::EmptyObject>(named_template, None).await 
             ),
         };
 
@@ -169,10 +169,10 @@ impl SqlExpand {
         let dto_token = st.dto_info.gen_token();
         let execute_query = match dto_ident {
             Some(_) => quote!(
-                let insert_rst = #executor_token.insert::<_, #ret_type>(named_template, Some(#dto_token)).await;
+                let insert_rst = #executor_token.dy_insert::<_, #ret_type>(named_template, Some(#dto_token)).await;
             ),
             None => quote!(
-                let insert_rst = #executor_token.insert::<dysql::EmptyObject, #ret_type>(named_template, None).await;
+                let insert_rst = #executor_token.dy_insert::<dysql::EmptyObject, #ret_type>(named_template, None).await;
             ),
         };
 
@@ -192,7 +192,7 @@ impl SqlExpand {
             
             let rst = match insert_rst {
                 Ok(Some(insert_id)) => Ok(insert_id),
-                Ok(None) => match #executor_token.fetch_insert_id().await {
+                Ok(None) => match #executor_token.dy_fetch_insert_id().await {
                     Ok(Some(insert_id)) => Ok(insert_id),
                     Ok(None) => {
                         break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, None, None)));
@@ -225,10 +225,10 @@ impl SqlExpand {
         // 生成 count 查询的调用
         let execute_count_query = match dto_ident {
             Some(_) => quote!(
-                let count_rst = #executor_token.page_count::<_, i64>(named_template.clone(), Some(&#dto_token)).await;
+                let count_rst = #executor_token.dy_page_count::<_, i64>(named_template.clone(), Some(&#dto_token)).await;
             ),
             None => quote!(
-                let count_rst = #executor_token.page_count::<dysql::EmptyObject, i64>(named_template.clone(), None).await;
+                let count_rst = #executor_token.dy_page_count::<dysql::EmptyObject, i64>(named_template.clone(), None).await;
             ),
         };
 
@@ -252,7 +252,7 @@ impl SqlExpand {
             #dto_ident.init(count as u64);
 
             // execute page_all query
-            #executor_token.page_all::<_, #ret_type>(named_template, &#dto_token).await 
+            #executor_token.dy_page_all::<_, #ret_type>(named_template, &#dto_token).await 
         });
 
         Ok(ret)

@@ -3,7 +3,7 @@ use crate::SqlxExecutorAdatper;
 macro_rules! impl_sqlx_adapter_pg_insert {
     ([$($vtype:ty),+]) => 
     {
-        async fn insert<D, U>(self, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>) 
+        async fn dy_insert<D, U>(self, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>) 
             -> Result<Option<U>, crate::DySqlError>
         where
             D: dysql_tpl::Content + Send + Sync,
@@ -50,7 +50,7 @@ macro_rules! impl_sqlx_adapter_pg_insert {
 macro_rules! impl_sqlx_adapter_pg_fetch_insert_id {
     ([$($vtype:ty),+]) => 
     {
-        async fn fetch_insert_id<U>(self)
+        async fn dy_fetch_insert_id<U>(self)
             -> Result<Option<U>, crate::DySqlError>
         where
             for<'r> U: sqlx::Decode<'r, Self::DB> + sqlx::Type<Self::DB> + Send + Unpin

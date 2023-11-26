@@ -64,7 +64,7 @@ ahash = "0.8"
 criterion = { version = "0.4", features = ["async_tokio"] }
 
 [features]
-default = ["sqlx-postgres", "sqlx-mysql", "sqlx-sqlite", "tokio-postgres", "rbatis-mysql", "rbatis-sqlite", "rbatis-pg"] # 
+default = ["sqlx-sqlite"] # "sqlx-postgres", "sqlx-mysql", "tokio-postgres", "rbatis-mysql", "rbatis-sqlite", "rbatis-pg"
 sqlx-postgres = ["dysql/sqlx-postgres", "sqlx/postgres"]
 sqlx-mysql = ["dysql/sqlx-mysql", "sqlx/mysql"]
 sqlx-sqlite = ["dysql/sqlx-sqlite", "sqlx/sqlite"]
@@ -110,8 +110,8 @@ path = "tests/test_rbatis/test_rbatis_mysql.rs"
 required-features = ["rbatis-mysql"]
 
 [[test]]
-name = "bench_raw"
-path = "benches/bench_raw.rs"
+name = "bench_no_harness"
+path = "benches/bench_no_harness.rs"
 required-features = ["rbatis-sqlite"]
 
 [[bench]]
@@ -120,8 +120,8 @@ path = "benches/bench_tpl.rs"
 harness = true
 
 [[bench]]
-name = "bench_ctri_pg"
-path = "benches/bench_ctri_pg.rs"
+name = "bench_ctri"
+path = "benches1/bench_ctri.rs"
 harness = false
 
 [[bench]]

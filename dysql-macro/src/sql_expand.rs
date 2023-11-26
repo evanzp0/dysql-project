@@ -57,10 +57,12 @@ impl SqlExpand {
         let dto_token = st.dto_info.gen_token();
         let execute_query = match dto_ident {
             Some(_) => quote!(
-                query.fetch_all::<_, _, #ret_type>(#executor_token, named_template, Some(#dto_token)).await 
+                // query.fetch_all::<_, _, #ret_type>(#executor_token, named_template, Some(#dto_token)).await 
+                #executor_token.dy_fetch_all::<_, #ret_type>(named_template, Some(#dto_token)).await 
             ),
             None => quote!(
-                query.fetch_all::<_, dysql::EmptyObject, #ret_type>(#executor_token, named_template, None).await 
+                // query.fetch_all::<_, dysql::EmptyObject, #ret_type>(#executor_token, named_template, None).await 
+                #executor_token.dy_fetch_all::<dysql::EmptyObject, #ret_type>(named_template, None).await 
             ),
         };
 
@@ -75,7 +77,7 @@ impl SqlExpand {
             use dysql::RbatisExecutorAdatper;
 
             #named_template_declare  // let named_sql = ....;
-            let query = (#executor_token).create_query();
+            // let query = (#executor_token).create_query();
             #execute_query
         });
 

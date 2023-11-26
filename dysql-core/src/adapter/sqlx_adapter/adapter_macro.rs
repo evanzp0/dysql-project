@@ -2,11 +2,11 @@
 #[macro_export]
 macro_rules! impl_sql_adapter {
     ($db:path, $conn:path) => {
-        impl<'q> crate::SqlxExecutorAdatper<$db> for sqlx::Transaction<'q, $db> {}
-        impl crate::SqlxExecutorAdatper<$db> for sqlx::Pool<$db> {}
-        impl crate::SqlxExecutorAdatper<$db> for &sqlx::Pool<$db> {}
-        impl crate::SqlxExecutorAdatper<$db> for $conn {}
-        impl crate::SqlxExecutorAdatper<$db> for &mut $conn {}
+        // impl<'q> crate::SqlxExecutorAdatper<$db> for sqlx::Transaction<'q, $db> {}
+        // impl crate::SqlxExecutorAdatper<$db> for sqlx::Pool<$db> {}
+        // impl crate::SqlxExecutorAdatper<$db> for &sqlx::Pool<$db> {}
+        // impl crate::SqlxExecutorAdatper<$db> for $conn {}
+        // impl crate::SqlxExecutorAdatper<$db> for &mut $conn {}
         // impl crate::SqlxExecutorAdatper<$db> for &std::cell::RefCell<$conn> {}
     };
 }
@@ -287,11 +287,11 @@ macro_rules! impl_sqlx_adapter_fetch_one {
 
 #[macro_export]
 macro_rules! impl_sqlx_adapter_fetch_all {
-    ($db:path, $row:path, [$($vtype:ty),+]) => {
-        pub async fn fetch_all<'e, 'c: 'e, E, D, U>(self, executor: E, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>) 
+    ($db:path, $row:path, [$($vtype:ty),+]) => 
+    {
+        async fn dy_fetch_all<D, U>(self, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>) 
             -> Result<Vec<U>, crate::DySqlError>
         where
-            E: 'e + sqlx::Executor<'c, Database = $db> + crate::SqlxExecutorAdatper<$db>,
             D: dysql_tpl::Content + Send + Sync,
             for<'r> U: sqlx::FromRow<'r, $row> + Send + Unpin,
         {
@@ -300,7 +300,7 @@ macro_rules! impl_sqlx_adapter_fetch_all {
             let named_sql = unsafe{std::str::from_utf8_unchecked(&named_sql_buf)};
             
             let mut buf = Vec::<u8>::with_capacity(named_sql.len());
-            let sql_and_params = crate::extract_params_buf(&named_sql, &mut buf, executor.get_dialect());
+            let sql_and_params = crate::extract_params_buf(&named_sql, &mut buf, self.get_dialect());
             let sql = unsafe{std::str::from_utf8_unchecked(&buf)};
             let param_names = match sql_and_params {
                 Ok(val) => val,
@@ -317,16 +317,56 @@ macro_rules! impl_sqlx_adapter_fetch_all {
                     let param_value = stpl.apply(dto);
                     match param_value {
                         Ok(param_value) => {
-                            query = impl_bind_sqlx_param_value!(query, param_value, [$($vtype),+]);
+                            query = impl_bind_sqlx_param_value!(query, param_value, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
                         },
                         Err(e) => Err(crate::DySqlError(crate::ErrorInner::new(crate::Kind::BindParamterError, Some(e), None)))?,
                     }
                 }
             }
 
-            let rst = query.fetch_all(executor).await;
+            let rst = query.fetch_all(self).await;
 
             rst.map_err(|e| crate::DySqlError(crate::ErrorInner::new(crate::Kind::QueryError, Some(Box::new(e)), None)))
         }
+    //     pub async fn fetch_all<'e, 'c: 'e, E, D, U>(self, executor: E, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>) 
+    //         -> Result<Vec<U>, crate::DySqlError>
+    //     where
+    //         E: 'e + sqlx::Executor<'c, Database = $db> + crate::SqlxExecutorAdatper<$db>,
+    //         D: dysql_tpl::Content + Send + Sync,
+    //         for<'r> U: sqlx::FromRow<'r, $row> + Send + Unpin,
+    //     {
+    //         let mut named_sql_buf = Vec::<u8>::with_capacity(named_template.source().len());
+    //         let named_sql_buf = crate::gen_named_sql_buf(named_template, named_sql_buf, &dto)?;
+    //         let named_sql = unsafe{std::str::from_utf8_unchecked(&named_sql_buf)};
+            
+    //         let mut buf = Vec::<u8>::with_capacity(named_sql.len());
+    //         let sql_and_params = crate::extract_params_buf(&named_sql, &mut buf, executor.get_dialect());
+    //         let sql = unsafe{std::str::from_utf8_unchecked(&buf)};
+    //         let param_names = match sql_and_params {
+    //             Ok(val) => val,
+    //             Err(e) => Err(
+    //                 crate::DySqlError(crate::ErrorInner::new(crate::Kind::ExtractSqlParamterError, Some(Box::new(e)), None))
+    //             )?,
+    //         };
+
+    //         let mut query = sqlx::query_as::<_, U>(sql);
+    //         if let Some(dto) = &dto {
+    //             for param_name in &param_names {
+    //                 let stpl = dysql_tpl::SimpleTemplate::new(param_name);
+                    
+    //                 let param_value = stpl.apply(dto);
+    //                 match param_value {
+    //                     Ok(param_value) => {
+    //                         query = impl_bind_sqlx_param_value!(query, param_value, [$($vtype),+]);
+    //                     },
+    //                     Err(e) => Err(crate::DySqlError(crate::ErrorInner::new(crate::Kind::BindParamterError, Some(e), None)))?,
+    //                 }
+    //             }
+    //         }
+
+    //         let rst = query.fetch_all(executor).await;
+
+    //         rst.map_err(|e| crate::DySqlError(crate::ErrorInner::new(crate::Kind::QueryError, Some(Box::new(e)), None)))
+    //     }
     };
 }

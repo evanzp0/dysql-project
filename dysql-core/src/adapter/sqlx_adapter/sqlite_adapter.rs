@@ -1,13 +1,23 @@
+use crate::SqlxExecutorAdatper;
+
 crate::impl_sql_adapter!(sqlx::Sqlite, sqlx::SqliteConnection);
+
+
+impl SqlxExecutorAdatper<sqlx::Sqlite> for &mut sqlx::SqliteConnection {
+    crate::impl_sqlx_adapter_fetch_all!(sqlx::Sqlite, sqlx::sqlite::SqliteRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
+}
+
 
 impl crate::SqlxQuery <sqlx::Sqlite>
 {
-    crate::impl_sqlx_adapter_fetch_one!(sqlx::Sqlite, sqlx::sqlite::SqliteRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
-    crate::impl_sqlx_adapter_fetch_all!(sqlx::Sqlite, sqlx::sqlite::SqliteRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
-    crate::impl_sqlx_adapter_fetch_scalar!(sqlx::Sqlite, sqlx::sqlite::SqliteRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
-    crate::impl_sqlx_adapter_execute!(sqlx::Sqlite, sqlx::sqlite::SqliteRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
-    crate::impl_sqlx_adapter_page_count!(sqlx::Sqlite, sqlx::sqlite::SqliteRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
-    crate::impl_sqlx_adapter_page_all!(sqlx::Sqlite, sqlx::sqlite::SqliteRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
+    // crate::impl_sqlx_adapter_fetch_all!(sqlx::Sqlite, sqlx::sqlite::SqliteRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
+
+    // crate::impl_sqlx_adapter_fetch_one!(sqlx::Sqlite, sqlx::sqlite::SqliteRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
+
+    // crate::impl_sqlx_adapter_fetch_scalar!(sqlx::Sqlite, sqlx::sqlite::SqliteRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
+    // crate::impl_sqlx_adapter_execute!(sqlx::Sqlite, sqlx::sqlite::SqliteRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
+    // crate::impl_sqlx_adapter_page_count!(sqlx::Sqlite, sqlx::sqlite::SqliteRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
+    // crate::impl_sqlx_adapter_page_all!(sqlx::Sqlite, sqlx::sqlite::SqliteRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
 
     pub async fn insert<'e, 'c: 'e, E, D, U>(self, executor: E, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>) 
         -> Result<Option<U>, crate::DySqlError>

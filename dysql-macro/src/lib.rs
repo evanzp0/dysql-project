@@ -98,7 +98,7 @@ impl ExecutorInfo {
         let executor = &self.src;
         rst.extend(quote!(#executor));
 
-        rst.into()
+        quote!((#rst))
     }
 }
 

@@ -1,7 +1,28 @@
 
 use std::marker::PhantomData;
 
+use sqlx::{Database, Sqlite};
+
 use crate::SqlDialect;
+
+#[macro_export]
+macro_rules! impl_bind_sqlx_param_value {
+    (
+        $query:ident, $p_val:ident, [$($vtype:ty),+]
+    ) => {
+        paste::paste!{
+            match $p_val {
+                $(
+                    dysql_tpl::SimpleValue::[<t_ $vtype>](val) => $query.bind(val),
+                )*
+                dysql_tpl::SimpleValue::t_str(val) => $query.bind(unsafe {&*val.0}),
+                dysql_tpl::SimpleValue::t_String(val) => $query.bind(unsafe {&*val.0}),
+                dysql_tpl::SimpleValue::None(val) => $query.bind(val),
+                _ => Err(crate::DySqlError(crate::ErrorInner::new(crate::Kind::BindParamterError, None, Some(format!("the type of {:?} is not support", $p_val)))))?,
+            }
+        }
+    };
+}
 
 pub struct SqlxQuery <DB>
 {
@@ -42,23 +63,10 @@ where
 
         panic!("only support 'postgres', 'mysql', 'sqlite' sql dialect")
     }
-}
 
-#[macro_export]
-macro_rules! impl_bind_sqlx_param_value {
-    (
-        $query:ident, $p_val:ident, [$($vtype:ty),+]
-    ) => {
-        paste::paste!{
-            match $p_val {
-                $(
-                    dysql_tpl::SimpleValue::[<t_ $vtype>](val) => $query.bind(val),
-                )*
-                dysql_tpl::SimpleValue::t_str(val) => $query.bind(unsafe {&*val.0}),
-                dysql_tpl::SimpleValue::t_String(val) => $query.bind(unsafe {&*val.0}),
-                dysql_tpl::SimpleValue::None(val) => $query.bind(val),
-                _ => Err(crate::DySqlError(crate::ErrorInner::new(crate::Kind::BindParamterError, None, Some(format!("the type of {:?} is not support", $p_val)))))?,
-            }
-        }
-    };
+    async fn dy_fetch_all<D, U>(self, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>) 
+        -> Result<Vec<U>, crate::DySqlError>
+    where
+        D: dysql_tpl::Content + Send + Sync,
+        for<'r> U: sqlx::FromRow<'r, sqlx::sqlite::SqliteRow> + Send + Unpin;
 }

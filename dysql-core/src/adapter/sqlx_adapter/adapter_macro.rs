@@ -1,21 +1,21 @@
 
-#[macro_export]
-macro_rules! impl_sql_adapter {
-    ($db:path, $conn:path) => {
-        // impl<'q> crate::SqlxExecutorAdatper<$db> for sqlx::Transaction<'q, $db> {}
-        // impl crate::SqlxExecutorAdatper<$db> for sqlx::Pool<$db> {}
-        // impl crate::SqlxExecutorAdatper<$db> for &sqlx::Pool<$db> {}
-        // impl crate::SqlxExecutorAdatper<$db> for $conn {}
-        // impl crate::SqlxExecutorAdatper<$db> for &mut $conn {}
-        // impl crate::SqlxExecutorAdatper<$db> for &std::cell::RefCell<$conn> {}
-    };
-}
+// #[macro_export]
+// macro_rules! impl_sql_adapter {
+//     ($db:path, $conn:path) => {
+//         // impl<'q> crate::SqlxExecutorAdatper<$db> for sqlx::Transaction<'q, $db> {}
+//         // impl crate::SqlxExecutorAdatper<$db> for sqlx::Pool<$db> {}
+//         // impl crate::SqlxExecutorAdatper<$db> for &sqlx::Pool<$db> {}
+//         // impl crate::SqlxExecutorAdatper<$db> for $conn {}
+//         // impl crate::SqlxExecutorAdatper<$db> for &mut $conn {}
+//         // impl crate::SqlxExecutorAdatper<$db> for &std::cell::RefCell<$conn> {}
+//     };
+// }
 
 #[macro_export]
 macro_rules! impl_sqlx_adapter_fetch_all {
-    ($db:path, $row:path, [$($vtype:ty),+]) => 
+    ($row:path, [$($vtype:ty),+]) => 
     {
-        async fn dy_fetch_all<D, U>(self, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>) 
+        async fn fetch_all<D, U>(self, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>) 
             -> Result<Vec<U>, crate::DySqlError>
         where
             D: dysql_tpl::Content + Send + Sync,
@@ -59,7 +59,7 @@ macro_rules! impl_sqlx_adapter_fetch_all {
 
 #[macro_export]
 macro_rules! impl_sqlx_adapter_fetch_one {
-    ($db:path, $row:path, [$($vtype:ty),+]) => {
+    ($row:path, [$($vtype:ty),+]) => {
         async fn fetch_one<D, U>(self, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>) 
             -> Result<U, crate::DySqlError>
         where
@@ -105,7 +105,7 @@ macro_rules! impl_sqlx_adapter_fetch_one {
 
 #[macro_export]
 macro_rules! impl_sqlx_adapter_fetch_scalar {
-    ($db:path, $row:path, [$($vtype:ty),+]) => {
+    ([$($vtype:ty),+]) => {
         async fn fetch_scalar<D, U>(self, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>) 
             -> Result<U, crate::DySqlError>
         where
@@ -151,7 +151,7 @@ macro_rules! impl_sqlx_adapter_fetch_scalar {
 
 #[macro_export]
 macro_rules! impl_sqlx_adapter_execute {
-    ($db:path, $row:path, [$($vtype:ty),+]) => {
+    ([$($vtype:ty),+]) => {
         async fn execute<D>(self,named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>) 
             -> Result<u64, crate::DySqlError>
         where
@@ -200,7 +200,7 @@ macro_rules! impl_sqlx_adapter_execute {
 
 #[macro_export]
 macro_rules! impl_sqlx_adapter_page_count {
-    ($db:path, $row:path, [$($vtype:ty),+])  => {
+    ([$($vtype:ty),+])  => {
         async fn page_count<D, U>(self, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>) 
             -> Result<U, crate::DySqlError>
         where
@@ -254,7 +254,7 @@ macro_rules! impl_sqlx_adapter_page_count {
 
 #[macro_export]
 macro_rules! impl_sqlx_adapter_page_all {
-    ($db:path, $row:path, [$($vtype:ty),+]) => {
+    ($row:path, [$($vtype:ty),+]) => {
         async fn page_all<D, U>(self, named_template: std::sync::Arc<dysql_tpl::Template>, page_dto: &crate::PageDto<D>) 
             -> Result<crate::Pagination<U>, crate::DySqlError>
         where

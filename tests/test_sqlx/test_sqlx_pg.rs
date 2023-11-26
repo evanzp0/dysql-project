@@ -5,8 +5,6 @@ use std::error::Error;
 use dysql::{PageDto, SortModel, sql, fetch_one, insert, fetch_scalar, execute, page, fetch_all, Value};
 use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
 
-// use dysql::SqlxExecutorAdatper;
-
 use crate::common::{UserDto, User};
 
 pub async fn connect_postgres_db() -> Pool<Postgres> {
@@ -92,14 +90,13 @@ async fn test_execute() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-
 #[tokio::test]
 async fn test_insert() -> Result<(), Box<dyn Error>> {
     let conn = connect_postgres_db().await;
     let mut tran = conn.begin().await?;
 
     let dto = UserDto{ id: None, name: Some("lisi".to_owned()), age: Some(50), id_rng: None };
-    let insert_id = insert!(|&mut *tran, dto| -> i64 {
+    let insert_id = insert!(|&mut tran, dto| -> i64 {
         r#"insert into test_user (name, age) values (:name, :age) returning id"#
     })?;
 

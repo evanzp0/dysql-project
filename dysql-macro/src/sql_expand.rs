@@ -58,11 +58,11 @@ impl SqlExpand {
         let execute_query = match dto_ident {
             Some(_) => quote!(
                 // query.fetch_all::<_, _, #ret_type>(#executor_token, named_template, Some(#dto_token)).await 
-                #executor_token.dy_fetch_all::<_, #ret_type>(named_template, Some(#dto_token)).await 
+                #executor_token.fetch_all::<_, #ret_type>(named_template, Some(#dto_token)).await 
             ),
             None => quote!(
                 // query.fetch_all::<_, dysql::EmptyObject, #ret_type>(#executor_token, named_template, None).await 
-                #executor_token.dy_fetch_all::<dysql::EmptyObject, #ret_type>(named_template, None).await 
+                #executor_token.fetch_all::<dysql::EmptyObject, #ret_type>(named_template, None).await 
             ),
         };
 
@@ -192,8 +192,14 @@ impl SqlExpand {
             
             let rst = match insert_rst {
                 Ok(Some(insert_id)) => Ok(insert_id),
-                Ok(None) => {
-                    #executor_token.fetch_insert_id().await
+                Ok(None) => match #executor_token.fetch_insert_id().await {
+                    Ok(Some(insert_id)) => Ok(insert_id),
+                    Ok(None) => {
+                        break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, None, None)));
+                    }
+                    Err(e) => {
+                        break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)), None)));
+                    }
                 }
                 Err(e) => {
                     break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)), None)));

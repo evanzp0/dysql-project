@@ -51,7 +51,7 @@ pub trait SqlxExecutorAdatper
     }
 
     /// 查询并返回多个指定类型的对象
-    async fn dy_fetch_all<D, U>(self, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>) 
+    async fn fetch_all<D, U>(self, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>) 
         -> Result<Vec<U>, crate::DySqlError>
     where
         D: dysql_tpl::Content + Send + Sync,
@@ -86,9 +86,9 @@ pub trait SqlxExecutorAdatper
     
     /// 获取新增记录的ID
     async fn fetch_insert_id<U>(self)
-        -> Result<U, crate::DySqlError>
+        -> Result<Option<U>, crate::DySqlError>
     where
-        for<'r> U: sqlx::Decode<'r, sqlx::Sqlite> + sqlx::Type<Self::DB> + Send + Unpin;
+        for<'r> U: sqlx::Decode<'r, Self::DB> + sqlx::Type<Self::DB> + Send + Unpin;
 
     /// 用于在分页查询中获取符合条件的总记录数
     async fn page_count<D, U>(self, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>) 

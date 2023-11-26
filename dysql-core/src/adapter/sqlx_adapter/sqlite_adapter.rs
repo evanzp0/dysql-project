@@ -1,20 +1,17 @@
 use crate::SqlxExecutorAdatper;
 
-crate::impl_sql_adapter!(sqlx::Sqlite, sqlx::SqliteConnection);
-
-
 impl SqlxExecutorAdatper for &mut sqlx::SqliteConnection {
 
     type DB = sqlx::Sqlite;
 
     type Row = sqlx::sqlite::SqliteRow;
 
-    crate::impl_sqlx_adapter_fetch_all!(sqlx::Sqlite, sqlx::sqlite::SqliteRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
-    crate::impl_sqlx_adapter_fetch_one!(sqlx::Sqlite, sqlx::sqlite::SqliteRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
-    crate::impl_sqlx_adapter_fetch_scalar!(sqlx::Sqlite, sqlx::sqlite::SqliteRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
-    crate::impl_sqlx_adapter_execute!(sqlx::Sqlite, sqlx::sqlite::SqliteRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
-    crate::impl_sqlx_adapter_page_all!(sqlx::Sqlite, sqlx::sqlite::SqliteRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
-    crate::impl_sqlx_adapter_page_count!(sqlx::Sqlite, sqlx::sqlite::SqliteRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
+    crate::impl_sqlx_adapter_fetch_all!(sqlx::sqlite::SqliteRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
+    crate::impl_sqlx_adapter_fetch_one!(sqlx::sqlite::SqliteRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
+    crate::impl_sqlx_adapter_fetch_scalar!([i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
+    crate::impl_sqlx_adapter_execute!([i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
+    crate::impl_sqlx_adapter_page_count!([i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
+    crate::impl_sqlx_adapter_page_all!(sqlx::sqlite::SqliteRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
 
     async fn insert<D, U>(self, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>) 
         -> Result<Option<U>, crate::DySqlError>
@@ -58,7 +55,7 @@ impl SqlxExecutorAdatper for &mut sqlx::SqliteConnection {
     }
 
     async fn fetch_insert_id<U>(self)
-        -> Result<U, crate::DySqlError>
+        -> Result<Option<U>, crate::DySqlError>
     where
         for<'r> U: sqlx::Decode<'r, sqlx::Sqlite> + sqlx::Type<Self::DB> + Send + Unpin
     {
@@ -67,7 +64,7 @@ impl SqlxExecutorAdatper for &mut sqlx::SqliteConnection {
             .await;
 
         match insert_id {
-            Ok(insert_id) => Ok(insert_id.0),
+            Ok(insert_id) => Ok(Some(insert_id.0)),
             Err(e) => Err(crate::DySqlError(crate::ErrorInner::new(crate::Kind::QueryError, Some(Box::new(e)), None))),
         }
     }

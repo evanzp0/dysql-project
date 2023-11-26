@@ -91,7 +91,6 @@ async fn test_execute() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-
 #[tokio::test]
 async fn test_insert() -> Result<(), Box<dyn Error>> {
     let mut conn = connect_postgres_db().await;

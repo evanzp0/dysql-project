@@ -7,3 +7,5 @@ pub use common::*;
 #[cfg(feature = "tokio-postgres")]
 mod postgres_adapter;
 
+#[cfg(feature = "tokio-postgres")]
+#[macro_use] pub mod adapter_macro;

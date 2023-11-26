@@ -2,49 +2,67 @@ use async_trait::async_trait;
 
 pub struct TokioPgQuery;
 
-/// 使用了 async_trait 会导致 trait 中的异步方法的返回值都被包装成 BoxPin，
-/// 这样会有性能损耗，但是 tokio-postgres 的性能本来就差，所以为了偷懒我就这么干了，
-/// 否则需要为 tokio-postgres 的 transaction 和 connection 注入不同的 ExecutorAdapter，
-/// 来为它们创建不同的 QueryAdapter 对象，然后再在各自的 QueryAdapter 中，
-/// 分别实现对 transaction 和 connection 的 query 方法的转发调用
-#[async_trait]
+/// tokio-postgres Executor 的适配接口
 pub trait TokioPgExecutorAdatper
 {
-    fn create_query(&self) -> TokioPgQuery
-    {
-        TokioPgQuery
-    }
-
     fn get_dialect(&self) -> crate::SqlDialect 
     {
         return crate::SqlDialect::postgres
     }
 
-    async fn prepare(&self, query: &str) -> Result<tokio_postgres::Statement, tokio_postgres::Error>;
+    /// 查询并返回多个指定类型的对象
+    async fn dy_fetch_all<D, U>(self, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>)
+        -> Result<Vec<U>, crate::DySqlError>
+    where 
+        D: dysql_tpl::Content + Send + Sync,
+        U: tokio_pg_mapper::FromTokioPostgresRow;
 
-    async fn query<T>(
-        &self, 
-        statement: &T, 
-        params: &[&(dyn tokio_postgres::types::ToSql + Sync)]
-    ) -> Result<Vec<tokio_postgres::Row>, tokio_postgres::Error> 
-    where
-        T: ?Sized + tokio_postgres::ToStatement + Sync;
+    /// 查询并返回一个指定类型的对象
+    async fn dy_fetch_one<D, U>(self, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>)
+        -> Result<U, crate::DySqlError>
+    where 
+        D: dysql_tpl::Content + Send + Sync,
+        U: tokio_pg_mapper::FromTokioPostgresRow;
 
-    async fn query_one<T>(
-        &self,
-        statement: &T,
-        params: &[&(dyn tokio_postgres::types::ToSql + Sync)],
-    ) -> Result<tokio_postgres::Row, tokio_postgres::Error>
-    where
-        T: ?Sized + tokio_postgres::ToStatement + Sync;
+    /// 查询并返回一个指定类型的单值
+    async fn dy_fetch_scalar<D, U>(self, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>)
+        -> Result<U, crate::DySqlError>
+    where 
+        D: dysql_tpl::Content + Send + Sync,
+        for<'a> U: tokio_postgres::types::FromSql<'a>;
 
-    async fn execute<T>(
-        &self,
-        statement: &T,
-        params: &[&(dyn tokio_postgres::types::ToSql + Sync)],
-    ) -> Result<u64, tokio_postgres::Error>
+    /// 执行一条sql命令并返回受其影响的记录数
+    async fn dy_execute<D>(self, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>)
+        -> Result<u64, crate::DySqlError>
+    where 
+        D: dysql_tpl::Content + Send + Sync;
+
+    /// 新增一条记录
+    async fn dy_insert<D, U>(self, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>)
+        -> Result<Option<U>, crate::DySqlError>
+    where 
+        D: dysql_tpl::Content + Send + Sync,
+        for<'a> U: tokio_postgres::types::FromSql<'a>;
+
+    /// 获取新增记录的ID
+    async fn dy_fetch_insert_id<U>(self)
+        -> Result<Option<U>, crate::DySqlError>
     where
-        T: ?Sized + tokio_postgres::ToStatement + Sync;
+        for<'a> U: tokio_postgres::types::FromSql<'a>;
+
+    /// 用于在分页查询中获取符合条件的总记录数
+    async fn dy_page_count<D, U>(self, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>)
+        -> Result<U, crate::DySqlError>
+    where 
+        D: dysql_tpl::Content + Send + Sync,
+        for<'a> U: tokio_postgres::types::FromSql<'a>;
+
+    /// 用返回分页查询中获取符合条件的结果
+    async fn dy_page_all<D, U>(self, named_template: std::sync::Arc<dysql_tpl::Template>, page_dto: &crate::PageDto<D>)
+        -> Result<crate::Pagination<U>, crate::DySqlError>
+    where 
+        D: dysql_tpl::Content + Send + Sync,
+        U: tokio_pg_mapper::FromTokioPostgresRow;
 }
 
 #[macro_export]

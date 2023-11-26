@@ -64,7 +64,7 @@ ahash = "0.8"
 criterion = { version = "0.4", features = ["async_tokio"] }
 
 [features]
-default = ["sqlx-postgres", "sqlx-sqlite", "sqlx-mysql"] # , "tokio-postgres", "rbatis-mysql", "rbatis-sqlite", "rbatis-pg"
+default = ["sqlx-postgres", "sqlx-sqlite", "sqlx-mysql", "tokio-postgres"] # , "rbatis-mysql", "rbatis-sqlite", "rbatis-pg"
 sqlx-postgres = ["dysql/sqlx-postgres", "sqlx/postgres"]
 sqlx-mysql = ["dysql/sqlx-mysql", "sqlx/mysql"]
 sqlx-sqlite = ["dysql/sqlx-sqlite", "sqlx/sqlite"]

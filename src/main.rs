@@ -1,13 +1,16 @@
 #![feature(async_fn_in_trait)]
 
 use dysql::{Content, fetch_all};
+use sqlx::Acquire;
 
 
 #[tokio::main]
 async fn main() {
     let mut conn = connect_db().await;
+    let mut tran = conn.begin().await.unwrap();
+
     let dto = UserDto{ id: None, name: Some("a5".to_owned()), age: Some(1), id_rng: None };
-    let rst = fetch_all!(|&mut conn, &dto| -> User {
+    let rst = fetch_all!(|&mut tran, &dto| -> User {
         r#"SELECT * FROM test_user 
         WHERE 1 = 1
           {{#name}}AND name = :name{{/name}}
@@ -16,13 +19,10 @@ async fn main() {
     }).unwrap();
 
     println!("{:#?}", rst);
+    tran.rollback().await.unwrap();
 
     // let man = conn.page_a().await;
     // println!("{:#?}", man);
-
-    // let mut tran = conn.begin().await.unwrap();
-
-
 
     // let query = sqlx::query_as::<sqlx::Sqlite, User>("select * from test_user where id = 1");
     

@@ -1,8 +1,7 @@
-use std::borrow::BorrowMut;
 
 use dysql::{Content, fetch_all, Value};
 use criterion::{Criterion, BenchmarkId, criterion_group, criterion_main};
-use sqlx::{FromRow, Executor};
+use sqlx::FromRow;
 
 #[derive(Content, Clone)]
 pub struct UserDto {

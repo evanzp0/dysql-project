@@ -20,10 +20,10 @@ impl SqlExpand {
         let dto_token = st.dto_info.gen_token();
         let execute_query = match dto_ident {
             Some(_) => quote!(
-                query.fetch_one::<_, _, #ret_type>(#executor_token, named_template, Some(#dto_token)).await 
+                #executor_token.fetch_one::<_, #ret_type>(named_template, Some(#dto_token)).await 
             ),
             None => quote!(
-                query.fetch_one::<_, dysql::EmptyObject, #ret_type>(#executor_token, named_template, None).await 
+                #executor_token.fetch_one::<dysql::EmptyObject, #ret_type>(named_template, None).await 
             ),
         };
         
@@ -38,7 +38,7 @@ impl SqlExpand {
             use dysql::RbatisExecutorAdatper;
 
             #named_template_declare  // let named_template = ....;
-            let query = (#executor_token).create_query();
+            
             #execute_query
         });
 
@@ -77,7 +77,7 @@ impl SqlExpand {
             use dysql::RbatisExecutorAdatper;
 
             #named_template_declare  // let named_sql = ....;
-            // let query = (#executor_token).create_query();
+
             #execute_query
         });
 
@@ -96,10 +96,10 @@ impl SqlExpand {
         let dto_token = st.dto_info.gen_token();
         let execute_query = match dto_ident {
             Some(_) => quote!(
-                query.fetch_scalar::<_, _, #ret_type>(#executor_token, named_template, Some(#dto_token)).await 
+                #executor_token.fetch_scalar::< _, #ret_type>(named_template, Some(#dto_token)).await 
             ),
             None => quote!(
-                query.fetch_scalar::<_, dysql::EmptyObject, #ret_type>(#executor_token, named_template, None).await 
+                #executor_token.fetch_scalar::<dysql::EmptyObject, #ret_type>(named_template, None).await 
             ),
         };
 
@@ -114,7 +114,7 @@ impl SqlExpand {
             use dysql::RbatisExecutorAdatper;
             
             #named_template_declare  // let named_sql = ....;
-            let query = (#executor_token).create_query();
+
             #execute_query
         });
 
@@ -132,10 +132,10 @@ impl SqlExpand {
         let dto_token = st.dto_info.gen_token();
         let execute_query = match dto_ident {
             Some(_) => quote!(
-                query.execute(#executor_token, named_template, Some(#dto_token)).await
+                #executor_token.execute(named_template, Some(#dto_token)).await
             ),
             None => quote!(
-                query.execute::<_, dysql::EmptyObject>(#executor_token, named_template, None).await 
+                #executor_token.execute::<_, dysql::EmptyObject>(named_template, None).await 
             ),
         };
 
@@ -150,7 +150,7 @@ impl SqlExpand {
             use dysql::RbatisExecutorAdatper;
 
             #named_template_declare  // let named_sql = ....;
-            let query = (#executor_token).create_query();
+            
             #execute_query
         });
 
@@ -169,10 +169,10 @@ impl SqlExpand {
         let dto_token = st.dto_info.gen_token();
         let execute_query = match dto_ident {
             Some(_) => quote!(
-                let insert_rst = query.insert::<_, _, #ret_type>(#executor_token, named_template, Some(#dto_token)).await;
+                let insert_rst = #executor_token.insert::<_, #ret_type>(named_template, Some(#dto_token)).await;
             ),
             None => quote!(
-                let insert_rst = query.insert::<_, dysql::EmptyObject, #ret_type>(#executor_token, named_template, None).await;
+                let insert_rst = #executor_token.insert::<dysql::EmptyObject, #ret_type>(named_template, None).await;
             ),
         };
 
@@ -187,14 +187,13 @@ impl SqlExpand {
             use dysql::RbatisExecutorAdatper;
 
             #named_template_declare  // let named_sql = ....;
-            let query = (#executor_token).create_query();
+
             #execute_query
             
             let rst = match insert_rst {
                 Ok(Some(insert_id)) => Ok(insert_id),
                 Ok(None) => {
-                    let query = tran.create_query();
-                    query.fetch_insert_id(#executor_token).await
+                    #executor_token.fetch_insert_id().await
                 }
                 Err(e) => {
                     break 'rst_block  Err(dysql::DySqlError(dysql::ErrorInner::new(dysql::Kind::QueryError, Some(Box::new(e)), None)));
@@ -220,10 +219,10 @@ impl SqlExpand {
         // 生成 count 查询的调用
         let execute_count_query = match dto_ident {
             Some(_) => quote!(
-                let count_rst = query.page_count::<_, _, i64>(#executor_token, named_template.clone(), Some(&#dto_token)).await;
+                let count_rst = #executor_token.page_count::<_, i64>(named_template.clone(), Some(&#dto_token)).await;
             ),
             None => quote!(
-                let count_rst = query.page_count::<_, dysql::EmptyObject, i64>(#executor_token, named_template.clone(), None).await;
+                let count_rst = #executor_token.page_count::<dysql::EmptyObject, i64>(named_template.clone(), None).await;
             ),
         };
 
@@ -238,7 +237,6 @@ impl SqlExpand {
             use dysql::RbatisExecutorAdatper;
 
             #named_template_declare  // let named_sql = ....;
-            let query = (#executor_token).create_query();
 
             #execute_count_query
             if let Err(e) = count_rst {
@@ -248,8 +246,7 @@ impl SqlExpand {
             #dto_ident.init(count as u64);
 
             // execute page_all query
-            let query = (#executor_token).create_query();
-            query.page_all::<_, _, #ret_type>(#executor_token, named_template, &#dto_token).await 
+            #executor_token.page_all::<_, #ret_type>(named_template, &#dto_token).await 
         });
 
         Ok(ret)
@@ -291,11 +288,6 @@ impl SqlExpand {
                     dysql::put_sql_template(#template_id, &serd_template).expect("Unexpected error when put_sql_template")
                 },
             };
-            // let named_template = {
-            //     let serd_template = [#(#serd_template,)*];
-            //     let template = dysql::Template::deserialize(&serd_template);
-            //     std::sync::Arc::new(template)
-            // };
         );
         Ok(rst)
     }

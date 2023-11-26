@@ -1,15 +1,15 @@
 
-pub struct RbatisPostgresQuery{
+pub struct RbatisPostgresAdapter{
     dialect: crate::SqlDialect
 }
 
-impl RbatisPostgresQuery {
+impl RbatisPostgresAdapter {
     pub fn new(dialect: crate::SqlDialect) -> Self {
         Self { dialect }
     }
 }
 
-impl RbatisPostgresQuery {
+impl RbatisPostgresAdapter {
     crate::impl_rbatis_adapter_fetch_one!();
     crate::impl_rbatis_adapter_fetch_all!();
     crate::impl_rbatis_adapter_fetch_scalar!();
@@ -17,7 +17,7 @@ impl RbatisPostgresQuery {
     crate::impl_rbatis_adapter_page_count!();
     crate::impl_rbatis_adapter_page_all!();
 
-    pub async fn insert<E, D, U>(self, executor: &E, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>)
+    pub async fn dy_insert<E, D, U>(self, executor: &E, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>)
         -> Result<Option<U>, crate::DySqlError>
     where 
         E: rbatis::executor::Executor,
@@ -65,15 +65,12 @@ impl RbatisPostgresQuery {
 
     /// dummy method stub
     /// 该方法不会被执行
-    pub async fn fetch_insert_id<E, U>(self, executor: &mut E) 
-        -> Result<U, crate::DySqlError>
+    pub async fn dy_fetch_insert_id<E, U>(self, executor: &E) 
+        -> Result<Option<U>, crate::DySqlError>
     where 
         E: rbatis::executor::Executor,
         U: serde::de::DeserializeOwned,
     {
-        let insert_id = rbs::Value::I64(-1);
-        let insert_id = rbatis::decode(insert_id)
-            .map_err(|e| crate::DySqlError(crate::ErrorInner::new(crate::Kind::ObjectMappingError, Some(e.into()), None)))?;
-        Ok(insert_id)
+        Ok(None)
     }
 }

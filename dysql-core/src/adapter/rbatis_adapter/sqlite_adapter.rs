@@ -1,15 +1,15 @@
 
-pub struct RbatisSqliteQuery{
+pub struct RbatisSqliteAdapter{
     dialect: crate::SqlDialect
 }
 
-impl RbatisSqliteQuery {
+impl RbatisSqliteAdapter {
     pub fn new(dialect: crate::SqlDialect) -> Self {
         Self { dialect }
     }
 }
 
-impl RbatisSqliteQuery {
+impl RbatisSqliteAdapter {
     crate::impl_rbatis_adapter_fetch_one!();
     crate::impl_rbatis_adapter_fetch_all!();
     crate::impl_rbatis_adapter_fetch_scalar!();
@@ -17,7 +17,7 @@ impl RbatisSqliteQuery {
     crate::impl_rbatis_adapter_page_count!();
     crate::impl_rbatis_adapter_page_all!();
 
-    pub async fn insert<E, D, U>(self, executor: &E, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>)
+    pub async fn dy_insert<E, D, U>(self, executor: &E, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>)
         -> Result<Option<U>, crate::DySqlError>
     where 
         E: rbatis::executor::Executor,
@@ -60,8 +60,8 @@ impl RbatisSqliteQuery {
         Ok(None)
     }
 
-    pub async fn fetch_insert_id<E, U>(self, executor: &mut E) 
-        -> Result<U, crate::DySqlError>
+    pub async fn dy_fetch_insert_id<E, U>(self, executor: &E) 
+        -> Result<Option<U>, crate::DySqlError>
     where
         E: rbatis::executor::Executor,
         U: serde::de::DeserializeOwned,
@@ -76,6 +76,6 @@ impl RbatisSqliteQuery {
         let insert_id = rbatis::decode(insert_id)
             .map_err(|e| crate::DySqlError(crate::ErrorInner::new(crate::Kind::ObjectMappingError, Some(e.into()), None)))?;
 
-        Ok(insert_id)
+        Ok(Some(insert_id))
     }
 }

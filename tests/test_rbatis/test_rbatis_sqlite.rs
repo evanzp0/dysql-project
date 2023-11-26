@@ -34,10 +34,10 @@ async fn connect_db() -> RBatis {
 
 #[tokio::test]
 async fn test_fetch_all() {
-    let mut conn = connect_db().await;
+    let conn = connect_db().await;
 
     let dto = UserDto{ id: None, name: None, age: Some(13) , id_rng: None };
-    let rst = fetch_all!(|&mut conn, &dto| -> User {
+    let rst = fetch_all!(|&conn, &dto| -> User {
         r#"SELECT * FROM test_user 
         WHERE 1 = 1
           {{#name}}AND name = :name{{/name}}
@@ -46,7 +46,7 @@ async fn test_fetch_all() {
     }).unwrap();
     assert_eq!(7, rst.len());
 
-    let rst = fetch_all!(|&mut conn| -> User {
+    let rst = fetch_all!(|&conn| -> User {
         r#"SELECT * FROM test_user"#
     }).unwrap();
     assert_eq!(9, rst.len());
@@ -116,7 +116,7 @@ async fn test_insert() -> Result<(), DySqlError> {
     let mut tran = conn.acquire_begin().await.unwrap();
 
     let dto = UserDto{ id: None, name: Some("lisi".to_owned()), age: Some(50), id_rng: None };
-    let insert_id = insert!(|&mut tran, dto| -> i64 {
+    let insert_id = insert!(|&tran, dto| -> i64 {
         r#"insert into test_user (name, age) values (:name, :age)"#
     })?;
 
@@ -128,14 +128,14 @@ async fn test_insert() -> Result<(), DySqlError> {
 
 #[tokio::test]
 async fn test_page() {
-    let mut conn = connect_db().await;
+    let conn = connect_db().await;
 
     let dto = UserDto{ id: None, name: Some("a".to_owned()), age: Some(13), id_rng: None };
     let sort_model = vec![
         SortModel {field: "id".to_owned(), sort: "desc".to_owned()}
     ];
     let mut pg_dto = PageDto::new_with_sort(3, 10, Some(&dto), sort_model.clone());
-    let rst = page!(|&mut conn, pg_dto| -> User {
+    let rst = page!(|&conn, pg_dto| -> User {
         "select * from test_user 
         where 1 = 1
         {{#data}}
@@ -146,7 +146,7 @@ async fn test_page() {
     assert_eq!(7, rst.total);
 
     let mut pg_dto = PageDto::new_with_sort(3, 10, Option::<()>::None, sort_model);
-    let rst = page!(|&mut conn, pg_dto| -> User {
+    let rst = page!(|&conn, pg_dto| -> User {
         "select * from test_user"
     }).unwrap();
     assert_eq!(9, rst.total);
@@ -154,14 +154,14 @@ async fn test_page() {
 
 #[tokio::test]
 async fn test_trim_sql() {
-    let mut conn = connect_db().await;
+    let conn = connect_db().await;
     let dto = UserDto::new(None, Some("z".to_owned()), Some(13), Some(vec![1, 2, 3,]));
     let sort_model = vec![
         SortModel {field: "id".to_owned(), sort: "desc".to_owned()}
     ];
     let mut pg_dto = PageDto::new_with_sort(3, 10, Some(&dto), sort_model);
 
-    let rst = page!(|&mut conn, pg_dto, "page_test_user"| -> User {
+    let rst = page!(|&conn, pg_dto, "page_test_user"| -> User {
         "select * from test_user 
         where
         {{#data}}

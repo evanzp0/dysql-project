@@ -9,192 +9,243 @@ use serde::de::DeserializeOwned;
 use crate::{SqlDialect, DySqlError, Pagination};
 
 #[cfg(feature = "rbatis-sqlite")]
-use crate::RbatisSqliteQuery;
+use crate::RbatisSqliteAdapter;
 #[cfg(feature = "rbatis-pg")]
-use crate::RbatisPostgresQuery;
+use crate::RbatisPostgresAdapter;
 #[cfg(feature = "rbatis-mysql")]
-use crate::RbatisMysqlQuery1;
-
-pub struct RbatisAdapterRouter {
-    dialect: SqlDialect
-}
-
-impl RbatisAdapterRouter {
-    pub fn new(dialect: SqlDialect) -> Self {
-        Self {dialect}
-    }
-
-    pub async fn fetch_one<E, D, U>(self, executor: &E, named_template: Arc<Template>, dto: Option<D>)
-        -> Result<U, DySqlError>
-    where 
-        E: Executor,
-        D: Content + Send + Sync,
-        U: DeserializeOwned,
-    {
-        use SqlDialect::*;
-        match self.dialect {
-            #[cfg(feature = "rbatis-pg")]
-            postgres => RbatisPostgresQuery::new(postgres).fetch_one(executor, named_template, dto).await,
-            #[cfg(feature = "rbatis-mysql")]
-            mysql => RbatisMysqlQuery1::new(postgres).fetch_one(executor, named_template, dto).await,
-            #[cfg(feature = "rbatis-sqlite")]
-            sqlite => RbatisSqliteQuery::new(sqlite).fetch_one(executor, named_template, dto).await,
-            _ => panic!("{:?} dialect not support", self.dialect),
-        }
-    }
-
-    pub async fn fetch_all<E, D, U>(self, executor: &E, named_template: Arc<Template>, dto: Option<D>)
-        -> Result<Vec<U>, DySqlError>
-    where 
-        E: Executor,
-        D: Content + Send + Sync,
-        U: DeserializeOwned,
-    {
-        use SqlDialect::*;
-        match self.dialect {
-            #[cfg(feature = "rbatis-pg")]
-            postgres => RbatisPostgresQuery::new(postgres).fetch_all(executor, named_template, dto).await,
-            #[cfg(feature = "rbatis-mysql")]
-            mysql => RbatisMysqlQuery1::new(postgres).fetch_all(executor, named_template, dto).await,
-            #[cfg(feature = "rbatis-sqlite")]
-            sqlite => RbatisSqliteQuery::new(sqlite).fetch_all(executor, named_template, dto).await,
-            _ => panic!("{:?} dialect not support", self.dialect),
-        }
-    }
-
-    pub async fn fetch_scalar<E, D, U>(self, executor: &E, named_template: Arc<Template>, dto: Option<D>)
-        -> Result<U, DySqlError>
-    where 
-        E: Executor,
-        D: Content + Send + Sync,
-        U: DeserializeOwned,
-    {
-        use SqlDialect::*;
-        match self.dialect {
-            #[cfg(feature = "rbatis-pg")]
-            postgres => RbatisPostgresQuery::new(postgres).fetch_scalar(executor, named_template, dto).await,
-            #[cfg(feature = "rbatis-mysql")]
-            mysql => RbatisMysqlQuery1::new(postgres).fetch_scalar(executor, named_template, dto).await,
-            #[cfg(feature = "rbatis-sqlite")]
-            sqlite => RbatisSqliteQuery::new(postgres).fetch_scalar(executor, named_template, dto).await,
-            _ => panic!("{:?} dialect not support", self.dialect),
-        }
-    }
-
-    pub async fn execute<E, D>(self, executor: &E, named_template: Arc<Template>, dto: Option<D>)
-        -> Result<u64, DySqlError>
-    where 
-        E: Executor,
-        D: Content + Send + Sync,
-    {
-        use SqlDialect::*;
-        match self.dialect {
-            #[cfg(feature = "rbatis-pg")]
-            postgres => RbatisPostgresQuery::new(postgres).execute(executor, named_template, dto).await,
-            #[cfg(feature = "rbatis-mysql")]
-            mysql => RbatisMysqlQuery1::new(postgres).execute(executor, named_template, dto).await,
-            #[cfg(feature = "rbatis-sqlite")]
-            sqlite => RbatisSqliteQuery::new(sqlite).execute(executor, named_template, dto).await,
-            _ => panic!("{:?} dialect not support", self.dialect),
-        }
-    }
-
-    pub async fn insert<E, D, U>(self, executor: &E, named_template: Arc<Template>, dto: Option<D>)
-        -> Result<Option<U>, DySqlError>
-    where 
-        E: Executor,
-        D: Content + Send + Sync,
-        U: DeserializeOwned,
-    {
-        use SqlDialect::*;
-        match self.dialect {
-            #[cfg(feature = "rbatis-pg")]
-            postgres => RbatisPostgresQuery::new(postgres).insert(executor, named_template, dto).await,
-            #[cfg(feature = "rbatis-mysql")]
-            mysql => RbatisMysqlQuery1::new(postgres).insert(executor, named_template, dto).await,
-            #[cfg(feature = "rbatis-sqlite")]
-            sqlite => RbatisSqliteQuery::new(sqlite).insert(executor, named_template, dto).await,
-            _ => panic!("{:?} dialect not support", self.dialect),
-        }
-    }
-
-    pub async fn fetch_insert_id<E, U>(self, executor: &mut E) 
-        -> Result<U, crate::DySqlError>
-    where
-        E: rbatis::executor::Executor,
-        U: serde::de::DeserializeOwned,
-    {
-        use SqlDialect::*;
-        match self.dialect {
-            #[cfg(feature = "rbatis-pg")]
-            postgres => RbatisPostgresQuery::new(postgres).fetch_insert_id(executor).await,
-            #[cfg(feature = "rbatis-mysql")]
-            mysql => RbatisMysqlQuery1::new(postgres).fetch_insert_id(executor).await,
-            #[cfg(feature = "rbatis-sqlite")]
-            sqlite => RbatisSqliteQuery::new(sqlite).fetch_insert_id(executor).await,
-            _ => panic!("{:?} dialect not support", self.dialect),
-        }
-    }
-
-    pub async fn page_count<E, D, U>(self, executor: &E, named_template: Arc<Template>, dto: Option<D>)
-        -> Result<U, DySqlError>
-    where 
-        E: Executor,
-        D: Content + Send + Sync,
-        U: DeserializeOwned,
-    {
-        use SqlDialect::*;
-        match self.dialect {
-            #[cfg(feature = "rbatis-pg")]
-            postgres => RbatisPostgresQuery::new(postgres).page_count(executor, named_template, dto).await,
-            #[cfg(feature = "rbatis-mysql")]
-            mysql => RbatisMysqlQuery1::new(postgres).page_count(executor, named_template, dto).await,
-            #[cfg(feature = "rbatis-sqlite")]
-            sqlite => RbatisSqliteQuery::new(sqlite).page_count(executor, named_template, dto).await,
-            _ => panic!("{:?} dialect not support", self.dialect),
-        }
-    }
-
-    pub async fn page_all<E, D, U>(self, executor: &E, named_template: Arc<Template>, page_dto: &crate::PageDto<D>)
-        -> Result<Pagination<U>, DySqlError>
-    where 
-        E: Executor,
-        D: Content + Send + Sync,
-        U: DeserializeOwned,
-    {
-        use SqlDialect::*;
-        match self.dialect {
-            #[cfg(feature = "rbatis-pg")]
-            postgres => RbatisPostgresQuery::new(postgres).page_all(executor, named_template, page_dto).await,
-            #[cfg(feature = "rbatis-mysql")]
-            mysql => RbatisMysqlQuery1::new(postgres).page_all(executor, named_template, page_dto).await,
-            #[cfg(feature = "rbatis-sqlite")]
-            sqlite => RbatisSqliteQuery::new(sqlite).page_all(executor, named_template, page_dto).await,
-            _ => panic!("{:?} dialect not support", self.dialect),
-        }
-    }
-}
+use crate::RbatisMysqlAdapter;
 
 pub trait RbatisExecutorAdatper
 {
-    fn create_query(&self) -> RbatisAdapterRouter
-    {
-        use SqlDialect::*;
-        match self.get_dialect() {
-            postgres => RbatisAdapterRouter::new(postgres),
-            mysql => RbatisAdapterRouter::new(mysql),
-            sqlite => RbatisAdapterRouter::new(sqlite),
-        }
-    }
+    fn get_dialect(&self) -> SqlDialect;
 
-    fn get_dialect(&self) -> SqlDialect; 
+    /// 查询并返回多个指定类型的对象
+    async fn dy_fetch_all<D, U>(self, named_template: Arc<Template>, dto: Option<D>)
+        -> Result<Vec<U>, DySqlError>
+    where 
+        D: Content + Send + Sync,
+        U: DeserializeOwned;
+
+    /// 查询并返回一个指定类型的对象
+    async fn dy_fetch_one<D, U>(self, named_template: Arc<Template>, dto: Option<D>)
+        -> Result<U, DySqlError>
+    where 
+        D: Content + Send + Sync,
+        U: DeserializeOwned;
+
+    /// 查询并返回一个指定类型的单值
+    async fn dy_fetch_scalar<D, U>(self,named_template: Arc<Template>, dto: Option<D>)
+        -> Result<U, DySqlError>
+    where 
+        D: Content + Send + Sync,
+        U: DeserializeOwned;
+
+    /// 执行一条sql命令并返回受其影响的记录数
+    async fn dy_execute<D>(self, named_template: Arc<Template>, dto: Option<D>)
+        -> Result<u64, DySqlError>
+    where 
+        D: Content + Send + Sync;
+
+    /// 新增一条记录
+    async fn dy_insert<D, U>(self, named_template: Arc<Template>, dto: Option<D>)
+        -> Result<Option<U>, DySqlError>
+    where 
+        D: Content + Send + Sync,
+        U: DeserializeOwned;
+
+    /// 获取新增记录的ID
+    async fn dy_fetch_insert_id<U>(self) 
+        -> Result<Option<U>, crate::DySqlError>
+    where
+        U: serde::de::DeserializeOwned;
+
+    /// 用于在分页查询中获取符合条件的总记录数
+    async fn dy_page_count<D, U>(self, named_template: Arc<Template>, dto: Option<D>)
+        -> Result<U, DySqlError>
+    where 
+        D: Content + Send + Sync,
+        U: DeserializeOwned;
+
+    /// 用返回分页查询中获取符合条件的结果
+    async fn dy_page_all<D, U>(self, named_template: Arc<Template>, page_dto: &crate::PageDto<D>)
+        -> Result<Pagination<U>, DySqlError>
+    where 
+        D: Content + Send + Sync,
+        U: DeserializeOwned;
 }
 
-impl RbatisExecutorAdatper for rbatis::RBatis {
-    fn get_dialect(&self) -> crate::SqlDialect {
-        let driver_type = self.driver_type().unwrap();
-        SqlDialect::from(driver_type)
-    }
+macro_rules! impl_rbatis_adapter_fetch_all_0 {
+    () => {
+        async fn dy_fetch_all<D, U>(self, named_template: Arc<Template>, dto: Option<D>)
+            -> Result<Vec<U>, DySqlError>
+        where 
+            D: Content + Send + Sync,
+            U: DeserializeOwned,
+        {
+            use SqlDialect::*;
+            match self.get_dialect() {
+                #[cfg(feature = "rbatis-pg")]
+                postgres => RbatisPostgresAdapter::new(postgres).dy_fetch_all(self, named_template, dto).await,
+                #[cfg(feature = "rbatis-mysql")]
+                mysql => RbatisMysqlAdapter::new(postgres).dy_fetch_all(self, named_template, dto).await,
+                #[cfg(feature = "rbatis-sqlite")]
+                sqlite => RbatisSqliteAdapter::new(sqlite).dy_fetch_all(self, named_template, dto).await,
+                _ => panic!("{:?} dialect not support", self.get_dialect()),
+            }
+        }
+    };
+}
+
+macro_rules! impl_rbatis_adapter_fetch_one_0 {
+    () => {
+        async fn dy_fetch_one<D, U>(self, named_template: Arc<Template>, dto: Option<D>)
+        -> Result<U, DySqlError>
+        where 
+            D: Content + Send + Sync,
+            U: DeserializeOwned,
+        {
+            use SqlDialect::*;
+            match self.get_dialect() {
+                #[cfg(feature = "rbatis-pg")]
+                postgres => RbatisPostgresAdapter::new(postgres).dy_fetch_one(self, named_template, dto).await,
+                #[cfg(feature = "rbatis-mysql")]
+                mysql => RbatisMysqlAdapter::new(postgres).dy_fetch_one(self, named_template, dto).await,
+                #[cfg(feature = "rbatis-sqlite")]
+                sqlite => RbatisSqliteAdapter::new(sqlite).dy_fetch_one(self, named_template, dto).await,
+                _ => panic!("{:?} dialect not support", self.get_dialect()),
+            }
+        }
+    };
+}
+
+macro_rules! impl_rbatis_adapter_fetch_scalar_0 {
+    () => {
+        async fn dy_fetch_scalar<D, U>(self,named_template: Arc<Template>, dto: Option<D>)
+        -> Result<U, DySqlError>
+        where 
+            D: Content + Send + Sync,
+            U: DeserializeOwned,
+        {
+            use SqlDialect::*;
+            match self.get_dialect() {
+                #[cfg(feature = "rbatis-pg")]
+                postgres => RbatisPostgresAdapter::new(postgres).dy_fetch_scalar(self, named_template, dto).await,
+                #[cfg(feature = "rbatis-mysql")]
+                mysql => RbatisMysqlAdapter::new(postgres).dy_fetch_scalar(self, named_template, dto).await,
+                #[cfg(feature = "rbatis-sqlite")]
+                sqlite => RbatisSqliteAdapter::new(sqlite).dy_fetch_scalar(self, named_template, dto).await,
+                _ => panic!("{:?} dialect not support", self.get_dialect()),
+            }
+        }
+    };
+}
+
+macro_rules! impl_rbatis_adapter_fetch_execute_0 {
+    () => {
+        async fn dy_execute<D>(self, named_template: Arc<Template>, dto: Option<D>)
+            -> Result<u64, DySqlError>
+        where 
+            D: Content + Send + Sync,
+        {
+            use SqlDialect::*;
+            match self.get_dialect() {
+                #[cfg(feature = "rbatis-pg")]
+                postgres => RbatisPostgresAdapter::new(postgres).dy_execute(self, named_template, dto).await,
+                #[cfg(feature = "rbatis-mysql")]
+                mysql => RbatisMysqlAdapter::new(postgres).dy_execute(self, named_template, dto).await,
+                #[cfg(feature = "rbatis-sqlite")]
+                sqlite => RbatisSqliteAdapter::new(sqlite).dy_execute(self, named_template, dto).await,
+                _ => panic!("{:?} dialect not support", self.get_dialect()),
+            }
+        }
+    };
+}
+
+macro_rules! impl_rbatis_adapter_insert_0 {
+    () => {
+        async fn dy_insert<D, U>(self, named_template: Arc<Template>, dto: Option<D>)
+            -> Result<Option<U>, DySqlError>
+        where 
+            D: Content + Send + Sync,
+            U: DeserializeOwned,
+        {
+            use SqlDialect::*;
+            match self.get_dialect() {
+                #[cfg(feature = "rbatis-pg")]
+                postgres => RbatisPostgresAdapter::new(postgres).dy_insert(self, named_template, dto).await,
+                #[cfg(feature = "rbatis-mysql")]
+                mysql => RbatisMysqlAdapter::new(postgres).dy_insert(self, named_template, dto).await,
+                #[cfg(feature = "rbatis-sqlite")]
+                sqlite => RbatisSqliteAdapter::new(sqlite).dy_insert(self, named_template, dto).await,
+                _ => panic!("{:?} dialect not support", self.get_dialect()),
+            }
+        }
+    };
+}
+
+macro_rules! impl_rbatis_adapter_fetch_insert_id_0 {
+    () => {
+        async fn dy_fetch_insert_id<U>(self) 
+            -> Result<Option<U>, crate::DySqlError>
+        where
+            U: serde::de::DeserializeOwned,
+        {
+            use SqlDialect::*;
+            match self.get_dialect() {
+                #[cfg(feature = "rbatis-pg")]
+                postgres => RbatisPostgresAdapter::new(postgres).dy_fetch_insert_id(self).await,
+                #[cfg(feature = "rbatis-mysql")]
+                mysql => RbatisMysqlAdapter::new(postgres).dy_fetch_insert_id(self).await,
+                #[cfg(feature = "rbatis-sqlite")]
+                sqlite => RbatisSqliteAdapter::new(sqlite).dy_fetch_insert_id(self).await,
+                _ => panic!("{:?} dialect not support", self.get_dialect()),
+            }
+        }
+    };
+}
+
+macro_rules! impl_rbatis_adapter_fetch_page_count_0 {
+    () => {
+        async fn dy_page_count<D, U>(self, named_template: Arc<Template>, dto: Option<D>)
+            -> Result<U, DySqlError>
+        where 
+            D: Content + Send + Sync,
+            U: DeserializeOwned,
+        {
+            use SqlDialect::*;
+            match self.get_dialect() {
+                #[cfg(feature = "rbatis-pg")]
+                postgres => RbatisPostgresAdapter::new(postgres).dy_page_count(self, named_template, dto).await,
+                #[cfg(feature = "rbatis-mysql")]
+                mysql => RbatisMysqlAdapter::new(postgres).dy_page_count(self, named_template, dto).await,
+                #[cfg(feature = "rbatis-sqlite")]
+                sqlite => RbatisSqliteAdapter::new(sqlite).dy_page_count(self, named_template, dto).await,
+                _ => panic!("{:?} dialect not support", self.get_dialect()),
+            }
+        }
+    };
+}
+
+macro_rules! impl_rbatis_adapter_fetch_page_all_0 {
+    () => {
+        async fn dy_page_all<D, U>(self, named_template: Arc<Template>, page_dto: &crate::PageDto<D>)
+            -> Result<Pagination<U>, DySqlError>
+        where 
+            D: Content + Send + Sync,
+            U: DeserializeOwned,
+        {
+            use SqlDialect::*;
+            match self.get_dialect() {
+                #[cfg(feature = "rbatis-pg")]
+                postgres => RbatisPostgresAdapter::new(postgres).dy_page_all(self, named_template, page_dto).await,
+                #[cfg(feature = "rbatis-mysql")]
+                mysql => RbatisMysqlAdapter::new(postgres).dy_page_all(self, named_template, page_dto).await,
+                #[cfg(feature = "rbatis-sqlite")]
+                sqlite => RbatisSqliteAdapter::new(sqlite).dy_page_all(self, named_template, page_dto).await,
+                _ => panic!("{:?} dialect not support", self.get_dialect()),
+            }
+        }
+    };
 }
 
 impl RbatisExecutorAdatper for &rbatis::RBatis {
@@ -202,28 +253,68 @@ impl RbatisExecutorAdatper for &rbatis::RBatis {
         let driver_type = self.driver_type().unwrap();
         SqlDialect::from(driver_type)
     }
+
+    impl_rbatis_adapter_fetch_all_0!();
+    impl_rbatis_adapter_fetch_one_0!();
+    impl_rbatis_adapter_fetch_scalar_0!();
+    impl_rbatis_adapter_fetch_execute_0!();
+    impl_rbatis_adapter_insert_0!();
+    impl_rbatis_adapter_fetch_insert_id_0!();
+    impl_rbatis_adapter_fetch_page_count_0!();
+    impl_rbatis_adapter_fetch_page_all_0!();
 }
 
-impl RbatisExecutorAdatper for rbatis::executor::RBatisTxExecutor {
+impl RbatisExecutorAdatper for &rbatis::executor::RBatisTxExecutor {
     fn get_dialect(&self) -> crate::SqlDialect {
         let driver_type = self.rb.driver_type().unwrap();
         SqlDialect::from(driver_type)
     }
+
+    impl_rbatis_adapter_fetch_all_0!();
+    impl_rbatis_adapter_fetch_one_0!();
+    impl_rbatis_adapter_fetch_scalar_0!();
+    impl_rbatis_adapter_fetch_execute_0!();
+    impl_rbatis_adapter_insert_0!();
+    impl_rbatis_adapter_fetch_insert_id_0!();
+    impl_rbatis_adapter_fetch_page_count_0!();
+    impl_rbatis_adapter_fetch_page_all_0!();
 }
 
-impl RbatisExecutorAdatper for &rbatis::executor::RBatisTxExecutor {
-    fn get_dialect(&self) -> SqlDialect {
-        let driver_type = self.rb.driver_type().unwrap();
-        SqlDialect::from(driver_type)
-    }
-}
 
-impl RbatisExecutorAdatper for &mut rbatis::executor::RBatisTxExecutor {
-    fn get_dialect(&self) -> SqlDialect {
-        let driver_type = self.rb.driver_type().unwrap();
-        SqlDialect::from(driver_type)
-    }
-}
+// impl RbatisExecutorAdatper for rbatis::RBatis {
+//     fn get_dialect(&self) -> crate::SqlDialect {
+//         let driver_type = self.driver_type().unwrap();
+//         SqlDialect::from(driver_type)
+//     }
+// }
+
+// impl RbatisExecutorAdatper for &rbatis::RBatis {
+//     fn get_dialect(&self) -> crate::SqlDialect {
+//         let driver_type = self.driver_type().unwrap();
+//         SqlDialect::from(driver_type)
+//     }
+// }
+
+// impl RbatisExecutorAdatper for rbatis::executor::RBatisTxExecutor {
+//     fn get_dialect(&self) -> crate::SqlDialect {
+//         let driver_type = self.rb.driver_type().unwrap();
+//         SqlDialect::from(driver_type)
+//     }
+// }
+
+// impl RbatisExecutorAdatper for &rbatis::executor::RBatisTxExecutor {
+//     fn get_dialect(&self) -> SqlDialect {
+//         let driver_type = self.rb.driver_type().unwrap();
+//         SqlDialect::from(driver_type)
+//     }
+// }
+
+// impl RbatisExecutorAdatper for &mut rbatis::executor::RBatisTxExecutor {
+//     fn get_dialect(&self) -> SqlDialect {
+//         let driver_type = self.rb.driver_type().unwrap();
+//         SqlDialect::from(driver_type)
+//     }
+// }
 
 pub fn simple_2_value(simple_value: SimpleValue) -> Value {
     match simple_value {

@@ -1,14 +1,11 @@
 mod common_nh;
-use std::{future::Future, pin::Pin};
 
 use common_nh::*;
 
-use dysql::{Content, fetch_all, Value};
+use dysql::{fetch_all, Value};
 use rbatis::executor::Executor;
-use serde::{Deserialize, Serialize};
-use sqlx::{FromRow, ConnectOptions, PgConnection};
 
-#[derive(Clone, Debug, Serialize, Deserialize, Content)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize, dysql::Content)]
 pub struct UserDto {
     pub id: Option<i64>,
     pub name: Option<String>,
@@ -22,8 +19,10 @@ impl UserDto {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-#[derive(FromRow)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+#[derive(sqlx::FromRow)]
+#[derive(tokio_pg_mapper_derive::PostgresMapper, PartialEq)]
+#[pg_mapper(table="test_user")]
 pub struct User {
     pub id: i64,
     pub name: Option<String>,
@@ -41,12 +40,8 @@ async fn tokio_pg_db() -> tokio_postgres::Client {
     client
 }
 
-pub async fn sqlx_pg_db() -> PgConnection {
-    // let conn = sqlx::postgres::PgPoolOptions::new()
-    //     .acquire_timeout(std::time::Duration::from_secs(60 * 60))
-    //     .max_connections(5)
-    //     .connect("postgres://root:111111@127.0.0.1/my_database").await.unwrap();
-
+pub async fn sqlx_pg_db() -> sqlx::PgConnection {
+    use sqlx::ConnectOptions;
     let options = sqlx::postgres::PgConnectOptions::new()
         .host("127.0.0.1")
         .port(5432)
@@ -58,10 +53,10 @@ pub async fn sqlx_pg_db() -> PgConnection {
     conn
 }
 
-async fn rbatis_pg_db() -> rbatis::RBatis {
+async fn rbatis_pg_db() -> rbatis::executor::RBatisConnExecutor {
     let rb = rbatis::RBatis::new();
     rb.init(rbdc_pg::Driver{},"postgres://root:111111@localhost:5432/my_database").unwrap();
-    rb
+    rb.acquire().await.unwrap()
 }
 
 rbatis::pysql!(pysql_select(rb: &dyn Executor, name:&str)  -> Result<rbs::Value, rbatis::Error> =>
@@ -71,70 +66,111 @@ rbatis::pysql!(pysql_select(rb: &dyn Executor, name:&str)  -> Result<rbs::Value,
 "#);
 
 //cargo test --release --bench bench_nh_pg --no-fail-fast -- --exact -Z unstable-options --show-output
-// ---- bench_raw_rbatis stdout ----
-// use Time: 32.028605071s ,each:320286 ns/op
-// use QPS: 3122 QPS/s
-#[tokio::test]
-async fn bench_raw_rbatis() {
-    let rbatis = rbatis_pg_db().await;
-    let name = "a5".to_owned();
-    let f = async move {
-        rbench!(100000, {
-            pysql_select(&rbatis, &name).await.unwrap();
-        });
-    };
-    f.await;
-}
 
-// ---- bench_dysql_rbatis stdout ----
-// use Time: 32.179844565s ,each:321798 ns/op
-// use QPS: 3107 QPS/s
-#[tokio::test]
-async fn bench_dysql_rbatis() {
-    let rbatis = rbatis_pg_db().await;
-    let dto = Value::new("a5");
+// ---- bench_raw_sqlx stdout ----
+// use Time: 31.643106854s ,each:316431 ns/op
+// use QPS: 3160 QPS/s
+#[test]
+fn bench_raw_sqlx() {
     let f = async move {
+        let mut conn = sqlx_pg_db().await;
+        let name = "a5";
+        let sql ="select * from test_user where name = $1 ";
         rbench!(100000, {
-            dysql::fetch_all!(|&rbatis, &dto| -> User {
-                "select * from test_user where name = :value"
-            }).unwrap();
+            let query = sqlx::query_as::<sqlx::Postgres, User>(&sql);
+            let query = query.bind(&name);
+            let _rst = query.fetch_all(&mut conn).await.unwrap();
         });
     };
-    f.await;
+    block_on(f);
 }
 
 // ---- bench_dysql_sqlx stdout ----
-// use Time: 16.68448359s ,each:166844 ns/op
-// use QPS: 5993 QPS/s
-#[tokio::test]
-async fn bench_dysql_sqlx() {
-    let mut conn = sqlx_pg_db().await;
-    let dto = Value::new("a5");
+// use Time: 31.754854259s ,each:317548 ns/op
+// use QPS: 3149 QPS/s
+#[test]
+fn bench_dysql_sqlx() {
     let f = async move {
+        let mut conn = sqlx_pg_db().await;
+        let dto = Value::new("a5");
         rbench!(100000, {
             fetch_all!(|&mut conn, &dto| -> User {
                 "select * from test_user where 1 = 1 and name = :value"
             }).unwrap();
         });
     };
-    f.await;
+    block_on(f);
 }
 
-// ---- bench_raw_sqlx stdout ----
-// use Time: 16.53535847s ,each:165353 ns/op
-// use QPS: 6047 QPS/s
-#[tokio::test]
-async fn bench_raw_sqlx() {
-    let mut conn = sqlx_pg_db().await;
-    let name = "a5";
+// ---- bench_raw_rbatis stdout ----
+// use Time: 32.099826871s ,each:320998 ns/op
+// use QPS: 3115 QPS/s
+#[test]
+fn bench_raw_rbatis() {
     let f = async move {
+        let conn = rbatis_pg_db().await;
+        let name = "a5".to_owned();
         rbench!(100000, {
-            let sql ="select * from test_user where name = $1 ";
-
-            let query = sqlx::query_as::<sqlx::Postgres, User>(&sql);
-            let query = query.bind(&name);
-            let _rst = query.fetch_all(&mut conn).await.unwrap();
+            pysql_select(&conn, &name).await.unwrap();
         });
     };
-    f.await
+    block_on(f);
+}
+
+// ---- bench_dysql_rbatis stdout ----
+// use Time: 32.353856944s ,each:323538 ns/op
+// use QPS: 3090 QPS/s
+#[test]
+fn bench_dysql_rbatis() {
+    let f = async move {
+        let conn = rbatis_pg_db().await;
+        let dto = Value::new("a5");
+        rbench!(100000, {
+            dysql::fetch_all!(|&conn, &dto| -> User {
+                "select * from test_user where name = :value"
+            }).unwrap();
+        });
+    };
+    block_on(f);
+}
+
+// ---- bench_raw_tokio_pg stdout ----
+// use Time: 55.855347915s ,each:558553 ns/op
+// use QPS: 1790 QPS/s
+#[test]
+fn bench_raw_tokio_pg() {
+    use tokio_pg_mapper::FromTokioPostgresRow;
+
+    let f = async move {
+        let conn = tokio_pg_db().await;
+        let sql ="select * from test_user where name = $1 ";
+        let name = "a5";
+        rbench!(100000, {
+            let stmt = conn.prepare(&sql).await.unwrap();
+            let rows = conn.query(&stmt, &[&name]).await.unwrap();
+
+            let _ = rows
+                .iter()
+                .map(|row| <User>::from_row_ref(row).expect("query unexpected error"))
+                .collect::<Vec<User>>();
+        });
+    };
+    block_on(f);
+}
+
+// ---- bench_dysql_tokio_pg stdout ----
+// use Time: 56.263362344s ,each:562633 ns/op
+// use QPS: 1777 QPS/s
+#[test]
+fn bench_dysql_tokio_pg() {
+    let f = async move {
+        let conn = tokio_pg_db().await;
+        let dto = Value::new("a5");
+        rbench!(100000, {
+            dysql::fetch_all!(|&conn, &dto| -> User {
+                "select * from test_user where name = :value"
+            }).unwrap();
+        });
+    };
+    block_on(f);
 }

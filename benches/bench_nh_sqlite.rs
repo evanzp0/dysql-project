@@ -1,14 +1,13 @@
-use dysql::{Value, Content, fetch_all};
+use dysql::{Value, fetch_all};
 use rbatis::{RBatis, executor::Executor};
 use rbdc_sqlite::Driver;
-use serde::{Serialize, Deserialize};
-use sqlx::{SqliteConnection, sqlite::{SqliteConnectOptions, SqliteJournalMode}, FromRow};
+use sqlx::{SqliteConnection, sqlite::{SqliteConnectOptions, SqliteJournalMode}};
 
 mod common_nh;
 use common_nh::*;
 
 
-async fn init_rbatis_connection() -> RBatis {
+async fn init_rbatis_connection() -> rbatis::executor::RBatisConnExecutor {
     let rb = RBatis::new();
     rb.init(Driver{},"sqlite::memory:").unwrap();
 
@@ -31,7 +30,7 @@ async fn init_rbatis_connection() -> RBatis {
     rb.exec("INSERT INTO test_user (name, age) VALUES ('b', 31)", vec![]).await.unwrap();
     rb.exec("INSERT INTO test_user (name, age) VALUES ('b', 33)", vec![]).await.unwrap();
 
-    rb
+    rb.acquire().await.unwrap()
 }
 
 async fn init_sqlx_db() -> SqliteConnection {
@@ -66,7 +65,13 @@ async fn init_sqlx_db() -> SqliteConnection {
     conn
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, Content)]
+rbatis::pysql!(pysql_select(rb: &dyn Executor, name:&str)  -> Result<rbs::Value, rbatis::Error> =>
+    r#"`select `
+         ` * `
+      `from test_user where name=#{name}`
+"#);
+
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize, dysql::Content)]
 pub struct UserDto {
     pub id: Option<i64>,
     pub name: Option<String>,
@@ -74,22 +79,14 @@ pub struct UserDto {
     pub id_rng: Option<Vec<i32>>,
 }
 
-rbatis::pysql!(pysql_select(rb: &dyn Executor, name:&str)  -> Result<rbs::Value, rbatis::Error> =>
-    r#"`select `
-         ` * `
-      `from test_user where 1 = 1`
-        if name != '':
-           ` and name=#{name}`
-"#);
-
 impl UserDto {
     pub fn new(id: Option<i64>, name: Option<String>, age: Option<i32>, id_rng: Option<Vec<i32>>) -> Self {
         Self { id, name, age, id_rng }
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-#[derive(FromRow)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+#[derive(sqlx::FromRow)]
 pub struct User {
     pub id: i64,
     pub name: Option<String>,
@@ -98,46 +95,34 @@ pub struct User {
 
 //cargo test --release --package dysql --bench bench_nh_sqlite--no-fail-fast -- --exact -Z unstable-options --show-output
 //cargo test --release --bench bench_nh_sqlite --no-fail-fast -- --exact -Z unstable-options --show-output
-// ---- bench_raw_rbatis stdout ----
-// use Time: 11.698437954s ,each:116984 ns/op
-// use QPS: 8548 QPS/s
-#[test]
-fn bench_raw_rbatis() {
-    let rbatis = block_on(init_rbatis_connection());
-    let name = "a".to_owned();
-    let f = async move {
-        rbench!(100000, {
-            pysql_select(&rbatis, &name).await.unwrap();
-        });
-    };
-    block_on(f);
-}
 
-// ---- bench_dysql_rbatis stdout ----
-// use Time: 12.328141445s ,each:123281 ns/op
-// use QPS: 8111 QPS/s
-#[test]
-fn bench_dysql_rbatis() {
-    let rbatis = block_on(init_rbatis_connection());
-    let dto = Value::new("a");
-    let f = async move {
-        rbench!(100000, {
-            dysql::fetch_all!(|&rbatis, &dto| -> User {
-                "select * from test_user where name = :value"
-            }).unwrap();
-        });
-    };
-    block_on(f);
-}
 
 // ---- bench_dysql_sqlx stdout ----
-// use Time: 4.743496849s ,each:47434 ns/op
-// use QPS: 21081 QPS/s
+// use Time: 4.174755327s ,each:41747 ns/op
+// use QPS: 23953 QPS/s
+#[test]
+fn bench_raw_sqlx() {
+    let f = async move {
+        let mut conn = init_sqlx_db().await;
+            let name = "a";
+            let sql ="select * from test_user where name = ? ";
+        rbench!(100000, {
+            let query = sqlx::query_as::<_, User>(&sql);
+            let query = query.bind(&name);
+            let _rst = query.fetch_all(&mut conn).await.unwrap();
+        });
+    };
+    block_on(f);
+}
+
+// ---- bench_raw_sqlx stdout ----
+// use Time: 4.903177835s ,each:49031 ns/op
+// use QPS: 20394 QPS/s
 #[test]
 fn bench_dysql_sqlx() {
-    let mut conn = block_on(init_sqlx_db());
-    let dto = Value::new("a");
     let f = async move {
+        let mut conn = init_sqlx_db().await;
+        let dto = Value::new("a");
         rbench!(100000, {
             fetch_all!(|&mut conn, &dto| -> User {
                 "select * from test_user where 1 = 1 and name = :value"
@@ -147,20 +132,33 @@ fn bench_dysql_sqlx() {
     block_on(f);
 }
 
-// ---- bench_raw_sqlx stdout ----
-// use Time: 4.474769804s ,each:44747 ns/op
-// use QPS: 22347 QPS/s
+// ---- bench_raw_rbatis stdout ----
+// use Time: 7.235434223s ,each:72354 ns/op
+// use QPS: 13820 QPS/s
 #[test]
-fn bench_raw_sqlx() {
-    let mut conn = block_on(init_sqlx_db());
-    let name = "a";
+fn bench_raw_rbatis() {
     let f = async move {
+        let rbatis = init_rbatis_connection().await;
+        let name = "a".to_owned();
         rbench!(100000, {
-            let sql ="select * from test_user where name = ? ";
+            pysql_select(&rbatis, &name).await.unwrap();
+        });
+    };
+    block_on(f);
+}
 
-            let query = sqlx::query_as::<_, User>(&sql);
-            let query = query.bind(&name);
-            let _rst = query.fetch_all(&mut conn).await.unwrap();
+// ---- bench_dysql_rbatis stdout ----
+// use Time: 7.215524126s ,each:72155 ns/op
+// use QPS: 13859 QPS/s
+#[test]
+fn bench_dysql_rbatis() {
+    let f = async move {
+        let rbatis = init_rbatis_connection().await;
+        let dto = Value::new("a");
+        rbench!(100000, {
+            dysql::fetch_all!(|&rbatis, &dto| -> User {
+                "select * from test_user where name = :value"
+            }).unwrap();
         });
     };
     block_on(f);

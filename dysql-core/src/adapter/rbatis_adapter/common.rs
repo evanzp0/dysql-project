@@ -15,6 +15,28 @@ use crate::RbatisPostgresAdapter;
 #[cfg(feature = "rbatis-mysql")]
 use crate::RbatisMysqlAdapter;
 
+pub fn simple_2_value(simple_value: SimpleValue) -> Value {
+    match simple_value {
+        SimpleValue::t_usize(v) => Value::U64(v as u64),
+        SimpleValue::t_isize(v) => Value::I64(v as i64),
+        SimpleValue::t_i64(v) => Value::I64(v),
+        SimpleValue::t_u64(v) => Value::U64(v),
+        SimpleValue::t_i32(v) => Value::I32(v),
+        SimpleValue::t_u32(v) => Value::U32(v),
+        SimpleValue::t_i16(v) => Value::I32(v as i32),
+        SimpleValue::t_u16(v) => Value::U32(v as u32),
+        SimpleValue::t_i8(v) => Value::I32(v as i32),
+        SimpleValue::t_u8(v) => Value::U32(v as u32),
+        SimpleValue::t_f32(v) => Value::F32(v),
+        SimpleValue::t_f64(v) => Value::F64(v),
+        SimpleValue::t_bool(v) => Value::Bool(v),
+        SimpleValue::t_str(v) => Value::String(v.as_str().unwrap().to_owned()),
+        SimpleValue::t_String(v) => Value::String(v.as_string().unwrap().clone()),
+        SimpleValue::None(_) => Value::Null,
+        _ => panic!("{:?} type not support", simple_value),
+    }
+}
+
 pub trait RbatisExecutorAdatper
 {
     fn get_dialect(&self) -> SqlDialect;
@@ -280,60 +302,18 @@ impl RbatisExecutorAdatper for &rbatis::executor::RBatisTxExecutor {
     impl_rbatis_adapter_fetch_page_all_0!();
 }
 
-
-// impl RbatisExecutorAdatper for rbatis::RBatis {
-//     fn get_dialect(&self) -> crate::SqlDialect {
-//         let driver_type = self.driver_type().unwrap();
-//         SqlDialect::from(driver_type)
-//     }
-// }
-
-// impl RbatisExecutorAdatper for &rbatis::RBatis {
-//     fn get_dialect(&self) -> crate::SqlDialect {
-//         let driver_type = self.driver_type().unwrap();
-//         SqlDialect::from(driver_type)
-//     }
-// }
-
-// impl RbatisExecutorAdatper for rbatis::executor::RBatisTxExecutor {
-//     fn get_dialect(&self) -> crate::SqlDialect {
-//         let driver_type = self.rb.driver_type().unwrap();
-//         SqlDialect::from(driver_type)
-//     }
-// }
-
-// impl RbatisExecutorAdatper for &rbatis::executor::RBatisTxExecutor {
-//     fn get_dialect(&self) -> SqlDialect {
-//         let driver_type = self.rb.driver_type().unwrap();
-//         SqlDialect::from(driver_type)
-//     }
-// }
-
-// impl RbatisExecutorAdatper for &mut rbatis::executor::RBatisTxExecutor {
-//     fn get_dialect(&self) -> SqlDialect {
-//         let driver_type = self.rb.driver_type().unwrap();
-//         SqlDialect::from(driver_type)
-//     }
-// }
-
-pub fn simple_2_value(simple_value: SimpleValue) -> Value {
-    match simple_value {
-        SimpleValue::t_usize(v) => Value::U64(v as u64),
-        SimpleValue::t_isize(v) => Value::I64(v as i64),
-        SimpleValue::t_i64(v) => Value::I64(v),
-        SimpleValue::t_u64(v) => Value::U64(v),
-        SimpleValue::t_i32(v) => Value::I32(v),
-        SimpleValue::t_u32(v) => Value::U32(v),
-        SimpleValue::t_i16(v) => Value::I32(v as i32),
-        SimpleValue::t_u16(v) => Value::U32(v as u32),
-        SimpleValue::t_i8(v) => Value::I32(v as i32),
-        SimpleValue::t_u8(v) => Value::U32(v as u32),
-        SimpleValue::t_f32(v) => Value::F32(v),
-        SimpleValue::t_f64(v) => Value::F64(v),
-        SimpleValue::t_bool(v) => Value::Bool(v),
-        SimpleValue::t_str(v) => Value::String(v.as_str().unwrap().to_owned()),
-        SimpleValue::t_String(v) => Value::String(v.as_string().unwrap().clone()),
-        SimpleValue::None(_) => Value::Null,
-        _ => panic!("{:?} type not support", simple_value),
+impl RbatisExecutorAdatper for &rbatis::executor::RBatisConnExecutor {
+    fn get_dialect(&self) -> crate::SqlDialect {
+        let driver_type = self.rb.driver_type().unwrap();
+        SqlDialect::from(driver_type)
     }
+
+    impl_rbatis_adapter_fetch_all_0!();
+    impl_rbatis_adapter_fetch_one_0!();
+    impl_rbatis_adapter_fetch_scalar_0!();
+    impl_rbatis_adapter_fetch_execute_0!();
+    impl_rbatis_adapter_insert_0!();
+    impl_rbatis_adapter_fetch_insert_id_0!();
+    impl_rbatis_adapter_fetch_page_count_0!();
+    impl_rbatis_adapter_fetch_page_all_0!();
 }

@@ -45,7 +45,6 @@ macro_rules! impl_tokio_pg_adapter_fetch_all {
             let params = tosql_values.into_iter();
             let params = params.as_slice();
 
-
             let rows = self
                 .query(&stmt, &params)
                 .await

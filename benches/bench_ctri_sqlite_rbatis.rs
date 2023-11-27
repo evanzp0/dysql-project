@@ -1,4 +1,3 @@
-use std::future::Future;
 
 use criterion::{Criterion, BenchmarkId, criterion_group, criterion_main};
 use rbatis::{RBatis, executor::RBatisConnExecutor};
@@ -34,10 +33,6 @@ async fn init_connection() -> RBatisConnExecutor {
 
 
 fn describe_trivial(c: &mut Criterion) {
-    // let runtime = tokio::runtime::Builder::new_multi_thread()
-    //         .enable_all()
-    //         .build()
-    //         .expect("tokio block_on fail");
     let runtime = tokio::runtime::Runtime::new().unwrap();
     let _db = runtime.block_on(init_connection());
     let size = 1;
@@ -60,18 +55,3 @@ criterion_group!(
     describe_trivial,
 );
 criterion_main!(benches);
-
-pub fn block_on<T>(task: T) -> T::Output
-where
-    T: Future + Send + 'static,
-    T::Output: Send + 'static,
-{
-    tokio::task::block_in_place(|| {
-        tokio::runtime::Builder::new_multi_thread()
-            .enable_all()
-            .build()
-            .expect("tokio block_on fail")
-            .block_on(task)
-        // tokio::runtime::Handle::current().block_on(task)
-    })
-}

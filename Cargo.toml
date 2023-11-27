@@ -114,10 +114,10 @@ name = "bench_tpl"
 path = "benches/bench_tpl.rs"
 harness = true
 
-[[test]]
-name = "bench_nh_sqlite"
-path = "benches/bench_nh_sqlite.rs"
-required-features = ["rbatis-sqlite"]
+# [[test]]
+# name = "bench_nh_sqlite"
+# path = "benches/bench_nh_sqlite.rs"
+# required-features = ["rbatis-sqlite"]
 
 # [[test]]
 # name = "bench_nh_pg"

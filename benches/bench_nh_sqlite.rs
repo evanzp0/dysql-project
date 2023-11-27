@@ -1,11 +1,46 @@
+mod entity;
 
 use rbatis::{RBatis, executor::Executor};
+
 use sqlx::{SqliteConnection, sqlite::{SqliteConnectOptions, SqliteJournalMode}};
 
 mod common_nh;
 use common_nh::*;
 
+use crate::entity::test_user;
 
+
+async fn init_seaorm_connection() -> sea_orm::DatabaseConnection {
+    use sea_orm::ConnectionTrait;
+    use sea_orm::Set;
+    use crate::entity::test_user::Entity as TestUser;
+    use sea_orm::EntityTrait;
+
+    let db = sea_orm::Database::connect("sqlite::memory:").await.unwrap();
+    let builder = db.get_database_backend();
+    let schema = sea_orm::Schema::new(builder);
+    let table_create_statement = schema.create_table_from_entity(TestUser);
+    let _ = db.execute(builder.build(&table_create_statement)).await;
+
+    let _ = TestUser::insert_many(
+        vec![
+            test_user::ActiveModel { id: Set(1), name: Set(Some("a5".to_owned())), age: Set(Some(10)) },
+            test_user::ActiveModel { id: Set(2), name: Set(Some("a".to_owned())), age: Set(Some(10)) },
+            test_user::ActiveModel { id: Set(3), name: Set(Some("a".to_owned())), age: Set(Some(10)) },
+            test_user::ActiveModel { id: Set(4), name: Set(Some("a".to_owned())), age: Set(Some(10)) },
+            test_user::ActiveModel { id: Set(5), name: Set(Some("a".to_owned())), age: Set(Some(10)) },
+            test_user::ActiveModel { id: Set(6), name: Set(Some("a".to_owned())), age: Set(Some(10)) },
+            test_user::ActiveModel { id: Set(7), name: Set(Some("a".to_owned())), age: Set(Some(10)) },
+            test_user::ActiveModel { id: Set(8), name: Set(Some("a".to_owned())), age: Set(Some(10)) },
+            test_user::ActiveModel { id: Set(9), name: Set(Some("a".to_owned())), age: Set(Some(10)) },
+        ]
+    )
+    .exec(&db)
+    .await
+    .unwrap();
+
+    db
+}
 async fn init_rbatis_connection() -> rbatis::executor::RBatisConnExecutor {
     let rb = RBatis::new();
     rb.init(rbdc_sqlite::Driver {},"sqlite::memory:").unwrap();
@@ -95,10 +130,6 @@ pub struct User {
 //cargo test --release --package dysql --bench bench_nh_sqlite--no-fail-fast -- --exact -Z unstable-options --show-output
 //cargo test --release --bench bench_nh_sqlite --no-fail-fast -- --exact -Z unstable-options --show-output
 
-
-// ---- bench_dysql_sqlx stdout ----
-// use Time: 4.094688259s ,each:40946 ns/op
-// use QPS: 24421 QPS/s
 #[test]
 fn bench_raw_sqlx() {
     let f = async move {
@@ -114,9 +145,6 @@ fn bench_raw_sqlx() {
     block_on(f);
 }
 
-// ---- bench_raw_sqlx stdout ----
-// use Time: 4.499274993s ,each:44992 ns/op
-// use QPS: 22225 QPS/s
 #[test]
 fn bench_dysql_sqlx() {
     let f = async move {
@@ -131,9 +159,6 @@ fn bench_dysql_sqlx() {
     block_on(f);
 }
 
-// ---- bench_raw_rbatis stdout ----
-// use Time: 6.660217716s ,each:66602 ns/op
-// use QPS: 15014 QPS/s
 #[test]
 fn bench_raw_rbatis() {
     let f = async move {
@@ -146,9 +171,6 @@ fn bench_raw_rbatis() {
     block_on(f);
 }
 
-// ---- bench_dysql_rbatis stdout ----
-// use Time: 6.54514856s ,each:65451 ns/op
-// use QPS: 15278 QPS/s
 #[test]
 fn bench_dysql_rbatis() {
     let f = async move {
@@ -162,3 +184,49 @@ fn bench_dysql_rbatis() {
     };
     block_on(f);
 }
+
+#[test]
+fn bench_seaorm() {
+    use crate::entity::test_user::Entity as TestUser;
+    use sea_orm::{EntityTrait, Condition, QueryFilter, ColumnTrait};
+    
+    let f = async move {
+        let db = init_seaorm_connection().await;
+        let name = "a";
+        rbench!(100000, {
+            TestUser::find()
+                .filter(
+                    Condition::all()
+                        .add(test_user::Column::Name.eq(name))
+                )
+                .all(&db)
+                .await
+                .unwrap();
+        });
+    };
+    block_on(f);
+}
+
+/*
+
+---- bench_raw_sqlx stdout ----
+use Time: 5.307200694s ,each:53072 ns/op
+use QPS: 18842 QPS/s
+
+---- bench_dysql_sqlx stdout ----
+use Time: 5.684216548s ,each:56842 ns/op
+use QPS: 17592 QPS/s
+
+---- bench_raw_rbatis stdout ----
+use Time: 6.792684106s ,each:67926 ns/op
+use QPS: 14721 QPS/s
+
+---- bench_dysql_rbatis stdout ----
+use Time: 6.806562149s ,each:68065 ns/op
+use QPS: 14691 QPS/s
+
+---- bench_seaorm stdout ----
+use Time: 11.438243935s ,each:114382 ns/op
+use QPS: 8742 QPS/s
+
+*/

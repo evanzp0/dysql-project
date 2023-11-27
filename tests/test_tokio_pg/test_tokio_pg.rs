@@ -3,11 +3,11 @@ mod common;
 use std::error::Error;
 
 use dysql::{PageDto, SortModel, sql, fetch_one, insert, fetch_scalar, execute, page, fetch_all, Value};
-use tokio_postgres::{NoTls, connect};
 
 use crate::common::{UserDto, User};
 
 async fn connect_postgres_db() -> tokio_postgres::Client {
+    use tokio_postgres::{NoTls, connect};
     let (client, connection) = connect("host=127.0.0.1 user=root password=111111 dbname=my_database", NoTls).await.unwrap();
     tokio::spawn(async move {
         if let Err(e) = connection.await {

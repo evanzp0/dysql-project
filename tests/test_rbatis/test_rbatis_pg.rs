@@ -1,14 +1,12 @@
 use dysql::{sql, fetch_one, fetch_all, Value, fetch_scalar, execute, DySqlError, ErrorInner, Kind, insert, SortModel, PageDto, page};
-use rbatis::RBatis;
-use rbdc_pg::Driver;
 
 use crate::common::{User, UserDto};
 
 mod common;
 
-async fn connect_db() -> RBatis {
-    let rb = RBatis::new();
-    rb.init(Driver{},"postgres://root:111111@localhost:5432/my_database").unwrap();
+async fn connect_db() -> rbatis::RBatis {
+    let rb = rbatis::RBatis::new();
+    rb.init(rbdc_pg::Driver{},"postgres://root:111111@localhost:5432/my_database").unwrap();
     rb
 }
 

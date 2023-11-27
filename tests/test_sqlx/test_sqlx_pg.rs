@@ -3,17 +3,14 @@ mod common;
 use std::error::Error;
 
 use dysql::{PageDto, SortModel, sql, fetch_one, insert, fetch_scalar, execute, page, fetch_all, Value};
-use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
 
 use crate::common::{UserDto, User};
 
-pub async fn connect_postgres_db() -> Pool<Postgres> {
+pub async fn connect_postgres_db() -> sqlx::Pool<sqlx::Postgres> {
     dotenv::dotenv().ok();
-
-    let conn = PgPoolOptions::new()
+    let conn = sqlx::postgres::PgPoolOptions::new()
         .max_connections(5)
         .connect("postgres://root:111111@127.0.0.1/my_database").await.unwrap();
-
     conn
 }
 

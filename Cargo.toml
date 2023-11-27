@@ -109,22 +109,29 @@ name = "test_rbatis_mysql"
 path = "tests/test_rbatis/test_rbatis_mysql.rs"
 required-features = ["rbatis-mysql"]
 
-[[test]]
-name = "bench_no_harness"
-path = "benches/bench_no_harness.rs"
-required-features = ["rbatis-sqlite"]
-
 [[bench]]
 name = "bench_tpl"
 path = "benches/bench_tpl.rs"
 harness = true
 
-[[bench]]
-name = "bench_ctri"
-path = "benches/bench_ctri.rs"
-harness = false
+[[test]]
+name = "bench_nh_sqlite"
+path = "benches/bench_nh_sqlite.rs"
+required-features = ["rbatis-sqlite"]
+
+[[test]]
+name = "bench_nh_pg"
+path = "benches/bench_nh_pg.rs"
+required-features = ["rbatis-pg", "sqlx-postgres", "tokio-postgres"]
 
 [[bench]]
 name = "bench_ctri_sqlite"
 path = "benches/bench_ctri_sqlite.rs"
 harness = false
+required-features = ["sqlx-sqlite"]
+
+[[bench]]
+name = "bench_ctri_sqlite_rbatis"
+path = "benches/bench_ctri_sqlite_rbatis.rs"
+harness = false
+required-features = ["rbatis-sqlite"]

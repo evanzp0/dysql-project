@@ -1,6 +1,5 @@
-use dysql::{Value, fetch_all};
+
 use rbatis::{RBatis, executor::Executor};
-use rbdc_sqlite::Driver;
 use sqlx::{SqliteConnection, sqlite::{SqliteConnectOptions, SqliteJournalMode}};
 
 mod common_nh;
@@ -9,7 +8,7 @@ use common_nh::*;
 
 async fn init_rbatis_connection() -> rbatis::executor::RBatisConnExecutor {
     let rb = RBatis::new();
-    rb.init(Driver{},"sqlite::memory:").unwrap();
+    rb.init(rbdc_sqlite::Driver {},"sqlite::memory:").unwrap();
 
     rb.exec(r#"
         CREATE TABLE test_user (
@@ -98,8 +97,8 @@ pub struct User {
 
 
 // ---- bench_dysql_sqlx stdout ----
-// use Time: 4.174755327s ,each:41747 ns/op
-// use QPS: 23953 QPS/s
+// use Time: 4.094688259s ,each:40946 ns/op
+// use QPS: 24421 QPS/s
 #[test]
 fn bench_raw_sqlx() {
     let f = async move {
@@ -116,15 +115,15 @@ fn bench_raw_sqlx() {
 }
 
 // ---- bench_raw_sqlx stdout ----
-// use Time: 4.903177835s ,each:49031 ns/op
-// use QPS: 20394 QPS/s
+// use Time: 4.499274993s ,each:44992 ns/op
+// use QPS: 22225 QPS/s
 #[test]
 fn bench_dysql_sqlx() {
     let f = async move {
         let mut conn = init_sqlx_db().await;
-        let dto = Value::new("a");
+        let dto = dysql::Value::new("a");
         rbench!(100000, {
-            fetch_all!(|&mut conn, &dto| -> User {
+            dysql::fetch_all!(|&mut conn, &dto| -> User {
                 "select * from test_user where 1 = 1 and name = :value"
             }).unwrap();
         });
@@ -133,8 +132,8 @@ fn bench_dysql_sqlx() {
 }
 
 // ---- bench_raw_rbatis stdout ----
-// use Time: 7.235434223s ,each:72354 ns/op
-// use QPS: 13820 QPS/s
+// use Time: 6.660217716s ,each:66602 ns/op
+// use QPS: 15014 QPS/s
 #[test]
 fn bench_raw_rbatis() {
     let f = async move {
@@ -148,13 +147,13 @@ fn bench_raw_rbatis() {
 }
 
 // ---- bench_dysql_rbatis stdout ----
-// use Time: 7.215524126s ,each:72155 ns/op
-// use QPS: 13859 QPS/s
+// use Time: 6.54514856s ,each:65451 ns/op
+// use QPS: 15278 QPS/s
 #[test]
 fn bench_dysql_rbatis() {
     let f = async move {
         let rbatis = init_rbatis_connection().await;
-        let dto = Value::new("a");
+        let dto = dysql::Value::new("a");
         rbench!(100000, {
             dysql::fetch_all!(|&rbatis, &dto| -> User {
                 "select * from test_user where name = :value"

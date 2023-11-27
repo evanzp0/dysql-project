@@ -90,17 +90,17 @@ pub fn hash_str(name: &str) -> u64 {
     hasher.finish()
 }
 
-pub fn gen_named_sql_buf<D>(named_template: Arc<Template>, buf: Vec<u8>, dto: &Option<D>) -> Result<Vec<u8>, DySqlError>
+pub fn gen_named_sql<D>(named_template: Arc<Template>, dto: &Option<D>) -> Result<String, DySqlError>
 where 
     D: Content + Send + Sync
 {
     let named_sql = if let Some(dto) = dto {
-        named_template.render(dto)
+        named_template.render_sql(dto)
     } else {
         named_template.source().to_owned()
     };
-    // 格式化 sql 并解析 BDEL 和 FDEL 指令
-    crate::trim_sql(&named_sql, buf)
+    
+    Ok(named_sql)
 }
 
 // fn ptr_to_str<'a>(ptr: *const str, len: usize) -> &'static str {

@@ -24,9 +24,7 @@ impl RbatisMysqlAdapter {
         D: dysql_tpl::Content + Send + Sync,
         U: serde::de::DeserializeOwned,
     {
-        let mut named_sql_buf = Vec::<u8>::with_capacity(named_template.source().len());
-        let named_sql_buf = crate::gen_named_sql_buf(named_template, named_sql_buf, &dto)?;
-        let named_sql = unsafe{std::str::from_utf8_unchecked(&named_sql_buf)};
+        let named_sql = crate::gen_named_sql(named_template, &dto)?;
             
         let mut buf = Vec::<u8>::with_capacity(named_sql.len());
         let sql_and_params = crate::extract_params_buf(&named_sql, &mut buf, self.dialect);

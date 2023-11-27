@@ -13,7 +13,7 @@ use std::path::Path;
 
 use serde::{Serialize, Deserialize};
 
-use crate::encoding::EscapingIOEncoder;
+use crate::encoding::{EscapingIOEncoder, SqlEncoder};
 use crate::{Partials, hash_name};
 use crate::{Content, TemplateError};
 
@@ -93,6 +93,28 @@ impl Template {
         let _ = rst.render(&mut buf, Option::<&()>::None);
 
         buf
+    }
+
+    /// Render this `Template` with a given `Content` to a `String`.
+    pub fn render_sql<C>(&self, content: &C) -> String 
+    where
+        for<'section> C: Content
+    {
+        let mut capacity = content.capacity_hint(self);
+
+        // Add extra 25% extra capacity for HTML escapes and an odd double variable use.
+        capacity += capacity / 4;
+
+        // let mut buf = String::with_capacity(capacity);
+        let mut buf = SqlEncoder::with_capacity(capacity);
+
+        // Ignore the result, cannot fail
+        let rst = Section::new(&self.blocks)
+            .with(content);
+        
+        let _ = rst.render(&mut buf, Option::<&()>::None);
+
+        buf.trim()
     }
 
     /// Render this `Template` with a given `Content` to a writer.

@@ -31,7 +31,6 @@ debug = true
 
 [package.metadata.scripts]
 test_sqlx = "cargo clean -p dysql-core && cargo test"
-flamegraph = "cargo flamegraph --bench bench_ctri_pg -o find-baseline.svg -- --benc"
 
 [dependencies]
 env_logger = "0.10"
@@ -62,6 +61,7 @@ mustache = "0.9"
 tera = "1.2.0"
 ahash = "0.8"
 criterion = { version = "0.4", features = ["async_tokio"] }
+futures = "0.3"
 
 [features]
 default = ["sqlx-postgres", "sqlx-sqlite", "sqlx-mysql", "tokio-postgres", "rbatis-mysql", "rbatis-sqlite", "rbatis-pg"] # 
@@ -119,10 +119,10 @@ name = "bench_nh_sqlite"
 path = "benches/bench_nh_sqlite.rs"
 required-features = ["rbatis-sqlite"]
 
-[[test]]
-name = "bench_nh_pg"
-path = "benches/bench_nh_pg.rs"
-required-features = ["rbatis-pg", "sqlx-postgres", "tokio-postgres"]
+# [[test]]
+# name = "bench_nh_pg"
+# path = "benches/bench_nh_pg.rs"
+# required-features = ["rbatis-pg", "sqlx-postgres", "tokio-postgres"]
 
 [[bench]]
 name = "bench_ctri_sqlite"
@@ -135,3 +135,10 @@ name = "bench_ctri_sqlite_rbatis"
 path = "benches/bench_ctri_sqlite_rbatis.rs"
 harness = false
 required-features = ["rbatis-sqlite"]
+
+[[bench]]
+name = "tunning"
+path = "benches/tunning/tunning.rs"
+harness = false
+required-features = ["rbatis-sqlite"]
+

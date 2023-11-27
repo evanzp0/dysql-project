@@ -16,6 +16,9 @@ use std::fmt;
 #[cfg(feature = "pulldown-cmark")]
 use pulldown_cmark::{html, Event, Parser};
 
+use crate::SimpleError;
+use crate::SimpleInnerError;
+
 /// A trait that wraps around either a `String` or `std::io::Write`, providing UTF-8 safe
 /// writing boundaries and special HTML character escaping.
 pub trait Encoder {
@@ -30,7 +33,7 @@ pub trait Encoder {
 
     #[cfg(feature = "pulldown-cmark")]
     /// Write HTML from an `Iterator` of `pulldown_cmark` `Event`s.
-    fn write_html<'a, I: Iterator<Item = Event<'a>>>(&mut self, iter: I) -> Result<(), Self::Error>;
+    fn write_html<'b, I: Iterator<Item = Event<'b>>>(&mut self, iter: I) -> Result<(), Self::Error>;
 
     /// Write a `Display` implementor to this `Encoder` in plain mode.
     fn format_unescaped<D: fmt::Display>(&mut self, display: D) -> Result<(), Self::Error>;
@@ -149,7 +152,7 @@ impl<W: io::Write> Encoder for EscapingIOEncoder<W> {
 
     #[cfg(feature = "pulldown-cmark")]
     #[inline]
-    fn write_html<'a, I: Iterator<Item = Event<'a>>>(&mut self, iter: I) -> io::Result<()> {
+    fn write_html<'b, I: Iterator<Item = Event<'b>>>(&mut self, iter: I) -> io::Result<()> {
         html::write_html(&mut self.inner, iter)
     }
 
@@ -190,7 +193,7 @@ impl Encoder for String {
 
     #[cfg(feature = "pulldown-cmark")]
     #[inline]
-    fn write_html<'a, I: Iterator<Item = Event<'a>>>(&mut self, iter: I) -> Result<(), Self::Error> {
+    fn write_html<'b, I: Iterator<Item = Event<'b>>>(&mut self, iter: I) -> Result<(), Self::Error> {
         html::push_html(self, iter);
 
         Ok(())
@@ -223,4 +226,217 @@ pub fn encode_cmark<E: Encoder>(source: &str, encoder: &mut E) -> Result<(), E::
     let parser = Parser::new(source);
 
     encoder.write_html(parser)
+}
+
+enum Token<'a> {
+    // (含控制符的 len, token str)
+    DEL(usize, &'a str), 
+    Normal(usize, &'a str),
+}
+
+const BLANKET_CHARS: [u8; 3] = [b' ', b'\n', b'\t'];
+
+pub(crate) struct SqlEncoder
+{
+    pub inner: String,
+    pub trim_token: Option<String>,
+}
+
+impl SqlEncoder {
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self {
+            inner: String::with_capacity(capacity),
+            trim_token: None,
+        }
+    }
+
+    pub fn trim(mut self) -> String {
+        if self.inner.len() > 0 {
+            self.inner.pop();
+        }
+        self.inner
+    }
+
+    fn trim_sql(&mut self, sql: &str) -> Result<(), SimpleError>
+    {
+        let sql_buf = &mut self.inner;
+        let mut end: usize = 0; // 当前位置
+        let sql_len: usize = sql.len();
+        // let mut trim_token: Option<&str> = None;
+    
+        while end < sql_len { 
+            if let Some(idx) = skip_blank(&sql[end..sql_len]) {
+                end += idx;
+            } else {
+                break;
+            }
+            
+            let sql_token = get_token(&sql[end..sql_len])?;
+            let token_len = match sql_token {
+                // 如果是 DEL 控制符，则记录需要 trim 的 token，在下一次写入 sql_buf 时过滤字符串
+                Token::DEL(len, token) => {
+                    self.trim_token = Some(token.to_owned());
+                    len
+                }
+                // 需要输出的 sql token 如果开始位置有需要 DEL 的 token，则跳过此 token 写入 sql_buf,
+                // 写入后重置 trim_token 为 None.
+                Token::Normal(len, token) => {
+                    if let Some(tm_token) = &self.trim_token {
+                        let trim_len = tm_token.len();
+                        if trim_len <= token.len() && tm_token == &token[0..trim_len] {
+                            if trim_len < token.len() {
+                                sql_buf.push_str(&token[trim_len..]);
+                                sql_buf.push_str(" ");
+                            } else {
+                                sql_buf.push_str(&token[trim_len..]);
+                            }
+                        } else {
+                            sql_buf.push_str(token);
+                            sql_buf.push_str(" ");
+                        }
+                    } else {
+                        sql_buf.push_str(token);
+                        sql_buf.push_str(" ");
+                    }
+                    self.trim_token = None;
+    
+                    len
+                }
+            };
+    
+            end += token_len;
+        }
+
+        Ok(())
+    }
+}
+
+impl  Encoder for SqlEncoder  {
+    // Change this to `!` once stabilized.
+    type Error = SimpleError;
+
+    #[inline]
+    fn write_unescaped(&mut self, part: &str) -> Result<(), Self::Error> {
+        
+        self.trim_sql(part)?;
+
+        // println!("unescaped | bf:{}/ af:{}/", part, self.inner);
+
+        Ok(())
+    }
+
+    #[inline]
+    fn write_escaped(&mut self, part: &str) -> Result<(), Self::Error> {
+        EscapingStringEncoder(&mut self.inner).write_escaped(part);
+        self.inner.push_str(" ");
+        // println!("escaped | bf:{}/ af:{}/", part, self.inner);
+
+        Ok(())
+    }
+
+    #[cfg(feature = "pulldown-cmark")]
+    #[inline]
+    fn write_html<'b, I: Iterator<Item = Event<'b>>>(&mut self, iter: I) -> Result<(), Self::Error> {
+        html::push_html(&mut self.inner, iter);
+        // println!("aaaaaaaaa");
+
+        Ok(())
+    }
+
+    #[inline]
+    fn format_unescaped<D: fmt::Display>(&mut self, display: D) -> Result<(), Self::Error> {
+        use std::fmt::Write;
+
+        // Never fails for a string
+        let _ = write!(&mut self.inner, "{} ", display);
+        // println!("bbbbbbb");
+
+        Ok(())
+    }
+
+    #[inline]
+    fn format_escaped<D: fmt::Display>(&mut self, display: D) -> Result<(), Self::Error> {
+        use std::fmt::Write;
+
+        // Never fails for a string
+        let _ = write!(EscapingStringEncoder(&mut self.inner), "{} ", display);
+        // println!("cccccc");
+
+        Ok(())
+    }
+}
+
+
+
+/// 跳过空白字符,
+/// 遇到非空白字符时返回 Some(跳过的字符数),
+/// 遇到结尾时返回 None
+fn skip_blank(s: &str) -> Option<usize> {
+    let mut current_idx = 0;
+    let slen = s.len();
+
+    while current_idx < slen {
+        let c = char_at(s, current_idx);
+        let is_not_blank = BLANKET_CHARS.iter().all(|b| *b != c);
+        if is_not_blank { break }
+
+        current_idx += 1;
+    }
+
+    if current_idx < slen {
+        Some(current_idx)
+    } else {
+        None
+    }
+}
+
+#[inline]
+fn char_at(s: &str, idx: usize) -> u8 {
+    *&s[idx..idx + 1].as_bytes()[0]
+}
+
+/// stop at blank or end
+fn get_token(s: &str) -> Result<Token, SimpleError> {
+    let mut current_idx = 0;
+    let slen = s.len();
+
+    // ![DEL(xxx)] 处理
+    if s.len() >= 6 && "![DEL(" == &s[0..6] {
+        current_idx += 6;
+        let mut has_end = false;
+        while current_idx < slen {
+            let c = char_at(s, current_idx);
+            let is_blank = BLANKET_CHARS.iter().any(|&b| b == c);
+            current_idx += 1;
+
+            if is_blank { 
+                break 
+            } else if c == b')' {
+                let c = char_at(&s[current_idx..], 0);
+                if c == b']' {
+                    has_end = true;
+                    current_idx += 1;
+                    break
+                }
+            }
+        }
+
+        if has_end {
+            let token = &s[6..current_idx - 2];
+            return Ok(Token::DEL(current_idx, token))
+        } else {
+            Err(SimpleInnerError(" '![DEL(..)' syntax error".to_owned()))?
+        }
+    } else {
+        while current_idx < slen {
+            let c = char_at(s, current_idx);
+            let is_blank = BLANKET_CHARS.iter().any(|&b| b == c);
+            if is_blank { 
+                break 
+            }
+            current_idx += 1;
+        }
+        let token = &s[0..current_idx];
+        return Ok(Token::Normal(current_idx, token))
+    }
 }

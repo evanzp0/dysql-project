@@ -9,9 +9,7 @@ macro_rules! impl_sqlx_adapter_fetch_all {
             D: dysql_tpl::Content + Send + Sync,
             for<'r> U: sqlx::FromRow<'r, $row> + Send + Unpin,
         {
-            let mut named_sql_buf = Vec::<u8>::with_capacity(named_template.source().len());
-            let named_sql_buf = crate::gen_named_sql_buf(named_template, named_sql_buf, &dto)?;
-            let named_sql = unsafe{std::str::from_utf8_unchecked(&named_sql_buf)};
+            let named_sql = crate::gen_named_sql(named_template, &dto)?;
             
             let mut buf = Vec::<u8>::with_capacity(named_sql.len());
             let sql_and_params = crate::extract_params_buf(&named_sql, &mut buf, self.get_dialect());
@@ -54,9 +52,7 @@ macro_rules! impl_sqlx_adapter_fetch_one {
             D: dysql_tpl::Content + Send + Sync,
             for<'r> U: sqlx::FromRow<'r, $row> + Send + Unpin,
         {
-            let mut named_sql_buf = Vec::<u8>::with_capacity(named_template.source().len());
-            let named_sql_buf = crate::gen_named_sql_buf(named_template, named_sql_buf, &dto)?;
-            let named_sql = unsafe{std::str::from_utf8_unchecked(&named_sql_buf)};
+            let named_sql = crate::gen_named_sql(named_template, &dto)?;
             
             let mut buf = Vec::<u8>::with_capacity(named_sql.len());
             let sql_and_params = crate::extract_params_buf(&named_sql, &mut buf, self.get_dialect());
@@ -100,9 +96,7 @@ macro_rules! impl_sqlx_adapter_fetch_scalar {
             D: dysql_tpl::Content + Send + Sync,
             for<'r> U: sqlx::Decode<'r, Self::DB> + sqlx::Type<Self::DB> + Send + Unpin
         {
-            let mut named_sql_buf = Vec::<u8>::with_capacity(named_template.source().len());
-            let named_sql_buf = crate::gen_named_sql_buf(named_template, named_sql_buf, &dto)?;
-            let named_sql = unsafe{std::str::from_utf8_unchecked(&named_sql_buf)};
+            let named_sql = crate::gen_named_sql(named_template, &dto)?;
 
             let mut buf = Vec::<u8>::with_capacity(named_sql.len());
             let sql_and_params = crate::extract_params_buf(&named_sql, &mut buf, self.get_dialect());
@@ -145,9 +139,7 @@ macro_rules! impl_sqlx_adapter_execute {
         where
             D: dysql_tpl::Content + Send + Sync
         {
-            let mut named_sql_buf = Vec::<u8>::with_capacity(named_template.source().len());
-            let named_sql_buf = crate::gen_named_sql_buf(named_template, named_sql_buf, &dto)?;
-            let named_sql = unsafe{std::str::from_utf8_unchecked(&named_sql_buf)};
+            let named_sql = crate::gen_named_sql(named_template, &dto)?;
 
             let mut buf = Vec::<u8>::with_capacity(named_sql.len());
             let sql_and_params = crate::extract_params_buf(&named_sql, &mut buf, self.get_dialect());
@@ -196,9 +188,7 @@ macro_rules! impl_sqlx_adapter_page_count {
             for<'r> U: sqlx::Decode<'r, Self::DB> + sqlx::Type<Self::DB> + Send + Unpin
         {
             use std::io::Write;
-            let mut named_sql_buf = Vec::<u8>::with_capacity(named_template.source().len());
-            let named_sql_buf = crate::gen_named_sql_buf(named_template, named_sql_buf, &dto)?;
-            let named_sql = unsafe{std::str::from_utf8_unchecked(&named_sql_buf)};
+            let named_sql = crate::gen_named_sql(named_template, &dto)?;
             
             let mut buf = Vec::<u8>::with_capacity(named_sql.len());
             let sql_and_params = crate::extract_params_buf(&named_sql, &mut buf, self.get_dialect());
@@ -251,10 +241,7 @@ macro_rules! impl_sqlx_adapter_page_all {
         {
             use std::io::Write;
 
-            let named_sql= named_template.render(page_dto);
-            let sql_buf: Vec<u8> = Vec::with_capacity(named_sql.len());
-            let sql_buf = crate::trim_sql(&named_sql, sql_buf).unwrap();
-            let named_sql = unsafe { std::str::from_utf8_unchecked(&sql_buf) };
+            let named_sql= named_template.render_sql(page_dto);
         
             let mut buf = Vec::<u8>::with_capacity(named_sql.len());
             let sql_and_params = crate::extract_params_buf(&named_sql, &mut buf, self.get_dialect());
@@ -274,11 +261,7 @@ macro_rules! impl_sqlx_adapter_page_all {
                     .map_err(|e| 
                         crate::DySqlError(crate::ErrorInner::new(crate::Kind::TemplateParseError, Some(e.into()), None))
                     )?;
-                let sort_fragment = template.render(page_dto);
-                
-                let sort_fragment_buf: Vec<u8> = Vec::with_capacity(sort_fragment.len());
-                let sort_fragment_buf = crate::trim_sql(&sort_fragment, sort_fragment_buf).unwrap();
-                let sort_fragment = unsafe { std::str::from_utf8_unchecked(&sort_fragment_buf) };
+                let sort_fragment = template.render_sql(page_dto);
                 
                 write!(sql_buf, "{} {} ", sql, sort_fragment).unwrap();
 

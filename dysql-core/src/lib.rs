@@ -7,7 +7,7 @@ mod error;
 mod dysql_context;
 mod utils;
 mod adapter;
-mod trim_sql;
+// mod trim_sql;
 mod dto;
 
 pub use extract_sql::*;
@@ -16,5 +16,5 @@ pub use error::*;
 pub use dysql_context::*;
 pub use utils::*;
 pub use adapter::*;
-pub use trim_sql::*;
+// pub use trim_sql::*;
 pub use dto::*;

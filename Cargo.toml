@@ -64,7 +64,7 @@ ahash = "0.8"
 criterion = { version = "0.4", features = ["async_tokio"] }
 futures = "0.3"
 sea-orm = { version = "0.12", features = ["sqlx-sqlite", "sqlx-postgres", "runtime-tokio-rustls", "macros"] }
-# diesel = { version = "2", features = ["sqlite", "postgres"] }
+diesel = { version = "2", features = ["sqlite", "postgres"] }
 
 
 [features]

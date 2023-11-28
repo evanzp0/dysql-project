@@ -7,8 +7,92 @@ use sqlx::{SqliteConnection, sqlite::{SqliteConnectOptions, SqliteJournalMode}};
 mod common_nh;
 use common_nh::*;
 
-use crate::entity::test_user;
+use crate::entity::test_user; // sea-orm need it
 
+rbatis::pysql!(pysql_select(rb: &dyn Executor, name:&str)  -> Result<rbs::Value, rbatis::Error> =>
+    r#"`select `
+         ` * `
+      `from test_user where name=#{name}`
+"#);
+
+#[derive(Clone, Debug)]
+#[derive(serde::Serialize, serde::Deserialize)] // rbatis need it
+#[derive(dysql::Content)] // dysql need it
+pub struct UserDto {
+    pub id: Option<i64>,
+    pub name: Option<String>,
+    pub age: Option<i32>,
+    pub id_rng: Option<Vec<i32>>,
+}
+
+impl UserDto {
+    pub fn new(id: Option<i64>, name: Option<String>, age: Option<i32>, id_rng: Option<Vec<i32>>) -> Self {
+        Self { id, name, age, id_rng }
+    }
+}
+
+// this mod is for diesel
+mod schema {
+    diesel::table! {
+        test_user {
+            id -> BigInt,
+            name -> Nullable<VarChar>,
+            age -> Nullable<Integer>,
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+#[derive(serde::Serialize, serde::Deserialize)] // rbatis need it
+#[derive(sqlx::FromRow)] // sqlx need it
+#[derive(diesel::Queryable, diesel::Selectable)] // diesel need it
+#[diesel(table_name = schema::test_user)] // diesel need it
+// sea-orm need stuffs are in entity folder
+pub struct User {
+    pub id: i64,
+    pub name: Option<String>,
+    pub age: Option<i32>,
+}
+
+fn init_diesel_connection() -> diesel::SqliteConnection {
+    use diesel::{Connection, RunQueryDsl, insert_into, ExpressionMethods};
+
+    let db_url = "sqlite::memory:"; // "file:test.db"
+    let mut conn = diesel::SqliteConnection::establish(db_url).unwrap();
+    diesel::sql_query("DROP TABLE IF EXISTS test_user;")
+    .execute(&mut conn)
+    .unwrap();
+    
+    // create table
+    diesel::sql_query(
+        "CREATE TABLE test_user(\
+            id INTEGER PRIMARY KEY AUTOINCREMENT,\
+            name VARCHAR,\
+            age INTEGER\
+        );"
+    )
+    .execute(&mut conn)
+    .unwrap();
+
+    use schema::test_user::dsl::*;
+
+    let _rst = insert_into(test_user)
+        .values(&vec![
+            (name.eq("a"), age.eq(10)),
+            (name.eq("a"), age.eq(20)),
+            (name.eq("a"), age.eq(20)),
+            (name.eq("a"), age.eq(20)),
+            (name.eq("a"), age.eq(20)),
+            (name.eq("b"), age.eq(20)),
+            (name.eq("b"), age.eq(20)),
+            (name.eq("b"), age.eq(20)),
+            (name.eq("b"), age.eq(20)),
+        ])
+        .execute(&mut conn)
+        .unwrap();
+
+    conn
+}
 
 async fn init_seaorm_connection() -> sea_orm::DatabaseConnection {
     use sea_orm::ConnectionTrait;
@@ -24,15 +108,15 @@ async fn init_seaorm_connection() -> sea_orm::DatabaseConnection {
 
     let _ = TestUser::insert_many(
         vec![
-            test_user::ActiveModel { id: Set(1), name: Set(Some("a5".to_owned())), age: Set(Some(10)) },
+            test_user::ActiveModel { id: Set(1), name: Set(Some("a".to_owned())), age: Set(Some(10)) },
             test_user::ActiveModel { id: Set(2), name: Set(Some("a".to_owned())), age: Set(Some(10)) },
             test_user::ActiveModel { id: Set(3), name: Set(Some("a".to_owned())), age: Set(Some(10)) },
             test_user::ActiveModel { id: Set(4), name: Set(Some("a".to_owned())), age: Set(Some(10)) },
             test_user::ActiveModel { id: Set(5), name: Set(Some("a".to_owned())), age: Set(Some(10)) },
-            test_user::ActiveModel { id: Set(6), name: Set(Some("a".to_owned())), age: Set(Some(10)) },
-            test_user::ActiveModel { id: Set(7), name: Set(Some("a".to_owned())), age: Set(Some(10)) },
-            test_user::ActiveModel { id: Set(8), name: Set(Some("a".to_owned())), age: Set(Some(10)) },
-            test_user::ActiveModel { id: Set(9), name: Set(Some("a".to_owned())), age: Set(Some(10)) },
+            test_user::ActiveModel { id: Set(6), name: Set(Some("b".to_owned())), age: Set(Some(10)) },
+            test_user::ActiveModel { id: Set(7), name: Set(Some("b".to_owned())), age: Set(Some(10)) },
+            test_user::ActiveModel { id: Set(8), name: Set(Some("b".to_owned())), age: Set(Some(10)) },
+            test_user::ActiveModel { id: Set(9), name: Set(Some("b".to_owned())), age: Set(Some(10)) },
         ]
     )
     .exec(&db)
@@ -97,34 +181,6 @@ async fn init_sqlx_db() -> SqliteConnection {
     sqlx::query("INSERT INTO test_user (name, age) VALUES ('b', 33)").execute(&mut conn).await.unwrap();
     
     conn
-}
-
-rbatis::pysql!(pysql_select(rb: &dyn Executor, name:&str)  -> Result<rbs::Value, rbatis::Error> =>
-    r#"`select `
-         ` * `
-      `from test_user where name=#{name}`
-"#);
-
-#[derive(Clone, Debug, serde::Serialize, serde::Deserialize, dysql::Content)]
-pub struct UserDto {
-    pub id: Option<i64>,
-    pub name: Option<String>,
-    pub age: Option<i32>,
-    pub id_rng: Option<Vec<i32>>,
-}
-
-impl UserDto {
-    pub fn new(id: Option<i64>, name: Option<String>, age: Option<i32>, id_rng: Option<Vec<i32>>) -> Self {
-        Self { id, name, age, id_rng }
-    }
-}
-
-#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
-#[derive(sqlx::FromRow)]
-pub struct User {
-    pub id: i64,
-    pub name: Option<String>,
-    pub age: Option<i32>,
 }
 
 //cargo test --release --package dysql --bench bench_nh_sqlite--no-fail-fast -- --exact -Z unstable-options --show-output
@@ -207,26 +263,43 @@ fn bench_seaorm() {
     block_on(f);
 }
 
+#[test]
+fn bench_diesel() {
+    use self::schema::test_user::dsl::*;
+    use diesel::{QueryDsl, ExpressionMethods, RunQueryDsl};
+
+    let mut db = init_diesel_connection();
+    let f_name = "a";
+    rbench!(100000, {
+        let _: Vec<User> = test_user
+            .filter(name.eq(f_name))
+            .load(&mut db)
+            .unwrap();
+    });
+}
+
 /*
+---- bench_diesel stdout ----
+use Time: 795.485704ms ,each:7954 ns/op
+use QPS: 125708 QPS/s
 
 ---- bench_raw_sqlx stdout ----
-use Time: 5.307200694s ,each:53072 ns/op
-use QPS: 18842 QPS/s
+use Time: 5.341557794s ,each:53415 ns/op
+use QPS: 18721 QPS/s
 
 ---- bench_dysql_sqlx stdout ----
-use Time: 5.684216548s ,each:56842 ns/op
-use QPS: 17592 QPS/s
-
----- bench_raw_rbatis stdout ----
-use Time: 6.792684106s ,each:67926 ns/op
-use QPS: 14721 QPS/s
+use Time: 5.346581006s ,each:53465 ns/op
+use QPS: 18703 QPS/s
 
 ---- bench_dysql_rbatis stdout ----
-use Time: 6.806562149s ,each:68065 ns/op
-use QPS: 14691 QPS/s
+use Time: 8.076815204s ,each:80768 ns/op
+use QPS: 12381 QPS/s
+
+---- bench_raw_rbatis stdout ----
+use Time: 8.736199606s ,each:87361 ns/op
+use QPS: 11446 QPS/s
 
 ---- bench_seaorm stdout ----
-use Time: 11.438243935s ,each:114382 ns/op
-use QPS: 8742 QPS/s
-
+use Time: 11.151077418s ,each:111510 ns/op
+use QPS: 8967 QPS/s
 */

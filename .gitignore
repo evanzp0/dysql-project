@@ -4,3 +4,6 @@ Cargo.lock
 .vscode
 .dysql
 tmp*.rs
+perf.data
+perf.data.*
+sqlite::memory:

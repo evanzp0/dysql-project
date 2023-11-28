@@ -1,3 +1,5 @@
+mod entity;
+
 mod common_nh;
 
 use common_nh::*;
@@ -43,6 +45,13 @@ pub struct User {
     pub id: i64,
     pub name: Option<String>,
     pub age: Option<i32>,
+}
+
+async fn seaorm_pg_db() -> sea_orm::DatabaseConnection {
+    let opt = sea_orm::ConnectOptions::new("postgres://root:111111@127.0.0.1:5432/my_database");
+
+    let db = sea_orm::Database::connect(opt).await.unwrap();
+    db
 }
 
 fn diesel_pg_db() -> diesel::PgConnection {
@@ -197,33 +206,64 @@ fn bench_diesel() {
     });
 }
 
+use crate::entity::test_user; // sea-orm need it
+
+#[tokio::test]
+async fn bench_seaorm() {
+    use crate::entity::test_user::Entity as TestUser;
+    use sea_orm::{EntityTrait, Condition, QueryFilter, ColumnTrait};
+    
+    let f = async move {
+        let db = seaorm_pg_db().await;
+        let name = "a";
+        rbench!(100000, {
+            TestUser::find()
+                .filter(
+                    Condition::all()
+                        .add(test_user::Column::Name.eq(name))
+                )
+                .all(&db)
+                .await
+                .unwrap();
+        });
+    };
+    f.await
+}
 
 /*
----- bench_diesel stdout ----
+---- bench_diesel(with cache) stdout ----
 use Time: 25.90198887s ,each:259019 ns/op
 use QPS: 3860 QPS/s
 
 ---- bench_raw_sqlx stdout ----
-use Time: 28.776344373s ,each:287763 ns/op
-use QPS: 3475 QPS/s
+use Time: 31.430053194s ,each:314300 ns/op
+use QPS: 3181 QPS/s
 
 ---- bench_dysql_sqlx stdout ----
-use Time: 29.58345996s ,each:295834 ns/op
-use QPS: 3380 QPS/s
+use Time: 31.58947175s ,each:315894 ns/op
+use QPS: 3165 QPS/s
 
 ---- bench_raw_rbatis stdout ----
-use Time: 29.680996296s ,each:296809 ns/op
-use QPS: 3369 QPS/s
+use Time: 31.892081112s ,each:318920 ns/op
+use QPS: 3135 QPS/s
 
 ---- bench_dysql_rbatis stdout ----
-use Time: 29.920421087s ,each:299204 ns/op
-use QPS: 3342 QPS/s
+use Time: 32.236670176s ,each:322366 ns/op
+use QPS: 3102 QPS/s
 
----- bench_dysql_tokio_pg stdout ----
-use Time: 53.982295655s ,each:539822 ns/op
-use QPS: 1852 QPS/s
+---- bench_seaorm stdout ----
+use Time: 35.289547118s ,each:352895 ns/op
+use QPS: 2833 QPS/s
 
 ---- bench_raw_tokio_pg stdout ----
-use Time: 42.387503598s ,each:423875 ns/op
-use QPS: 2359 QPS/s
+use Time: 45.33743535s ,each:453374 ns/op
+use QPS: 2205 QPS/s
+
+---- bench_diesel(without cache) stdout ----
+use Time: 54.092548462s ,each:540925 ns/op
+use QPS: 1848 QPS/s
+
+---- bench_dysql_tokio_pg stdout ----
+use Time: 62.740363919s ,each:627403 ns/op
+use QPS: 1593 QPS/s
 */

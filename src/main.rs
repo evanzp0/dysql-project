@@ -1,32 +1,80 @@
-use dysql::Template;
+use diesel::insert_into;
+use diesel::prelude::*;
 
+mod schema {
+    diesel::table! {
+        test_user {
+            id -> BigInt,
+            name -> Text,
+            age -> Integer,
+        }
+    }
+}
+
+use schema::test_user;
+
+#[derive(PartialEq, Debug)]
+#[derive(Queryable, Selectable)]
+#[diesel(table_name = test_user)]
+struct TestUser {
+    id: i64,
+    name: String,
+    age: i32,
+}
 
 fn main() {
-    let dto = UserDto::new(None, Some("z".to_owned()), Some(13), Some(vec![1, 2, 3,]));
-    let sort_model = vec![
-        dysql::SortModel {field: "id".to_owned(), sort: "desc".to_owned()}
-    ];
-    let mut pg_dto = dysql::PageDto::new_with_sort(3, 10, Some(&dto), sort_model);
-    pg_dto.init(9);
-    println!("{:?}", pg_dto.start);
-    let s = "{{#sort_model}} {{field}} {{sort}} {{/sort_model}} LIMIT";
+    let mut conn = init_diesel_sqlite_db();
 
-    let tpl = Template::new(s).unwrap();
-    let rst = tpl.render_sql(&pg_dto);
+    use self::schema::test_user::dsl::*;
 
-    println!("{}", rst);
-}
+    let results = test_user
+        .filter(name.eq("a5"))
+        // .limit(5)
+        .select(TestUser::as_select());
+    let results = results.load(&mut conn)
+        .expect("Error loading test_user");
 
-#[derive(dysql::Content, Clone)]
-pub struct UserDto {
-    pub id: Option<i64>,
-    pub name: Option<String>,
-    pub age: Option<i32>,
-    pub id_rng: Option<Vec<i32>>,
-}
-
-impl UserDto {
-    pub fn new(id: Option<i64>, name: Option<String>, age: Option<i32>, id_rng: Option<Vec<i32>>) -> Self {
-        Self { id, name, age, id_rng }
+    println!("Displaying {} users", results.len());
+    for user in results {
+        println!("id: {}, name: {}, age: {}", user.id, user.name, user.age);
     }
+}
+
+fn init_diesel_sqlite_db() -> SqliteConnection {
+    let db_url = "sqlite::memory:"; // "file:test.db"
+    let mut conn = SqliteConnection::establish(db_url).unwrap();
+    diesel::sql_query("DROP TABLE IF EXISTS test_user;")
+    .execute(&mut conn)
+    .unwrap();
+    
+    // create table
+    diesel::sql_query(
+        "CREATE TABLE test_user(\
+            id INTEGER PRIMARY KEY AUTOINCREMENT,\
+            name VARCHAR,\
+            age INTEGER\
+        );"
+    )
+    .execute(&mut conn)
+    .unwrap();
+
+    use schema::test_user::dsl::*;
+
+    let rst = insert_into(test_user)
+        .values(&vec![
+            (name.eq("a5"), age.eq(10)),
+            (name.eq("a"), age.eq(20)),
+            (name.eq("a"), age.eq(20)),
+            (name.eq("a"), age.eq(20)),
+            (name.eq("a"), age.eq(20)),
+            (name.eq("a"), age.eq(20)),
+            (name.eq("a"), age.eq(20)),
+            (name.eq("a"), age.eq(20)),
+            (name.eq("a"), age.eq(20)),
+        ])
+        .execute(&mut conn)
+        .unwrap();
+
+    println!("{:?}", rst);
+    conn
 }

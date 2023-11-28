@@ -279,9 +279,13 @@ fn bench_diesel() {
 }
 
 /*
----- bench_diesel stdout ----
+---- bench_diesel(with cache) stdout ----
 use Time: 795.485704ms ,each:7954 ns/op
 use QPS: 125708 QPS/s
+
+---- bench_diesel(without cache) stdout ----
+use Time: 1.182472056s ,each:11824 ns/op
+use QPS: 84568 QPS/s
 
 ---- bench_raw_sqlx stdout ----
 use Time: 5.341557794s ,each:53415 ns/op

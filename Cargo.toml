@@ -51,6 +51,7 @@ rbdc-pg = {  version = "4.5", optional = true }
 rbdc-mysql = { version ="4.5", optional = true }
 rbdc-sqlite = { version = "4.5", optional = true }
 # rbdc-mssql = { version ="4.5", optional = true }
+# diesel = { path = "../diesel/diesel", features = ["sqlite", "postgres"] }
 
 [dev-dependencies]
 askama = "0.12"
@@ -63,7 +64,8 @@ ahash = "0.8"
 criterion = { version = "0.4", features = ["async_tokio"] }
 futures = "0.3"
 sea-orm = { version = "0.12", features = ["sqlx-sqlite", "sqlx-postgres", "runtime-tokio-rustls", "macros"] }
-diesel = { version = "2", features = ["sqlite", "postgres"] }
+# diesel = { version = "2", features = ["sqlite", "postgres"] }
+
 
 [features]
 default = ["sqlx-postgres", "sqlx-sqlite", "sqlx-mysql", "tokio-postgres", "rbatis-mysql", "rbatis-sqlite", "rbatis-pg"] # 

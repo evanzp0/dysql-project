@@ -287,11 +287,12 @@ impl SqlExpand {
         // 生成 TokenStream
         let rst = quote!(
             // 优先从 cache 中加载 sql 模板，如果 cache 中没有，则直接从序列化的二进制变量中加载并缓存 sql 模板
-            let named_template = match dysql::get_sql_template(#template_id) {
-                Some(tpl) => tpl,
+            let (named_template, template_id) = match dysql::get_sql_template(#template_id) {
+                Some(tpl) => (tpl, #template_id),
                 None => {
                     let serd_template =  [#(#serd_template,)*];
-                    dysql::put_sql_template(#template_id, &serd_template).expect("Unexpected error when put_sql_template")
+                    let tpl = dysql::put_sql_template(#template_id, &serd_template).expect("Unexpected error when put_sql_template");
+                    (tpl, #template_id)
                 },
             };
         );

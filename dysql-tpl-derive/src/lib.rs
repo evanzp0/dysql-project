@@ -238,6 +238,57 @@ pub fn content_derive(input: TokenStream) -> TokenStream {
     let flatten = &*flatten;
     let fields = fields.iter().map(|Field { field, .. }| field);
 
+    // let field_names = fields.clone();
+    // let field_hashes: Vec<u64> = fields.clone().map(|f| {
+    //     let mut hasher = FnvHasher::default();
+    //     f.to_string().hash(&mut hasher);
+    //     hasher.finish()
+    // })
+    // .collect();
+
+    // let fn_get_field_names = quote!(
+    //     fn get_field_names(&self) -> Option<Vec<(&'static str, u64)>> {
+    //         Some(
+    //             vec![
+    //                 #((stringify!(#field_names), #field_hashes)),*
+    //             ]
+    //         )
+    //     }
+    // );
+
+    let field_for_caches = fields.clone();
+    let caches_hint_cap = field_for_caches.len() + 1;
+    let field_hashes: Vec<u64> = field_for_caches.clone().map(|f| {
+        let mut hasher = FnvHasher::default();
+        f.to_string().hash(&mut hasher);
+        hasher.finish()
+    })
+    .collect();
+
+    let fn_cache_check = quote!(
+        fn cache_check(&self, parent_hash: u64) -> Option<u64> {
+            let mut field_hashes = Vec::<u64>::with_capacity(#caches_hint_cap);
+            #(
+                let c_rst = match self.#field_for_caches.cache_check(#field_hashes) {
+                    Some(v) => {
+                        v
+                    }
+                    None => 
+                        return None,
+                };
+                field_hashes.push(c_rst);
+            )*
+
+            if field_hashes.len() > 0 {
+                field_hashes.push(parent_hash);
+                let hash = dysql::hash_it(field_hashes);
+                Some(hash)
+            } else {
+                Some(parent_hash)
+            }  
+        }
+    );
+
     let where_clause = type_params
         .map(|param| quote!(#param: ::dysql::Content))
         .collect::<Vec<_>>();
@@ -250,6 +301,12 @@ pub fn content_derive(input: TokenStream) -> TokenStream {
     // FIXME: decouple lifetimes from actual generics with trait boundaries
     let tokens = quote! {
         impl#generics ::dysql::Content for #name#generics #where_clause {
+            // #[inline]
+            // #fn_get_field_names
+
+            #[inline]
+            #fn_cache_check
+
             #[inline]
             fn capacity_hint(&self, tpl: &::dysql::Template) -> usize {
                 tpl.capacity_hint() #( + self.#fields.capacity_hint(tpl) )*

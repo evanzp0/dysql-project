@@ -1,4 +1,4 @@
-use dysql_core::{save_sql_template, hash_str};
+use dysql_core::{save_sql_template, hash_it};
 use dysql_tpl::Template;
 use quote::quote;
 
@@ -263,7 +263,7 @@ impl SqlExpand {
     /// st: 在编译时生成的包含 sql 的结构体;
     fn gen_named_template_declare(&self, st: &crate::DyClosure) -> syn::Result<proc_macro2::TokenStream> {
         // 根据 sql body 生成唯一 hash 标识
-        let template_id = hash_str(&st.body);
+        let template_id = hash_it(&st.body);
         
         // 根据配置决定是否持久化 sql
         let source_file = if let Some(path) = st.source_file.to_str() {

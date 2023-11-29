@@ -75,7 +75,7 @@ pub fn save_sql_template(source_file: &str, template_id: u64, sql: &str, sql_nam
 
     let template = Arc::new(template);
 
-    let meta_id = hash_str(&source_file);
+    let meta_id = hash_it(&source_file);
     get_sql_cache()
         .write()
         .unwrap()
@@ -84,7 +84,7 @@ pub fn save_sql_template(source_file: &str, template_id: u64, sql: &str, sql_nam
     Ok(())
 }
 
-pub fn hash_str(name: &str) -> u64 {
+pub fn hash_it<T: Hash>(name: T) -> u64 {
     let mut hasher = FnvHasher::default();
     name.hash(&mut hasher);
     hasher.finish()

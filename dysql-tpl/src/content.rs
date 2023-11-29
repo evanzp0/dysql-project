@@ -15,17 +15,35 @@ use crate::traits::ContentSequence;
 
 use arrayvec::ArrayVec;
 use chrono::Utc;
+use fnv::FnvHasher;
 use std::borrow::{Borrow, Cow, ToOwned};
 use std::collections::{BTreeMap, HashMap};
-use std::hash::{BuildHasher, Hash};
+use std::hash::{BuildHasher, Hash, Hasher};
 use std::ops::Deref;
 
 use paste::paste;
+
+pub(crate) fn hash_it<T: Hash>(name: T) -> u64 {
+    let mut hasher = FnvHasher::default();
+    name.hash(&mut hasher);
+    hasher.finish()
+}
 
 /// Trait allowing the rendering to quickly access data stored in the type that
 /// implements it. You needn't worry about implementing it, in virtually all
 /// cases the `#[derive(Content)]` attribute above your types should be sufficient.
 pub trait Content {
+    // #[inline]
+    // fn get_field_names(&self) -> Option<Vec<(&'static str, u64)>> {
+    //     None
+    // }
+
+    /// 检查当前对象是否能 cache
+    #[inline]
+    fn cache_check(&self, parent_hash: u64) -> Option<u64> {
+        Some(parent_hash)
+    }
+
     /// Marks whether this content is truthy. Used when attempting to render a section.
     #[inline]
     fn is_truthy(&self) -> bool {
@@ -426,6 +444,16 @@ impl<T: Content> Content for Option<T> {
     }
 
     #[inline]
+    fn cache_check(&self, parent_hash: u64) -> Option<u64> {
+        match self {
+            Some(v) => v.cache_check(parent_hash),
+            None => Some(
+                hash_it(vec![Some(parent_hash), Option::<u64>::None])
+            ),
+        }
+    }
+
+    #[inline]
     fn render_escaped<E: Encoder>(&self, encoder: &mut E) -> Result<(), E::Error> {
         if let Some(inner) = self {
             inner.render_escaped(encoder)?;
@@ -518,6 +546,14 @@ where
     }
 
     #[inline]
+    fn cache_check(&self, parent_hash: u64) -> Option<u64> {
+        match self {
+            Ok(v) => v.cache_check(parent_hash),
+            Err(_) => None,
+        }
+    }
+
+    #[inline]
     fn render_escaped<E: Encoder>(&self, encoder: &mut E) -> Result<(), E::Error> {
         if let Ok(inner) = self {
             inner.render_escaped(encoder)?;
@@ -599,6 +635,15 @@ impl<T: Content> Content for Vec<T> {
     }
 
     #[inline]
+    fn cache_check(&self, parent_hash: u64) -> Option<u64> {
+        if self.len() > 0 {
+            None
+        } else {
+            Some(parent_hash)
+        }
+    }
+    
+    #[inline]
     fn render_section<C, E, IC>(
         &self,
         section: Section<C>,
@@ -635,6 +680,15 @@ impl<T: Content> Content for [T] {
     #[inline]
     fn is_truthy(&self) -> bool {
         !self.is_empty()
+    }
+
+    #[inline]
+    fn cache_check(&self, parent_hash: u64) -> Option<u64> {
+        if self.len() > 0 {
+            None
+        } else {
+            Some(parent_hash)
+        }
     }
 
     #[inline]
@@ -677,6 +731,15 @@ impl<T: Content, const N: usize> Content for [T; N] {
     }
 
     #[inline]
+    fn cache_check(&self, parent_hash: u64) -> Option<u64> {
+        if self.len() > 0 {
+            None
+        } else {
+            Some(parent_hash)
+        }
+    }
+
+    #[inline]
     fn render_section<C, E, IC>(
         &self,
         section: Section<C>,
@@ -713,6 +776,15 @@ impl<T: Content, const N: usize> Content for ArrayVec<T, N> {
     #[inline]
     fn is_truthy(&self) -> bool {
         !self.is_empty()
+    }
+
+    #[inline]
+    fn cache_check(&self, parent_hash: u64) -> Option<u64> {
+        if self.len() > 0 {
+            None
+        } else {
+            Some(parent_hash)
+        }
     }
 
     #[inline]
@@ -756,6 +828,15 @@ where
 {
     fn is_truthy(&self) -> bool {
         !self.is_empty()
+    }
+
+    #[inline]
+    fn cache_check(&self, parent_hash: u64) -> Option<u64> {
+        if self.len() > 0 {
+            None
+        } else {
+            Some(parent_hash)
+        }
     }
 
     /// Render a section with self.
@@ -880,6 +961,15 @@ where
 {
     fn is_truthy(&self) -> bool {
         !self.is_empty()
+    }
+
+    #[inline]
+    fn cache_check(&self, parent_hash: u64) -> Option<u64> {
+        if self.len() > 0 {
+            None
+        } else {
+            Some(parent_hash)
+        }
     }
 
     /// Render a section with self.
@@ -1010,6 +1100,11 @@ macro_rules! impl_pointer_types {
                 #[inline]
                 fn capacity_hint(&self, tpl: &Template) -> usize {
                     self.deref().capacity_hint(tpl)
+                }
+
+                #[inline]
+                fn cache_check(&self, parent_hash: u64) -> Option<u64> {
+                    self.deref().cache_check(parent_hash)
                 }
 
                 #[inline]
@@ -1190,6 +1285,11 @@ impl Content for beef::Cow<'_, str> {
     #[inline]
     fn is_truthy(&self) -> bool {
         !self.is_empty()
+    }
+    
+    #[inline]
+    fn cache_check(&self, _parent_hash: u64) -> Option<u64> {
+        None
     }
 
     #[inline]

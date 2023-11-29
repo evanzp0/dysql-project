@@ -8,7 +8,9 @@ macro_rules! impl_tokio_pg_adapter_fetch_all {
             D: dysql_tpl::Content + Send + Sync,
             U: tokio_pg_mapper::FromTokioPostgresRow,
         {
-            let named_sql = crate::gen_named_sql(named_template, &dto)?;
+            
+
+            let named_sql = crate::get_named_sql(template_id, named_template.clone(), &dto)?;
 
             let mut buf = Vec::<u8>::with_capacity(named_sql.len());
             let sql_and_params = crate::extract_params_buf(&named_sql, &mut buf, self.get_dialect());

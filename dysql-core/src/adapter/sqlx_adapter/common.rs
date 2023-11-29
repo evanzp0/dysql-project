@@ -51,34 +51,34 @@ pub trait SqlxExecutorAdatper
     }
 
     /// 查询并返回多个指定类型的对象
-    async fn dy_fetch_all<D, U>(self, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>) 
+    async fn dy_fetch_all<D, U>(self, template_id: u64, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>) 
         -> Result<Vec<U>, crate::DySqlError>
     where
         D: dysql_tpl::Content + Send + Sync,
         for<'r> U: sqlx::FromRow<'r, Self::Row> + Send + Unpin;
 
     /// 查询并返回一个指定类型的对象
-    async fn dy_fetch_one<D, U>(self, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>) 
+    async fn dy_fetch_one<D, U>(self, template_id: u64, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>) 
         -> Result<U, crate::DySqlError>
     where
         D: dysql_tpl::Content + Send + Sync,
         for<'r> U: sqlx::FromRow<'r, Self::Row> + Send + Unpin;
 
     /// 查询并返回一个指定类型的单值
-    async fn dy_fetch_scalar<D, U>(self, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>) 
+    async fn dy_fetch_scalar<D, U>(self, template_id: u64, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>) 
         -> Result<U, crate::DySqlError>
     where
         D: dysql_tpl::Content + Send + Sync,
         for<'r> U: sqlx::Decode<'r, Self::DB> + sqlx::Type<Self::DB> + Send + Unpin;
 
     /// 执行一条sql命令并返回受其影响的记录数
-    async fn dy_execute<D>(self,named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>) 
+    async fn dy_execute<D>(self, template_id: u64, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>) 
         -> Result<u64, crate::DySqlError>
     where
         D: dysql_tpl::Content + Send + Sync;
 
     /// 新增一条记录
-    async fn dy_insert<D, U>(self, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>) 
+    async fn dy_insert<D, U>(self, template_id: u64, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>) 
         -> Result<Option<U>, crate::DySqlError>
     where
         D: dysql_tpl::Content + Send + Sync,
@@ -91,14 +91,14 @@ pub trait SqlxExecutorAdatper
         for<'r> U: sqlx::Decode<'r, Self::DB> + sqlx::Type<Self::DB> + Send + Unpin;
 
     /// 用于在分页查询中获取符合条件的总记录数
-    async fn dy_page_count<D, U>(self, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>) 
+    async fn dy_page_count<D, U>(self, template_id: u64, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>) 
         -> Result<U, crate::DySqlError>
     where
         D: dysql_tpl::Content + Send + Sync,
         for<'r> U: sqlx::Decode<'r, Self::DB> + sqlx::Type<Self::DB> + Send + Unpin;
 
     /// 用返回分页查询中获取符合条件的结果
-    async fn dy_page_all<D, U>(self, named_template: std::sync::Arc<dysql_tpl::Template>, page_dto: &crate::PageDto<D>) 
+    async fn dy_page_all<D, U>(self, template_id: u64, named_template: std::sync::Arc<dysql_tpl::Template>, page_dto: &crate::PageDto<D>) 
         -> Result<crate::Pagination<U>, crate::DySqlError>
     where
         D: dysql_tpl::Content + Send + Sync,

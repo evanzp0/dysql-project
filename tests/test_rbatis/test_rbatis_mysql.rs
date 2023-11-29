@@ -1,6 +1,6 @@
 use dysql::{sql, fetch_one, fetch_all, Value, fetch_scalar, execute, DySqlError, ErrorInner, Kind, insert, SortModel, PageDto, page};
 use rbatis::RBatis;
-use rbdc_sqlite::Driver;
+use rbdc_mysql::Driver;
 
 use crate::common::{User, UserDto};
 
@@ -8,27 +8,7 @@ mod common;
 
 async fn connect_db() -> RBatis {
     let rb = RBatis::new();
-    rb.init(Driver{},"sqlite::memory:").unwrap();
-
-    rb.exec(r#"
-        CREATE TABLE test_user (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name VARCHAR(255) NULL,
-            age INT NULL
-        )"#,
-        vec![]
-    ).await.unwrap();
-
-    rb.exec("INSERT INTO test_user (name, age) VALUES ('huanglan', 10)", vec![]).await.unwrap();
-    rb.exec("INSERT INTO test_user (name, age) VALUES ('zhanglan', 21)", vec![]).await.unwrap();
-    rb.exec("INSERT INTO test_user (name, age) VALUES ('zhangsan', 35)", vec![]).await.unwrap();
-    rb.exec("INSERT INTO test_user (name, age) VALUES ('a4', 12)", vec![]).await.unwrap();
-    rb.exec("INSERT INTO test_user (name, age) VALUES ('a5', 21)", vec![]).await.unwrap();
-    rb.exec("INSERT INTO test_user (name, age) VALUES ('a6', 22)", vec![]).await.unwrap();
-    rb.exec("INSERT INTO test_user (name, age) VALUES ('a7', 24)", vec![]).await.unwrap();
-    rb.exec("INSERT INTO test_user (name, age) VALUES ('a8', 31)", vec![]).await.unwrap();
-    rb.exec("INSERT INTO test_user (name, age) VALUES ('a9', 33)", vec![]).await.unwrap();
-
+    rb.init(Driver{},"mysql://root:111111@127.0.0.1:3306/my_database").unwrap();
     rb
 }
 
@@ -139,7 +119,7 @@ async fn test_page() {
         "select * from test_user 
         where 1 = 1
         {{#data}}
-            {{#name}}and name like '%' || :data.name || '%'{{/name}}
+            {{#name}}and name like concat('%', :data.name, '%'){{/name}}
             {{#age}}and age > :data.age{{/age}}
         {{/data}}"
     }).unwrap();
@@ -166,7 +146,7 @@ async fn test_trim_sql() {
         where
         {{#data}}
             ![DEL(and)]
-            {{#name}}and name like '%' || :data.name || '%'{{/name}}
+            {{#name}}and name like concat('%', :data.name, '%'){{/name}}
             {{#age}}and age > :data.age{{/age}}
             {{?id_rng}}
                 and id in (

@@ -128,10 +128,10 @@ harness = true
 # path = "benches/bench_nh_pg.rs"
 # required-features = ["rbatis-pg", "sqlx-postgres", "tokio-postgres"]
 
-[[test]]
-name = "bench_sync_async"
-path = "benches/bench_sync_async.rs"
-required-features = ["rbatis-pg", "sqlx-postgres", "tokio-postgres"]
+# [[test]]
+# name = "bench_sync_async"
+# path = "benches/bench_sync_async.rs"
+# required-features = ["rbatis-pg", "sqlx-postgres", "tokio-postgres"]
 
 [[bench]]
 name = "bench_ctri_sqlite"

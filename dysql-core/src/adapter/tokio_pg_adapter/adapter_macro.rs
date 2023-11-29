@@ -2,7 +2,7 @@
 macro_rules! impl_tokio_pg_adapter_fetch_all {
     ([$($vtype:ty),+]) => 
     {
-        async fn dy_fetch_all<D, U>(self, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>)
+        async fn dy_fetch_all<D, U>(self, template_id: u64, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>)
             -> Result<Vec<U>, crate::DySqlError>
         where 
             D: dysql_tpl::Content + Send + Sync,
@@ -62,7 +62,7 @@ macro_rules! impl_tokio_pg_adapter_fetch_all {
 macro_rules! impl_tokio_pg_adapter_fetch_one {
     ([$($vtype:ty),+]) => 
     {
-        async fn dy_fetch_one<D, U>(self, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>)
+        async fn dy_fetch_one<D, U>(self, template_id: u64, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>)
             -> Result<U, crate::DySqlError>
         where 
             D: dysql_tpl::Content + Send + Sync,
@@ -124,7 +124,7 @@ macro_rules! impl_tokio_pg_adapter_fetch_one {
 macro_rules! impl_tokio_pg_adapter_fetch_scalar {
     ([$($vtype:ty),+]) => 
     {
-        async fn dy_fetch_scalar<D, U>(self, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>)
+        async fn dy_fetch_scalar<D, U>(self, template_id: u64, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>)
             -> Result<U, crate::DySqlError>
         where 
             D: dysql_tpl::Content + Send + Sync,
@@ -181,7 +181,7 @@ macro_rules! impl_tokio_pg_adapter_fetch_scalar {
 macro_rules! impl_tokio_pg_adapter_execute {
     ([$($vtype:ty),+]) => 
     {
-        async fn dy_execute<D>(self, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>)
+        async fn dy_execute<D>(self, template_id: u64, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>)
             -> Result<u64, crate::DySqlError>
         where 
             D: dysql_tpl::Content + Send + Sync,
@@ -235,7 +235,7 @@ macro_rules! impl_tokio_pg_adapter_execute {
 macro_rules! impl_tokio_pg_adapter_insert {
     ([$($vtype:ty),+]) => 
     {
-        async fn dy_insert<D, U>(self, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>)
+        async fn dy_insert<D, U>(self, template_id: u64, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>)
             -> Result<Option<U>, crate::DySqlError>
         where 
             D: dysql_tpl::Content + Send + Sync,
@@ -304,7 +304,7 @@ macro_rules! impl_tokio_pg_adapter_fetch_insert_id {
 macro_rules! impl_tokio_pg_adapter_page_count {
     ([$($vtype:ty),+]) => 
     {
-        async fn dy_page_count<D, U>(self, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>)
+        async fn dy_page_count<D, U>(self, template_id: u64, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>)
             -> Result<U, crate::DySqlError>
         where 
             D: dysql_tpl::Content + Send + Sync,
@@ -372,7 +372,7 @@ macro_rules! impl_tokio_pg_adapter_page_count {
 macro_rules! impl_tokio_pg_adapter_page_all {
     ([$($vtype:ty),+]) => 
     {
-        async fn dy_page_all<D, U>(self, named_template: std::sync::Arc<dysql_tpl::Template>, page_dto: &crate::PageDto<D>)
+        async fn dy_page_all<D, U>(self, template_id: u64, named_template: std::sync::Arc<dysql_tpl::Template>, page_dto: &crate::PageDto<D>)
             -> Result<crate::Pagination<U>, crate::DySqlError>
         where 
             D: dysql_tpl::Content + Send + Sync,

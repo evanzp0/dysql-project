@@ -13,7 +13,7 @@ impl SqlxExecutorAdatper for &mut sqlx::SqliteConnection {
     crate::impl_sqlx_adapter_page_count!([i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
     crate::impl_sqlx_adapter_page_all!(sqlx::sqlite::SqliteRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
 
-    async fn dy_insert<D, U>(self, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>) 
+    async fn dy_insert<D, U>(self, template_id: u64, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>) 
         -> Result<Option<U>, crate::DySqlError>
     where
         D: dysql_tpl::Content + Send + Sync,

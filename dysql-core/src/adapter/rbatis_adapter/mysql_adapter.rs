@@ -17,7 +17,7 @@ impl RbatisMysqlAdapter {
     crate::impl_rbatis_adapter_page_count!();
     crate::impl_rbatis_adapter_page_all!();
 
-    pub async fn dy_insert<E, D, U>(self, executor: &E, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>)
+    pub async fn dy_insert<E, D, U>(self, executor: &E, template_id: u64, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>)
         -> Result<Option<U>, crate::DySqlError>
     where 
         E: rbatis::executor::Executor,
@@ -65,7 +65,7 @@ impl RbatisMysqlAdapter {
         U: serde::de::DeserializeOwned,
     {
         let insert_id = executor
-            .query("SELECT last_insert_rowid();", vec![])
+            .query("SELECT LAST_INSERT_ID();", vec![])
             .await
             .map_err(|e| 
                 crate::DySqlError(crate::ErrorInner::new(crate::Kind::QueryError, Some(e.into()), None))

@@ -3,7 +3,7 @@ use crate::SqlxExecutorAdatper;
 macro_rules! impl_sqlx_adapter_mysql_insert {
     ([$($vtype:ty),+]) => 
     {
-        async fn dy_insert<D, U>(self, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>) 
+        async fn dy_insert<D, U>(self, template_id: u64, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>) 
             -> Result<Option<U>, crate::DySqlError>
         where
             D: dysql_tpl::Content + Send + Sync,

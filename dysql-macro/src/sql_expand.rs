@@ -21,11 +21,11 @@ impl SqlExpand {
         let execute_query = match dto_ident {
             Some(_) => quote!(
                 // query.fetch_all::<_, _, #ret_type>(#executor_token, named_template, Some(#dto_token)).await 
-                #executor_token.dy_fetch_all::<_, #ret_type>(named_template, Some(#dto_token)).await 
+                #executor_token.dy_fetch_all::<_, #ret_type>(template_id, named_template, Some(#dto_token)).await 
             ),
             None => quote!(
                 // query.fetch_all::<_, dysql::EmptyObject, #ret_type>(#executor_token, named_template, None).await 
-                #executor_token.dy_fetch_all::<dysql::EmptyObject, #ret_type>(named_template, None).await 
+                #executor_token.dy_fetch_all::<dysql::EmptyObject, #ret_type>(template_id, named_template, None).await 
             ),
         };
 
@@ -59,10 +59,10 @@ impl SqlExpand {
         let dto_token = st.dto_info.gen_token();
         let execute_query = match dto_ident {
             Some(_) => quote!(
-                #executor_token.dy_fetch_one::<_, #ret_type>(named_template, Some(#dto_token)).await 
+                #executor_token.dy_fetch_one::<_, #ret_type>(template_id, named_template, Some(#dto_token)).await 
             ),
             None => quote!(
-                #executor_token.dy_fetch_one::<dysql::EmptyObject, #ret_type>(named_template, None).await 
+                #executor_token.dy_fetch_one::<dysql::EmptyObject, #ret_type>(template_id, named_template, None).await 
             ),
         };
         
@@ -96,10 +96,10 @@ impl SqlExpand {
         let dto_token = st.dto_info.gen_token();
         let execute_query = match dto_ident {
             Some(_) => quote!(
-                #executor_token.dy_fetch_scalar::< _, #ret_type>(named_template, Some(#dto_token)).await 
+                #executor_token.dy_fetch_scalar::< _, #ret_type>(template_id, named_template, Some(#dto_token)).await 
             ),
             None => quote!(
-                #executor_token.dy_fetch_scalar::<dysql::EmptyObject, #ret_type>(named_template, None).await 
+                #executor_token.dy_fetch_scalar::<dysql::EmptyObject, #ret_type>(template_id, named_template, None).await 
             ),
         };
 
@@ -132,10 +132,10 @@ impl SqlExpand {
         let dto_token = st.dto_info.gen_token();
         let execute_query = match dto_ident {
             Some(_) => quote!(
-                #executor_token.dy_execute(named_template, Some(#dto_token)).await
+                #executor_token.dy_execute(template_id, named_template, Some(#dto_token)).await
             ),
             None => quote!(
-                #executor_token.dy_execute::<_, dysql::EmptyObject>(named_template, None).await 
+                #executor_token.dy_execute::<_, dysql::EmptyObject>(template_id, named_template, None).await 
             ),
         };
 
@@ -169,10 +169,10 @@ impl SqlExpand {
         let dto_token = st.dto_info.gen_token();
         let execute_query = match dto_ident {
             Some(_) => quote!(
-                let insert_rst = #executor_token.dy_insert::<_, #ret_type>(named_template, Some(#dto_token)).await;
+                let insert_rst = #executor_token.dy_insert::<_, #ret_type>(template_id, named_template, Some(#dto_token)).await;
             ),
             None => quote!(
-                let insert_rst = #executor_token.dy_insert::<dysql::EmptyObject, #ret_type>(named_template, None).await;
+                let insert_rst = #executor_token.dy_insert::<dysql::EmptyObject, #ret_type>(template_id, named_template, None).await;
             ),
         };
 
@@ -225,10 +225,10 @@ impl SqlExpand {
         // 生成 count 查询的调用
         let execute_count_query = match dto_ident {
             Some(_) => quote!(
-                let count_rst = #executor_token.dy_page_count::<_, i64>(named_template.clone(), Some(&#dto_token)).await;
+                let count_rst = #executor_token.dy_page_count::<_, i64>(template_id, named_template.clone(), Some(&#dto_token)).await;
             ),
             None => quote!(
-                let count_rst = #executor_token.dy_page_count::<dysql::EmptyObject, i64>(named_template.clone(), None).await;
+                let count_rst = #executor_token.dy_page_count::<dysql::EmptyObject, i64>(template_id, named_template.clone(), None).await;
             ),
         };
 
@@ -252,7 +252,7 @@ impl SqlExpand {
             #dto_ident.init(count as u64);
 
             // execute page_all query
-            #executor_token.dy_page_all::<_, #ret_type>(named_template, &#dto_token).await 
+            #executor_token.dy_page_all::<_, #ret_type>(template_id, named_template, &#dto_token).await 
         });
 
         Ok(ret)

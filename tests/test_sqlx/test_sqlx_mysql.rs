@@ -116,7 +116,7 @@ async fn test_page() {
         "select * from test_user 
         where 1 = 1
         {{#data}}
-            {{#name}}and name like '%' || :data.name || '%'{{/name}}
+            {{#name}}and name like concat('%', :data.name, '%'){{/name}}
             {{#age}}and age > :data.age{{/age}}
         {{/data}}"
     }).unwrap();
@@ -143,7 +143,7 @@ async fn test_trim_sql() {
         where
         {{#data}}
             ![DEL(and)]
-            {{#name}}and name like '%' || :data.name || '%'{{/name}}
+            {{#name}}and name like concat('%', :data.name, '%'){{/name}}
             {{#age}}and age > :data.age{{/age}}
             {{?id_rng}}
                 and id in (

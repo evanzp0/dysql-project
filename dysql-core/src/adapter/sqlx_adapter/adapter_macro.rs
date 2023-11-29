@@ -3,7 +3,7 @@
 macro_rules! impl_sqlx_adapter_fetch_all {
     ($row:path, [$($vtype:ty),+]) => 
     {
-        async fn dy_fetch_all<D, U>(self, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>) 
+        async fn dy_fetch_all<D, U>(self, template_id: u64, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>) 
             -> Result<Vec<U>, crate::DySqlError>
         where
             D: dysql_tpl::Content + Send + Sync,
@@ -46,7 +46,7 @@ macro_rules! impl_sqlx_adapter_fetch_all {
 #[macro_export]
 macro_rules! impl_sqlx_adapter_fetch_one {
     ($row:path, [$($vtype:ty),+]) => {
-        async fn dy_fetch_one<D, U>(self, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>) 
+        async fn dy_fetch_one<D, U>(self, template_id: u64, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>) 
             -> Result<U, crate::DySqlError>
         where
             D: dysql_tpl::Content + Send + Sync,
@@ -90,7 +90,7 @@ macro_rules! impl_sqlx_adapter_fetch_one {
 #[macro_export]
 macro_rules! impl_sqlx_adapter_fetch_scalar {
     ([$($vtype:ty),+]) => {
-        async fn dy_fetch_scalar<D, U>(self, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>) 
+        async fn dy_fetch_scalar<D, U>(self, template_id: u64, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>) 
             -> Result<U, crate::DySqlError>
         where
             D: dysql_tpl::Content + Send + Sync,
@@ -134,7 +134,7 @@ macro_rules! impl_sqlx_adapter_fetch_scalar {
 #[macro_export]
 macro_rules! impl_sqlx_adapter_execute {
     ([$($vtype:ty),+]) => {
-        async fn dy_execute<D>(self,named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>) 
+        async fn dy_execute<D>(self, template_id: u64, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>) 
             -> Result<u64, crate::DySqlError>
         where
             D: dysql_tpl::Content + Send + Sync
@@ -181,7 +181,7 @@ macro_rules! impl_sqlx_adapter_execute {
 #[macro_export]
 macro_rules! impl_sqlx_adapter_page_count {
     ([$($vtype:ty),+])  => {
-        async fn dy_page_count<D, U>(self, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>) 
+        async fn dy_page_count<D, U>(self, template_id: u64, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>) 
             -> Result<U, crate::DySqlError>
         where
             D: dysql_tpl::Content + Send + Sync,
@@ -233,7 +233,7 @@ macro_rules! impl_sqlx_adapter_page_count {
 #[macro_export]
 macro_rules! impl_sqlx_adapter_page_all {
     ($row:path, [$($vtype:ty),+]) => {
-        async fn dy_page_all<D, U>(self, named_template: std::sync::Arc<dysql_tpl::Template>, page_dto: &crate::PageDto<D>) 
+        async fn dy_page_all<D, U>(self, template_id: u64, named_template: std::sync::Arc<dysql_tpl::Template>, page_dto: &crate::PageDto<D>) 
             -> Result<crate::Pagination<U>, crate::DySqlError>
         where
             D: dysql_tpl::Content + Send + Sync,

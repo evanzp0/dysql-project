@@ -2,7 +2,7 @@
 #[macro_export]
 macro_rules! impl_rbatis_adapter_fetch_all {
     () => {
-        pub async fn dy_fetch_all<E, D, U>(self, executor: &E, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>)
+        pub async fn dy_fetch_all<E, D, U>(self, executor: &E, template_id: u64, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>)
             -> Result<Vec<U>, crate::DySqlError>
         where 
             E: rbatis::executor::Executor,
@@ -51,7 +51,7 @@ macro_rules! impl_rbatis_adapter_fetch_all {
 #[macro_export]
 macro_rules! impl_rbatis_adapter_fetch_one {
     () => {
-        pub async fn dy_fetch_one<E, D, U>(self, executor: &E, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>)
+        pub async fn dy_fetch_one<E, D, U>(self, executor: &E, template_id: u64, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>)
             -> Result<U, crate::DySqlError>
         where 
             E: rbatis::executor::Executor,
@@ -100,7 +100,7 @@ macro_rules! impl_rbatis_adapter_fetch_one {
 #[macro_export]
 macro_rules! impl_rbatis_adapter_fetch_scalar {
     () => {
-        pub async fn dy_fetch_scalar<E, D, U>(self, executor: &E, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>)
+        pub async fn dy_fetch_scalar<E, D, U>(self, executor: &E, template_id: u64, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>)
             -> Result<U, crate::DySqlError>
         where 
             E: rbatis::executor::Executor,
@@ -149,7 +149,7 @@ macro_rules! impl_rbatis_adapter_fetch_scalar {
 #[macro_export]
 macro_rules! impl_rbatis_adapter_execute {
     () => {
-        pub async fn dy_execute<E, D>(self, executor: &E, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>)
+        pub async fn dy_execute<E, D>(self, executor: &E, template_id: u64, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>)
             -> Result<u64, crate::DySqlError>
         where 
             E: rbatis::executor::Executor,
@@ -194,7 +194,7 @@ macro_rules! impl_rbatis_adapter_execute {
 #[macro_export]
 macro_rules! impl_rbatis_adapter_page_count {
     () => {
-        pub async fn dy_page_count<E, D, U>(self, executor: &E, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>)
+        pub async fn dy_page_count<E, D, U>(self, executor: &E, template_id: u64, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>)
             -> Result<U, crate::DySqlError>
         where 
             E: rbatis::executor::Executor,
@@ -204,6 +204,8 @@ macro_rules! impl_rbatis_adapter_page_count {
             use std::io::Write;
 
             let named_sql = crate::gen_named_sql(named_template, &dto)?;
+
+            println!("sql: {}", named_sql);
                 
             let mut buf = Vec::<u8>::with_capacity(named_sql.len());
             let sql_and_params = crate::extract_params_buf(&named_sql, &mut buf, self.dialect);
@@ -253,7 +255,7 @@ macro_rules! impl_rbatis_adapter_page_count {
 #[macro_export]
 macro_rules! impl_rbatis_adapter_page_all {
     () => {
-        pub async fn dy_page_all<E, D, U>(self, executor: &E, named_template: std::sync::Arc<dysql_tpl::Template>, page_dto: &crate::PageDto<D>) 
+        pub async fn dy_page_all<E, D, U>(self, executor: &E, template_id: u64, named_template: std::sync::Arc<dysql_tpl::Template>, page_dto: &crate::PageDto<D>) 
             -> Result<crate::Pagination<U>, crate::DySqlError>
         where 
             E: rbatis::executor::Executor,

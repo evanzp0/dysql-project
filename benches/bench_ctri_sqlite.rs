@@ -60,17 +60,17 @@ async fn connect_db() -> sqlx::SqliteConnection {
 }
 
 // Here we have an async function to benchmark
-async fn do_fetch_all_dysql_sqlx(db: &std::cell::RefCell<sqlx::SqliteConnection>, dto: &Value<i32>) {
+async fn do_fetch_all_dysql_sqlx(db: &std::cell::RefCell<sqlx::SqliteConnection>, dto: &Value<&str>) {
     let mut db = db.borrow_mut();
     let _rst = fetch_all!(|db, &dto| -> User {
-        r#"SELECT * FROM test_user WHERE 1 = 1 AND age > :value"#
+        r#"SELECT * FROM test_user WHERE name = :value"#
     }).unwrap();
 }
 
 fn fetch_all_dysql_sqlx(c: &mut Criterion) {
     let runtime = tokio::runtime::Runtime::new().unwrap();
     let db = std::cell::RefCell::new(runtime.block_on(connect_db()));
-    let dto = Value::new(1);
+    let dto = Value::new("a1");
     c.bench_with_input(
         BenchmarkId::new("dysql sqlx-sqlite", "fetch_all"),
         &(&db, &dto),
@@ -83,7 +83,7 @@ fn fetch_all_dysql_sqlx(c: &mut Criterion) {
     );
 }
 
-async fn do_fetch_all_raw_sqlx(db: &std::cell::RefCell<sqlx::SqliteConnection>, dto: &Value<i32>) {
+async fn do_fetch_all_raw_sqlx(db: &std::cell::RefCell<sqlx::SqliteConnection>, dto: &Value<&str>) {
     let sql ="select * from test_user where name = ? ";
     let mut db = db.borrow_mut();
     let query = sqlx::query_as::<_, User>(&sql);
@@ -94,7 +94,7 @@ async fn do_fetch_all_raw_sqlx(db: &std::cell::RefCell<sqlx::SqliteConnection>, 
 fn fetch_all_raw_sqlx(c: &mut Criterion) {
     let runtime = tokio::runtime::Runtime::new().unwrap();
     let db = std::cell::RefCell::new(runtime.block_on(connect_db()));
-    let dto = Value::new(1);
+    let dto = Value::new("a1");
     c.bench_with_input(
         BenchmarkId::new("raw sqlx-sqlite", "fetch_all"),
         &(&db, &dto),

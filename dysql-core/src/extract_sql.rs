@@ -25,7 +25,7 @@ pub fn extract_params_buf<'a>(o_sql: &'a str, sql_buf: &mut Vec<u8>, sql_dial: S
     use std::io::Write;
 
     let mut sql_buf = Cursor::new(sql_buf);
-    let mut params: Vec<&'a str> = vec![];
+    let mut params = vec![];
 
     let mut count = 0;
     let mut start: usize = 0;
@@ -61,6 +61,7 @@ pub fn extract_params_buf<'a>(o_sql: &'a str, sql_buf: &mut Vec<u8>, sql_dial: S
 
                 cur = current_cursor;
                 let p = &o_sql[start..cur];
+                // params.push(p.to_owned());
                 params.push(p);
                 start = cur;
             }

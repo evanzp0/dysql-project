@@ -9,10 +9,15 @@ macro_rules! impl_sqlx_adapter_fetch_all {
             D: dysql_tpl::Content + Send + Sync,
             for<'r> U: sqlx::FromRow<'r, $row> + Send + Unpin,
         {
+            let dialect = self.get_dialect();
+
+            // let sql_data = crate::get_sql_and_params(template_id, named_template.clone(), &dto, dialect)?;
+            // let sql = &sql_data.sql;
+            // let param_names = &sql_data.param_names;
+
             let named_sql = crate::gen_named_sql(named_template, &dto)?;
-            
             let mut buf = Vec::<u8>::with_capacity(named_sql.len());
-            let sql_and_params = crate::extract_params_buf(&named_sql, &mut buf, self.get_dialect());
+            let sql_and_params = crate::extract_params_buf(&named_sql, &mut buf, dialect);
             let sql = unsafe{std::str::from_utf8_unchecked(&buf)};
             let param_names = match sql_and_params {
                 Ok(val) => val,
@@ -23,7 +28,7 @@ macro_rules! impl_sqlx_adapter_fetch_all {
 
             let mut query = sqlx::query_as::<_, U>(sql);
             if let Some(dto) = &dto {
-                for param_name in &param_names {
+                for param_name in param_names {
                     let stpl = dysql_tpl::SimpleTemplate::new(param_name);
                     
                     let param_value = stpl.apply(dto);

@@ -6,12 +6,12 @@ impl SqlxExecutorAdatper for &mut sqlx::SqliteConnection {
 
     type Row = sqlx::sqlite::SqliteRow;
 
-    crate::impl_sqlx_adapter_fetch_all!(sqlx::sqlite::SqliteRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
-    crate::impl_sqlx_adapter_fetch_one!(sqlx::sqlite::SqliteRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
-    crate::impl_sqlx_adapter_fetch_scalar!([i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
-    crate::impl_sqlx_adapter_execute!([i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
-    crate::impl_sqlx_adapter_page_count!([i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
-    crate::impl_sqlx_adapter_page_all!(sqlx::sqlite::SqliteRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
+    crate::impl_sqlx_adapter_fetch_all!(sqlx::sqlite::SqliteRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc, DateTime_Local, DateTime_FixedOffset]);
+    crate::impl_sqlx_adapter_fetch_one!(sqlx::sqlite::SqliteRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc, DateTime_Local, DateTime_FixedOffset]);
+    crate::impl_sqlx_adapter_fetch_scalar!([i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc, DateTime_Local, DateTime_FixedOffset]);
+    crate::impl_sqlx_adapter_execute!([i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc, DateTime_Local, DateTime_FixedOffset]);
+    crate::impl_sqlx_adapter_page_count!([i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc, DateTime_Local, DateTime_FixedOffset]);
+    crate::impl_sqlx_adapter_page_all!(sqlx::sqlite::SqliteRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc, DateTime_Local, DateTime_FixedOffset]);
 
     async fn dy_insert<D, U>(self, template_id: u64, named_template: std::sync::Arc<dysql_tpl::Template>, dto: Option<D>) 
         -> Result<Option<U>, crate::DySqlError>
@@ -38,7 +38,7 @@ impl SqlxExecutorAdatper for &mut sqlx::SqliteConnection {
                 let param_value = stpl.apply(dto);
                 match param_value {
                     Ok(param_value) => {
-                        query = impl_bind_sqlx_param_value!(query, param_value, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
+                        query = impl_bind_sqlx_param_value!(query, param_value, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc, DateTime_Local, DateTime_FixedOffset]);
                     },
                     Err(e) => Err( crate::DySqlError( crate::ErrorInner::new( crate::Kind::BindParamterError, Some(e), None)))?,
                 }

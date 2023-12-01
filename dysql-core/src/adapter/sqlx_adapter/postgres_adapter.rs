@@ -64,14 +64,14 @@ impl SqlxExecutorAdatper for &sqlx::Pool<sqlx::Postgres> {
 
     type Row = sqlx::postgres::PgRow;
 
-    crate::impl_sqlx_adapter_fetch_all!(sqlx::postgres::PgRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
-    crate::impl_sqlx_adapter_fetch_one!(sqlx::postgres::PgRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
-    crate::impl_sqlx_adapter_fetch_scalar!([i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
-    crate::impl_sqlx_adapter_execute!([i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
-    crate::impl_sqlx_adapter_page_count!([i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
-    crate::impl_sqlx_adapter_page_all!(sqlx::postgres::PgRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
-    impl_sqlx_adapter_pg_insert!([i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
-    impl_sqlx_adapter_pg_fetch_insert_id!([i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
+    crate::impl_sqlx_adapter_fetch_all!(sqlx::postgres::PgRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc, DateTime_Local, DateTime_FixedOffset]);
+    crate::impl_sqlx_adapter_fetch_one!(sqlx::postgres::PgRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc, DateTime_Local, DateTime_FixedOffset]);
+    crate::impl_sqlx_adapter_fetch_scalar!([i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc, DateTime_Local, DateTime_FixedOffset]);
+    crate::impl_sqlx_adapter_execute!([i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc, DateTime_Local, DateTime_FixedOffset]);
+    crate::impl_sqlx_adapter_page_count!([i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc, DateTime_Local, DateTime_FixedOffset]);
+    crate::impl_sqlx_adapter_page_all!(sqlx::postgres::PgRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc, DateTime_Local, DateTime_FixedOffset]);
+    impl_sqlx_adapter_pg_insert!([i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc, DateTime_Local, DateTime_FixedOffset]);
+    impl_sqlx_adapter_pg_fetch_insert_id!([i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc, DateTime_Local, DateTime_FixedOffset]);
 }
 
 impl SqlxExecutorAdatper for &mut sqlx::PgConnection {
@@ -80,12 +80,12 @@ impl SqlxExecutorAdatper for &mut sqlx::PgConnection {
 
     type Row = sqlx::postgres::PgRow;
 
-    crate::impl_sqlx_adapter_fetch_all!(sqlx::postgres::PgRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
-    crate::impl_sqlx_adapter_fetch_one!(sqlx::postgres::PgRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
-    crate::impl_sqlx_adapter_fetch_scalar!([i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
-    crate::impl_sqlx_adapter_execute!([i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
-    crate::impl_sqlx_adapter_page_count!([i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
-    crate::impl_sqlx_adapter_page_all!(sqlx::postgres::PgRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
-    impl_sqlx_adapter_pg_insert!([i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
-    impl_sqlx_adapter_pg_fetch_insert_id!([i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
+    crate::impl_sqlx_adapter_fetch_all!(sqlx::postgres::PgRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc, DateTime_Local, DateTime_FixedOffset]);
+    crate::impl_sqlx_adapter_fetch_one!(sqlx::postgres::PgRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc, DateTime_Local, DateTime_FixedOffset]);
+    crate::impl_sqlx_adapter_fetch_scalar!([i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc, DateTime_Local, DateTime_FixedOffset]);
+    crate::impl_sqlx_adapter_execute!([i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc, DateTime_Local, DateTime_FixedOffset]);
+    crate::impl_sqlx_adapter_page_count!([i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc, DateTime_Local, DateTime_FixedOffset]);
+    crate::impl_sqlx_adapter_page_all!(sqlx::postgres::PgRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc, DateTime_Local, DateTime_FixedOffset]);
+    impl_sqlx_adapter_pg_insert!([i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc, DateTime_Local, DateTime_FixedOffset]);
+    impl_sqlx_adapter_pg_fetch_insert_id!([i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc, DateTime_Local, DateTime_FixedOffset]);
 }

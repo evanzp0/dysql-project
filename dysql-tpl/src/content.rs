@@ -14,36 +14,25 @@ use crate::template::{Section, Template};
 use crate::traits::ContentSequence;
 
 use arrayvec::ArrayVec;
-use chrono::Utc;
-use fnv::FnvHasher;
+use chrono::{FixedOffset, Local, Utc};
+
 use std::borrow::{Borrow, Cow, ToOwned};
 use std::collections::{BTreeMap, HashMap};
-use std::hash::{BuildHasher, Hash, Hasher};
+use std::hash::{BuildHasher, Hash};
 use std::ops::Deref;
 
 use paste::paste;
 
-pub(crate) fn hash_it<T: Hash>(name: T) -> u64 {
-    let mut hasher = FnvHasher::default();
-    name.hash(&mut hasher);
-    hasher.finish()
-}
+// pub(crate) fn hash_it<T: Hash>(name: T) -> u64 {
+//     let mut hasher = FnvHasher::default();
+//     name.hash(&mut hasher);
+//     hasher.finish()
+// }
 
 /// Trait allowing the rendering to quickly access data stored in the type that
 /// implements it. You needn't worry about implementing it, in virtually all
 /// cases the `#[derive(Content)]` attribute above your types should be sufficient.
 pub trait Content {
-    // #[inline]
-    // fn get_field_names(&self) -> Option<Vec<(&'static str, u64)>> {
-    //     None
-    // }
-
-    /// 检查当前对象是否能 cache
-    #[inline]
-    fn cache_check(&self, parent_hash: u64) -> Option<u64> {
-        Some(parent_hash)
-    }
-
     /// Marks whether this content is truthy. Used when attempting to render a section.
     #[inline]
     fn is_truthy(&self) -> bool {
@@ -444,16 +433,6 @@ impl<T: Content> Content for Option<T> {
     }
 
     #[inline]
-    fn cache_check(&self, parent_hash: u64) -> Option<u64> {
-        match self {
-            Some(v) => v.cache_check(parent_hash),
-            None => Some(
-                hash_it(vec![Some(parent_hash), Option::<u64>::None])
-            ),
-        }
-    }
-
-    #[inline]
     fn render_escaped<E: Encoder>(&self, encoder: &mut E) -> Result<(), E::Error> {
         if let Some(inner) = self {
             inner.render_escaped(encoder)?;
@@ -546,14 +525,6 @@ where
     }
 
     #[inline]
-    fn cache_check(&self, parent_hash: u64) -> Option<u64> {
-        match self {
-            Ok(v) => v.cache_check(parent_hash),
-            Err(_) => None,
-        }
-    }
-
-    #[inline]
     fn render_escaped<E: Encoder>(&self, encoder: &mut E) -> Result<(), E::Error> {
         if let Ok(inner) = self {
             inner.render_escaped(encoder)?;
@@ -633,15 +604,6 @@ impl<T: Content> Content for Vec<T> {
     fn is_truthy(&self) -> bool {
         !self.is_empty()
     }
-
-    #[inline]
-    fn cache_check(&self, parent_hash: u64) -> Option<u64> {
-        if self.len() > 0 {
-            None
-        } else {
-            Some(parent_hash)
-        }
-    }
     
     #[inline]
     fn render_section<C, E, IC>(
@@ -680,15 +642,6 @@ impl<T: Content> Content for [T] {
     #[inline]
     fn is_truthy(&self) -> bool {
         !self.is_empty()
-    }
-
-    #[inline]
-    fn cache_check(&self, parent_hash: u64) -> Option<u64> {
-        if self.len() > 0 {
-            None
-        } else {
-            Some(parent_hash)
-        }
     }
 
     #[inline]
@@ -731,15 +684,6 @@ impl<T: Content, const N: usize> Content for [T; N] {
     }
 
     #[inline]
-    fn cache_check(&self, parent_hash: u64) -> Option<u64> {
-        if self.len() > 0 {
-            None
-        } else {
-            Some(parent_hash)
-        }
-    }
-
-    #[inline]
     fn render_section<C, E, IC>(
         &self,
         section: Section<C>,
@@ -776,15 +720,6 @@ impl<T: Content, const N: usize> Content for ArrayVec<T, N> {
     #[inline]
     fn is_truthy(&self) -> bool {
         !self.is_empty()
-    }
-
-    #[inline]
-    fn cache_check(&self, parent_hash: u64) -> Option<u64> {
-        if self.len() > 0 {
-            None
-        } else {
-            Some(parent_hash)
-        }
     }
 
     #[inline]
@@ -828,15 +763,6 @@ where
 {
     fn is_truthy(&self) -> bool {
         !self.is_empty()
-    }
-
-    #[inline]
-    fn cache_check(&self, parent_hash: u64) -> Option<u64> {
-        if self.len() > 0 {
-            None
-        } else {
-            Some(parent_hash)
-        }
     }
 
     /// Render a section with self.
@@ -962,16 +888,7 @@ where
     fn is_truthy(&self) -> bool {
         !self.is_empty()
     }
-
-    #[inline]
-    fn cache_check(&self, parent_hash: u64) -> Option<u64> {
-        if self.len() > 0 {
-            None
-        } else {
-            Some(parent_hash)
-        }
-    }
-
+    
     /// Render a section with self.
     #[inline]
     fn render_section<C, E, IC>(
@@ -1101,12 +1018,7 @@ macro_rules! impl_pointer_types {
                 fn capacity_hint(&self, tpl: &Template) -> usize {
                     self.deref().capacity_hint(tpl)
                 }
-
-                #[inline]
-                fn cache_check(&self, parent_hash: u64) -> Option<u64> {
-                    self.deref().cache_check(parent_hash)
-                }
-
+                
                 #[inline]
                 fn render_escaped<E: Encoder>(&self, encoder: &mut E) -> Result<(), E::Error> {
                     self.deref().render_escaped(encoder)
@@ -1288,11 +1200,6 @@ impl Content for beef::Cow<'_, str> {
     }
     
     #[inline]
-    fn cache_check(&self, _parent_hash: u64) -> Option<u64> {
-        None
-    }
-
-    #[inline]
     fn capacity_hint(&self, _tpl: &Template) -> usize {
         self.len()
     }
@@ -1331,8 +1238,67 @@ impl Content for beef::lean::Cow<'_, str> {
     }
 }
 
-#[cfg(feature = "chrono")]
+// #[cfg(feature = "chrono")]
 impl Content for chrono::NaiveDateTime {
+    #[inline]
+    fn is_truthy(&self) -> bool {
+        true
+    }
+
+    #[inline]
+    fn capacity_hint(&self, _tpl: &Template) -> usize {
+        22
+    }
+
+    #[inline]
+    fn render_unescaped<E: Encoder>(&self, encoder: &mut E) -> Result<(), E::Error> {
+        encoder.format_unescaped(self.timestamp_millis())
+    }
+
+    #[inline]
+    fn render_escaped<E: Encoder>(&self, encoder: &mut E) -> Result<(), E::Error> {
+        let formatted = format!("{}", self.format("%Y-%m-%d %H:%M:%S.%3f"));
+        encoder.format_unescaped(formatted)
+    }
+
+    #[inline]
+    fn apply_unescaped(&self) -> Result<SimpleValue, SimpleError> {
+        Ok(SimpleValue::t_NaiveDateTime(*self))
+    }
+}
+
+// #[cfg(feature = "chrono")]
+impl Content for chrono::DateTime<FixedOffset>
+{
+    #[inline]
+    fn is_truthy(&self) -> bool {
+        true
+    }
+
+    #[inline]
+    fn capacity_hint(&self, _tpl: &Template) -> usize {
+        22
+    }
+
+    #[inline]
+    fn render_unescaped<E: Encoder>(&self, encoder: &mut E) -> Result<(), E::Error> {
+        encoder.format_unescaped(self.timestamp_millis())
+    }
+
+    #[inline]
+    fn render_escaped<E: Encoder>(&self, encoder: &mut E) -> Result<(), E::Error> {
+        let formatted = format!("{}", self.format("%Y-%m-%d %H:%M:%S.%3f"));
+        encoder.format_unescaped(formatted)
+    }
+
+    #[inline]
+    fn apply_unescaped(&self) -> Result<SimpleValue, SimpleError> {
+        Ok(SimpleValue::t_DateTime_FixedOffset(*self))
+    }
+}
+
+impl Content for chrono::DateTime<Local>
+{
     #[inline]
     fn is_truthy(&self) -> bool {
         true
@@ -1344,17 +1310,22 @@ impl Content for chrono::NaiveDateTime {
     }
 
     #[inline]
+    fn render_unescaped<E: Encoder>(&self, encoder: &mut E) -> Result<(), E::Error> {
+        encoder.format_unescaped(self.timestamp_millis())
+    }
+
+    #[inline]
     fn render_escaped<E: Encoder>(&self, encoder: &mut E) -> Result<(), E::Error> {
-        encoder.format_unescaped(self)
+        let formatted = format!("{}", self.format("%Y-%m-%d %H:%M:%S.%3f"));
+        encoder.format_unescaped(formatted)
     }
 
     #[inline]
     fn apply_unescaped(&self) -> Result<SimpleValue, SimpleError> {
-        Ok(SimpleValue::t_NaiveDateTime(*self))
+        Ok(SimpleValue::t_DateTime_Local(*self))
     }
 }
 
-#[cfg(feature = "chrono")]
 impl Content for chrono::DateTime<Utc>
 {
     #[inline]
@@ -1368,8 +1339,14 @@ impl Content for chrono::DateTime<Utc>
     }
 
     #[inline]
+    fn render_unescaped<E: Encoder>(&self, encoder: &mut E) -> Result<(), E::Error> {
+        encoder.format_unescaped(self.timestamp_millis())
+    }
+
+    #[inline]
     fn render_escaped<E: Encoder>(&self, encoder: &mut E) -> Result<(), E::Error> {
-        encoder.format_unescaped(self)
+        let formatted = format!("{}", self.format("%Y-%m-%d %H:%M:%S.%3f"));
+        encoder.format_unescaped(formatted)
     }
 
     #[inline]
@@ -1378,7 +1355,40 @@ impl Content for chrono::DateTime<Utc>
     }
 }
 
-#[cfg(feature = "uuid")]
+// #[cfg(feature = "chrono")]
+// impl<T: chrono::TimeZone> Content for chrono::DateTime<T>
+// where
+//     T::Offset: std::fmt::Display,
+// {
+//     #[inline]
+//     fn is_truthy(&self) -> bool {
+//         true
+//     }
+
+//     #[inline]
+//     fn capacity_hint(&self, _tpl: &Template) -> usize {
+//         5
+//     }
+
+//     #[inline]
+//     fn render_unescaped<E: Encoder>(&self, encoder: &mut E) -> Result<(), E::Error> {
+//         encoder.format_unescaped(self.timestamp_millis())
+//     }
+
+//     #[inline]
+//     fn render_escaped<E: Encoder>(&self, encoder: &mut E) -> Result<(), E::Error> {
+//         let formatted = format!("{}", self.format("%Y-%m-%d %H:%M:%S.%3f"));
+//         encoder.format_unescaped(formatted)
+//     }
+
+//     #[inline]
+//     fn apply_unescaped(&self) -> Result<SimpleValue, SimpleError> {
+//         // Ok(SimpleValue::t_Utc(*self))
+//         Ok(SimpleValue::t_DateTime(self.timestamp_millis()))
+//     }
+// }
+
+// #[cfg(feature = "uuid")]
 impl Content for uuid::Uuid {
     #[inline]
     fn is_truthy(&self) -> bool {
@@ -1398,5 +1408,19 @@ impl Content for uuid::Uuid {
     #[inline]
     fn apply_unescaped(&self) -> Result<SimpleValue, SimpleError> {
         Ok(SimpleValue::t_Uuid(*self))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_datetime() {
+        use chrono::{TimeZone, Utc};
+
+        let date_time = Utc.with_ymd_and_hms(2020, 11, 10, 0, 1, 32).unwrap();
+
+        let formatted = format!("{}", date_time.format("%Y-%m-%d %H:%M:%S.%3f"));
+
+        println!("{}", formatted);
     }
 }

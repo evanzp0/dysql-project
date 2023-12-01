@@ -42,13 +42,13 @@ async fn test_fetch_one() {
     let rst = fetch_one!(|&conn, dto| -> User {
         select_sql + "where id = :value order by id"
     }).unwrap();
-    assert_eq!(common::User { id: 2, name: Some("zhanglan".to_owned()), age: Some(21) }, rst);
+    assert_eq!(common::User { id: 2, name: Some("a2".to_owned()), age: Some(21) }, rst);
 
     let rst = fetch_one!(|&conn| -> User {
         select_sql + "where id = 2"
     }).unwrap();
 
-    assert_eq!(User { id: 2, name: Some("zhanglan".to_owned()), age: Some(21) }, rst);
+    assert_eq!(User { id: 2, name: Some("a2".to_owned()), age: Some(21) }, rst);
 }
 
 #[tokio::test]
@@ -135,7 +135,7 @@ async fn test_page() {
 #[tokio::test]
 async fn test_trim_sql() {
     let conn = connect_db().await;
-    let dto = UserDto::new(None, Some("z".to_owned()), Some(13), Some(vec![1, 2, 3,]));
+    let dto = UserDto::new(None, Some("a".to_owned()), Some(13), Some(vec![1, 2, 3,]));
     let sort_model = vec![
         SortModel {field: "id".to_owned(), sort: "desc".to_owned()}
     ];

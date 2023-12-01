@@ -71,14 +71,14 @@ impl SqlxExecutorAdatper for &sqlx::Pool<sqlx::MySql> {
 
     type Row = sqlx::mysql::MySqlRow;
 
-    crate::impl_sqlx_adapter_fetch_all!(sqlx::mysql::MySqlRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
-    crate::impl_sqlx_adapter_fetch_one!(sqlx::mysql::MySqlRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
-    crate::impl_sqlx_adapter_fetch_scalar!([i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
-    crate::impl_sqlx_adapter_execute!([i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
-    crate::impl_sqlx_adapter_page_count!([i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
-    crate::impl_sqlx_adapter_page_all!(sqlx::mysql::MySqlRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
-    impl_sqlx_adapter_mysql_insert!([i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
-    impl_sqlx_adapter_mysql_fetch_insert_id!([i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
+    crate::impl_sqlx_adapter_fetch_all!(sqlx::mysql::MySqlRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc, DateTime_Local]);
+    crate::impl_sqlx_adapter_fetch_one!(sqlx::mysql::MySqlRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc, DateTime_Local]);
+    crate::impl_sqlx_adapter_fetch_scalar!([i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc, DateTime_Local]);
+    crate::impl_sqlx_adapter_execute!([i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc, DateTime_Local]);
+    crate::impl_sqlx_adapter_page_count!([i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc, DateTime_Local]);
+    crate::impl_sqlx_adapter_page_all!(sqlx::mysql::MySqlRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc, DateTime_Local]);
+    impl_sqlx_adapter_mysql_insert!([i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc, DateTime_Local]);
+    impl_sqlx_adapter_mysql_fetch_insert_id!([i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc, DateTime_Local]);
 }
 
 impl SqlxExecutorAdatper for &mut sqlx::MySqlConnection {
@@ -87,12 +87,12 @@ impl SqlxExecutorAdatper for &mut sqlx::MySqlConnection {
 
     type Row = sqlx::mysql::MySqlRow;
 
-    crate::impl_sqlx_adapter_fetch_all!(sqlx::mysql::MySqlRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
-    crate::impl_sqlx_adapter_fetch_one!(sqlx::mysql::MySqlRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
-    crate::impl_sqlx_adapter_fetch_scalar!([i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
-    crate::impl_sqlx_adapter_execute!([i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
-    crate::impl_sqlx_adapter_page_count!([i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
-    crate::impl_sqlx_adapter_page_all!(sqlx::mysql::MySqlRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
-    impl_sqlx_adapter_mysql_insert!([i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
-    impl_sqlx_adapter_mysql_fetch_insert_id!([i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc]);
+    crate::impl_sqlx_adapter_fetch_all!(sqlx::mysql::MySqlRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc, DateTime_Local]);
+    crate::impl_sqlx_adapter_fetch_one!(sqlx::mysql::MySqlRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc, DateTime_Local]);
+    crate::impl_sqlx_adapter_fetch_scalar!([i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc, DateTime_Local]);
+    crate::impl_sqlx_adapter_execute!([i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc, DateTime_Local]);
+    crate::impl_sqlx_adapter_page_count!([i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc, DateTime_Local]);
+    crate::impl_sqlx_adapter_page_all!(sqlx::mysql::MySqlRow, [i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc, DateTime_Local]);
+    impl_sqlx_adapter_mysql_insert!([i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc, DateTime_Local]);
+    impl_sqlx_adapter_mysql_fetch_insert_id!([i64, i32, i16, i8, f32, f64, bool, Uuid, NaiveDateTime, Utc, DateTime_Local]);
 }

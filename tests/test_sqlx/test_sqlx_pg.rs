@@ -18,7 +18,7 @@ pub async fn connect_postgres_db() -> sqlx::Pool<sqlx::Postgres> {
 async fn test_fetch_all() {
     let conn = connect_postgres_db().await;
 
-    let dto = UserDto{ id: None, name: None, age: Some(13) , id_rng: None };
+    let dto = UserDto::new(None, None, Some(13), None);
     let rst = fetch_all!(|&conn, &dto| -> User {
         r#"SELECT * FROM test_user 
         WHERE 1 = 1
@@ -38,11 +38,11 @@ sql!("select_sql","select * from test_user ");
 #[tokio::test]
 async fn test_fetch_one() {
     let conn = connect_postgres_db().await;
-    // let dto = UserDto{ id: Some(2), name: None, age: None, id_rng: None };
-    let dto = dysql::Value::new(2_i64);
+    let dto = UserDto{ id: Some(2), name: None, age: None, id_rng: None };
+    // let dto = dysql::Value::new(2_i64);
 
     let rst = fetch_one!(|&conn, dto| -> User {
-        select_sql + "where id = :value order by id"
+        select_sql + "where id = :id order by id"
     }).unwrap();
     assert_eq!(User { id: 2, name: Some("zhanglan".to_owned()), age: Some(21) }, rst);
 

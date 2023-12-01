@@ -1,9 +1,7 @@
 
+use chrono::{NaiveDateTime, DateTime, Utc, Local, FixedOffset};
 use paste::paste;
-use chrono::NaiveDateTime;
-use chrono::DateTime;
 use uuid::Uuid;
-use chrono::Utc;
 
 use super::SimpleError;
 use super::SimpleInnerError;
@@ -48,16 +46,13 @@ macro_rules! impl_simple_value_varaint {
             pub enum SimpleValue {
                 $(
                     [<t_ $vtype>]($vtype),
-                    // [<option_ $vtype>](Option<$vtype>),
                 )*
                 t_str(RawStr),
-                // option_str(Option<*const str>),
                 t_String(RawString),
-                // option_String(Option<*const String>),
                 t_Utc(DateTime<Utc>),
-                // option_Utc(Option<DateTime<Utc>>),
+                t_DateTime_Local(DateTime<Local>),
+                t_DateTime_FixedOffset(DateTime<FixedOffset>),
                 None(Option<i32>),
-                // t_unknown,
             }
         }
     }

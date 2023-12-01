@@ -65,7 +65,9 @@ criterion = { version = "0.4", features = ["async_tokio"] }
 futures = "0.3"
 sea-orm = { version = "0.12", features = ["sqlx-sqlite", "sqlx-postgres", "runtime-tokio-rustls", "macros"] }
 diesel = { version = "2", features = ["sqlite", "postgres"] }
-
+uuid = "1"
+chrono = "0.4"
+chrono-tz = "0.8"
 
 [features]
 default = ["sqlx-postgres", "sqlx-sqlite", "sqlx-mysql", "tokio-postgres", "rbatis-mysql", "rbatis-sqlite", "rbatis-pg"] # 
@@ -84,13 +86,28 @@ path = "tests/test_sqlx/test_sqlx_pg.rs"
 required-features = ["sqlx-postgres"]
 
 [[test]]
+name = "test_sqlx_postgres2"
+path = "tests/test_sqlx/test_sqlx_pg2.rs"
+required-features = ["sqlx-postgres"]
+
+[[test]]
 name = "test_sqlx_mysql"
 path = "tests/test_sqlx/test_sqlx_mysql.rs"
 required-features = ["sqlx-mysql"]
 
 [[test]]
+name = "test_sqlx_mysql2"
+path = "tests/test_sqlx/test_sqlx_mysql2.rs"
+required-features = ["sqlx-mysql"]
+
+[[test]]
 name = "test_sqlx_sqlite"
 path = "tests/test_sqlx/test_sqlx_sqlite.rs"
+required-features = ["sqlx-sqlite"]
+
+[[test]]
+name = "test_sqlx_sqlite2"
+path = "tests/test_sqlx/test_sqlx_sqlite2.rs"
 required-features = ["sqlx-sqlite"]
 
 [[test]]
@@ -118,10 +135,10 @@ name = "bench_tpl"
 path = "benches/bench_tpl.rs"
 harness = true
 
-[[test]]
-name = "bench_nh_sqlite"
-path = "benches/bench_nh_sqlite.rs"
-required-features = ["rbatis-sqlite"]
+# [[test]]
+# name = "bench_nh_sqlite"
+# path = "benches/bench_nh_sqlite.rs"
+# required-features = ["rbatis-sqlite"]
 
 # [[test]]
 # name = "bench_nh_pg"

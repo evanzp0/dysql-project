@@ -11,5 +11,7 @@ pub use simple_section::*;
 
 #[cfg(feature="postgres" )]
 mod tokio_pg_adapter;
+
+#[allow(unused_imports)]
 #[cfg(feature="postgres")]
 pub use tokio_pg_adapter::*;

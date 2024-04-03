@@ -14,7 +14,8 @@ arrayvec = "0.7.2"
 beef = "0.5.2"
 fnv = "1.0"
 pulldown-cmark = { version = "0.9", default_features = false, optional = true }
-dysql-tpl-derive = { path = "../dysql-tpl-derive", optional = true } # , version = "2.0"
+# dysql-tpl-derive = { path = "../dysql-tpl-derive", optional = true }
+dysql-tpl-derive = { version = "2", optional = true }
 logos = "0.13.0"
 chrono = { version = "0.4", features = ["serde"], optional = false }
 uuid = { version = "1.5", features = ["serde"], optional = false }

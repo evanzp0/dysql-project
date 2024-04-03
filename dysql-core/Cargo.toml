@@ -9,7 +9,8 @@ documentation = "https://docs.rs/dysql-core"
 readme = "../README.md"
 
 [dependencies]
-dysql-tpl = { path = "../dysql-tpl"} # version = "2.0" 
+# dysql-tpl = { path = "../dysql-tpl"} # version = "2.0" 
+dysql-tpl = { version = "2" } # 
 # tokio-postgres family
 tokio-postgres = { version = "0.7", features = ["with-chrono-0_4", "with-uuid-1"], optional = true }
 tokio-pg-mapper = { version = "0.2", optional = true }

@@ -12,9 +12,12 @@ readme = "../README.md"
 name = "dysql"
 
 [dependencies]
-dysql-tpl = { path = "../dysql-tpl" } # , version = "2.0"
-dysql-core = { path = "../dysql-core" } # version = "2.0"
-dysql-macro = { path = "../dysql-macro" } # version = "2.0"
+# dysql-tpl = { path = "../dysql-tpl" } # , version = "2.0"
+# dysql-core = { path = "../dysql-core" } # version = "2.0"
+# dysql-macro = { path = "../dysql-macro" } # version = "2.0"
+dysql-tpl = {  version = "2" }
+dysql-core = { version = "2" }
+dysql-macro = { version = "2" }
 serde = { version = "1", features = ["derive"] }
 
 [features]

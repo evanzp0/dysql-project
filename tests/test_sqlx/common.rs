@@ -7,7 +7,7 @@ use sqlx::FromRow;
 pub struct UserDto {
     pub id: Option<i64>,
     pub name: Option<String>,
-    pub age: Option<u8>,
+    pub age: Option<i32>,
     pub id_rng: Option<Vec<i32>>,
 }
 
